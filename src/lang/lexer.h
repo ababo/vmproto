@@ -15,7 +15,7 @@ namespace Ant {
     };
 
     enum Token {
-      TOKEN_ERROR = 0,
+      TOKEN_ERR = 0,
       TOKEN_EOF,
       TOKEN_LEFT_BR,
       TOKEN_RIGHT_BR,

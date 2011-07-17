@@ -1,0 +1,34 @@
+﻿Entities:
+
+1. The main entities are two: modules and threads.
+2. Module represents code and data.
+3. Code is immutable while data are mutable and persisting.
+4. Module has number of external procedures.
+5. Module has UUID and can be located by it through the global network.
+6. Thread represents program execution.
+7. Thread can call a module external procedure using UUID of the module and
+number index of the procedure.
+
+
+Synchronization:
+
+1. Some procedures are readers, i.e., they don’t change module data. Other
+procedures are writers.
+2. No thread can execute procedures while there is a thread executing a writer
+procedure of the module. Claiming threads will be blocked.
+3. There can be an arbitrary number of threads simultaneously executing reader
+procedures of the module.
+4. Writer threads have higher unblock priority over reader threads.
+
+
+Module freezing:
+
+1. Module can get frozen, i.e., to become inaccessible for threads.
+2. Threads which are already executing inside the module stop when it becomes
+frozen.
+3. Module can get unfrozen.
+4. When module becomes unfrozen stopped threads resume their execution.
+5. Frozen module can be copied inside its host or to another host. The new
+module will have a newly generated UUID and will not contain stopped threads.
+6. Frozen module can be moved to another host. UUID of the moved module will not
+change and stopped threads inside it will be preserved.
