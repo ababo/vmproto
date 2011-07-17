@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "test.h"
-#include "common/test.h"
-#include "lang/test.h"
+#include "all.h"
+#include "../common/test/all.h"
+#include "../lang/test/all.h"
 
 using namespace std;
 using namespace Ant::Common::Test;

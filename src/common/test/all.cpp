@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "test.h"
+#include "all.h"
 
 using namespace std;
 

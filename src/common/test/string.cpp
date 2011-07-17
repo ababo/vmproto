@@ -1,3 +1,4 @@
+#include "all.h"
 #include "../string.h"
 
 namespace Ant {

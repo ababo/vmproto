@@ -1,10 +1,13 @@
 include ../Makefile.inc
 
-ODIR = ../../bin/lang
+ODIR = ../../bin/test
 SDIR = .
 
-_OBJS = lexer.o
+_OBJS = all.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
+
+DIRS = ../common/test \
+       ../lang/test
 
 main: prereq $(OBJS) ;
 
@@ -14,9 +17,11 @@ $(ODIR)/%.o: $(SDIR)/%.cpp
 .PHONY: prereq
 
 prereq:
+	-for d in $(DIRS); do (cd $$d; $(MAKE) ); done
 	mkdir -p $(ODIR)
 
 .PHONY: clean
 
-clean:
+clean: $(SUBS)
+	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
 	rm -f $(ODIR)/*.o
