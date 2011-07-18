@@ -15,15 +15,14 @@ namespace Ant {
     };
 
     enum Token {
-      TOKEN_ERR = 0,
+      TOKEN_ERROR = 0,
       TOKEN_EOF,
-      TOKEN_LEFT_BR,
-      TOKEN_RIGHT_BR,
+      TOKEN_DELIMITER,
       TOKEN_SYMBOL,
       TOKEN_STR_LIT,
-      TOKEN_NEG_INT,
       TOKEN_POS_INT,
-      TOKEN_REAL,
+      TOKEN_NEG_INT,
+      TOKEN_REAL
     };
 
     class Lexer {
@@ -33,20 +32,22 @@ namespace Ant {
       void nextToken();
       Token readToken();
       Location location() { return loc; }
+      Token token() { return tok; }
 
-      const Common::String &getString() { return str; }
-      uint64_t getPosInt() { return pint; }
-      int64_t getNegInt() { return nint; }
-      double getReal() { return real; }
+      const Common::String &string() { return str; }
+      uint64_t posInt() { return pint; }
+      int64_t negInt() { return nint; }
+      double real() { return rl; }
 
     protected:
       std::istream &in;
       Location loc;
+      Token tok;
 
       Common::String str;
       uint64_t pint;
       int64_t nint;
-      double real;
+      double rl;
     };
   }
 }
