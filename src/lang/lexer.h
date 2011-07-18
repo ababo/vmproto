@@ -17,7 +17,9 @@ namespace Ant {
     enum Token {
       TOKEN_ERROR = 0,
       TOKEN_EOF,
-      TOKEN_DELIMITER,
+      TOKEN_OPEN,
+      TOKEN_CLOSE,
+      TOKEN_DOT,
       TOKEN_SYMBOL,
       TOKEN_STR_LIT,
       TOKEN_POS_INT,

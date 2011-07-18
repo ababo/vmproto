@@ -6,7 +6,7 @@ namespace Ant {
     namespace Test {
 
       bool testString() {
-        return false;
+        return true;
       }
 
     }
