@@ -8,15 +8,16 @@
 namespace Ant {
   namespace Test {
 
-    void printTestResult(const Common::String subj,
+    bool printTestResult(const Common::String subj,
                          const Common::String test,
                          bool testPassed,
                          int lineWidth) {
       using namespace std;
 
-      int count = lineWidth - subj.length() - test.length() - 3;
+      int count = lineWidth - subj.length() - test.length() - 4;
       cout << subj << " (" << test << ")" << setfill('.');
-      cout << setw(count) << testPassed ? "passed" : "failed" << endl;
+      cout << setw(count) << (testPassed ? "passed" : "FAILED") << endl;
+      return testPassed;
     }
 
     bool testAntOS() {

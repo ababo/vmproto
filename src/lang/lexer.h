@@ -15,16 +15,16 @@ namespace Ant {
     };
 
     enum Token {
-      TOKEN_ERROR = 0,
-      TOKEN_EOF,
-      TOKEN_OPEN,
-      TOKEN_CLOSE,
-      TOKEN_DOT,
-      TOKEN_SYMBOL,
-      TOKEN_STR_LIT,
-      TOKEN_POS_INT,
-      TOKEN_NEG_INT,
-      TOKEN_REAL
+      TOKEN_ERROR = 0, // message in Lexer::string()
+      TOKEN_EOF,       // nothing left to parse 
+      TOKEN_OPEN,      // '(' 
+      TOKEN_CLOSE,     // ')'
+      TOKEN_DOT,       // single '.'
+      TOKEN_SYMBOL,    // name in Lexer::string()
+      TOKEN_STR_LIT,   // literal in Lexer::string()
+      TOKEN_POS_INT,   // value in Lexer::posInt()
+      TOKEN_NEG_INT,   // value in Lexer::negInt()
+      TOKEN_REAL       // value in Lexer::real()
     };
 
     class Lexer {

@@ -6,7 +6,7 @@
 namespace Ant {
   namespace Test {
 
-    void printTestResult(const Common::String subj,
+    bool printTestResult(const Common::String subj,
                          const Common::String test,
                          bool testPassed,
                          int lineWidth = 80);
