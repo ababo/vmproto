@@ -14,14 +14,14 @@ namespace {
 
   bool testInput() {
     bool passed = true;
-    
-    Char chr;    
-    std::stringstream in("\xD0\x9D\xD0\xB0\x20\xD1");
+    std::stringstream in("\xD0\x9D\xD0\xB0\x20\x00\xE6");
+    Char chr;
     
     try {
-      in >> chr, passed = chr == 0x041F;
-      in >> chr, passed = passed && chr == 0x043E;
+      in >> chr, passed = chr == 0x041D;
+      in >> chr, passed = passed && chr == 0x0430;
       in >> chr, passed = passed && chr == ' ';
+      in >> chr, passed = passed && chr == 0;
     }
     catch (...) { passed = false; }
 
@@ -33,10 +33,10 @@ namespace {
       catch(...) {}
     }
 
-    in.str("\xD1\xD1");
-
     if(passed) {
       passed = false;
+      in.str("\xD1\xD1");
+      in.clear();
 
       try { in >> chr; }
       catch(const EncodingException&) { passed = true; }

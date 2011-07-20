@@ -13,7 +13,7 @@ namespace Ant {
       Char() : c(0) {}
       Char(uint32_t cp);
 
-      operator uint32_t () const { return c; }
+      operator uint32_t() const { return c; }
 
     protected:
       uint32_t c;

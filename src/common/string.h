@@ -16,11 +16,11 @@ namespace Ant {
       String() {}
       String(const char *str);
 
-      operator const std::string& () const { return s; }
-      bool operator == (const std::string str) const { return str == s; }
+      operator const std::string&() const { return s; }
+      bool operator==(const std::string str) const { return str == s; }
 
       const char *c_str() const { return s.c_str(); }
-      size_t size () const { return s.size(); }
+      size_t size() const { return s.size(); }
       size_t length() const;
 
       void push_back(Char chr);
