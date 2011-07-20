@@ -43,8 +43,8 @@ namespace {
   }
 
 #define LONG_SYMBOL1 "H!e@l#l$o%_^w&o*r~l<d>?...+-/"
-#define LONG_SYMBOL2 "\65\45\208\191\208\190\45\209\128\209\131\209\129" \
-  "\209\129\208\186\208\184\45\209\129\208\187\208\176\208\177\208\190\63"
+#define LONG_SYMBOL2 "\xD0\x9D\xD0\xB0\x2D\xD1\x80" \
+  "\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xBE\xD0\xBC"
 
   bool testSymbols() {
     PREPARE_LEXER(LONG_SYMBOL1 " " LONG_SYMBOL2 " 12.23a q13 1..3. -.");

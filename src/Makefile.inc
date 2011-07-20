@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -I$(PPATH)/depend
+CFLAGS = -I$(PPATH)/depend -g
 MAKE = make
 
 LD = g++

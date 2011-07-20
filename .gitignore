@@ -1,4 +1,6 @@
 *.o
 program
-#*
+\#*#
 .#*
+.*.swp
+depend/
