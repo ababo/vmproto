@@ -10,13 +10,14 @@ namespace Ant {
 
     bool printTestResult(const Common::String subj,
                          const Common::String test,
-                         bool testPassed,
-                         int lineWidth) {
+                         bool testPassed) {
       using namespace std;
 
-      int count = lineWidth - subj.length() - test.length() - 4;
-      cout << subj << " (" << test << ")" << setfill('.');
-      cout << setw(count) << (testPassed ? "passed" : "FAILED") << endl;
+      static const int LINE_WIDTH = 80;      
+      int c = LINE_WIDTH - subj.length() - test.length() - 4;
+      wcout << subj << L" (" << test << L")" << setfill(L'.');
+      wcout << setw(c) << (testPassed ? L"passed" : L"FAILED") << endl;
+      
       return testPassed;
     }
 

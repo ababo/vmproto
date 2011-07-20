@@ -8,8 +8,7 @@ namespace Ant {
 
     bool printTestResult(const Common::String subj,
                          const Common::String test,
-                         bool testPassed,
-                         int lineWidth = 80);
+                         bool testPassed);
 
     bool testAntOS();
 

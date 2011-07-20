@@ -33,13 +33,13 @@ namespace Ant {
       
       void nextToken();
       Token readToken();
-      Location location() { return loc; }
-      Token token() { return tok; }
+      Location location() const { return loc; }
+      Token token() const { return tok; }
 
-      const Common::String &string() { return str; }
-      uint64_t posInt() { return pint; }
-      int64_t negInt() { return nint; }
-      double real() { return rl; }
+      const Common::String &string() const { return str; }
+      uint64_t posInt() const { return pint; }
+      int64_t negInt() const { return nint; }
+      double real() const { return rl; }
 
     protected:
       std::istream &in;

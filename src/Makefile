@@ -1,22 +1,19 @@
-include Makefile.inc
-
-LD = g++
-PROG = program
-LFLAGS =
-
-ODIR = ../bin
-SDIR = .
+PPATH = ..
+DIRS = $(PPATH)/src/test \
+       $(PPATH)/src/common \
+       $(PPATH)/src/lang
+ODIR = $(PPATH)/bin
 
 _OBJS = main.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 OBJS_ALL = $(shell find $(ODIR) -type f -name '*.o')
 
-DIRS = test common lang
+include $(PPATH)/src/Makefile.inc
 
 main: prereq $(OBJS)
 	$(LD) -o $(ODIR)/$(PROG) $(OBJS_ALL) $(LFLAGS)
 
-$(ODIR)/%.o: $(SDIR)/%.cpp
+$(ODIR)/%.o: ./%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: prereq

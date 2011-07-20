@@ -1,14 +1,14 @@
-include ../Makefile.inc
-
+PPATH = ../..
 ODIR = ../../bin/lang
-SDIR = .
 
 _OBJS = lexer.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
+include $(PPATH)/src/Makefile.inc
+
 main: prereq $(OBJS) ;
 
-$(ODIR)/%.o: $(SDIR)/%.cpp
+$(ODIR)/%.o: ./%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: prereq

@@ -1,17 +1,16 @@
-include ../Makefile.inc
-
-ODIR = ../../bin/test
-SDIR = .
+PPATH = ../..
+DIRS = $(PPATH)/src/common/test \
+       $(PPATH)/src/lang/test
+ODIR = $(PPATH)/bin/test
 
 _OBJS = all.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
-DIRS = ../common/test \
-       ../lang/test
+include $(PPATH)/src/Makefile.inc
 
 main: prereq $(OBJS) ;
 
-$(ODIR)/%.o: $(SDIR)/%.cpp
+$(ODIR)/%.o: ./%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: prereq
