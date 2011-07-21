@@ -1,6 +1,6 @@
 #ifndef __PLATFORM_INCLUDED__
 #define __PLATFORM_INCLUDED__
 
-#define WCHAR_SIZE 4
+#undef SHORT_WCHAR
 
 #endif // __PLATFORM_INCLUDED__

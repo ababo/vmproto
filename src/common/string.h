@@ -4,6 +4,8 @@
 #include <string>
 #include <ostream>
 
+#include "char.h"
+
 namespace Ant {
   namespace Common {
 
@@ -20,6 +22,8 @@ namespace Ant {
       const char *c_str() const { return s.c_str(); }
       size_t size () const { return s.size(); }
       size_t length() const;
+
+      void push_back(Char chr);
 
     protected:
       std::string s;

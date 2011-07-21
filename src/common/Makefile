@@ -1,7 +1,7 @@
 PPATH = ../..
 ODIR = $(PPATH)/bin/common
 
-_OBJS = string.o
+_OBJS = string.o char.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc

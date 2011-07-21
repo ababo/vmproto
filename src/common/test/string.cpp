@@ -10,31 +10,30 @@ namespace {
 
   const String subj = "Ant::Common::String";
 
-  const char *NON_ASCII = "\xD0\x9D\xD0\xB0\x20\xD1\x80"
-    "\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xBE\xD0\xBC";
+#define NON_ASCII "\xD0\x9D\xD0\xB0\x20\xD1\x80" \
+  "\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xBE\xD0\xBC"
 
-  const char *NON_UTF8 = "\xD0\x9D\xD0\xB0\x20\xD1\x80"
-    "\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xBE\xD0\xD0";
-
-  bool testSanity() {
+  bool testCtor() {
     bool passed = true;
 
     try { String s = NON_ASCII; }
     catch (...) { passed = false; }
 
-    passed = false;
+    if(passed) {
+      passed = false;
+      
+      try { String s = NON_ASCII "\xD0"; }
+      catch (const EncodingException&) { passed = true; }
+      catch (...) {} 
+    }
 
-    try { String s = NON_UTF8; }
-    catch (const EncodingException&) { passed = true; }
-    catch (...) { }
-
-    return printTestResult(subj, "sanity", passed);
+    return printTestResult(subj, "ctor", passed);
   }
 
   bool testLength() {
     String buf = NON_ASCII;
 
-    return printTestResult(subj, "length", buf.length() == 18);
+    return printTestResult(subj, "length", buf.length() == 10);
   }
 }
 
@@ -44,7 +43,7 @@ namespace Ant {
 
       bool testString() {
         return
-          testSanity() &&
+          testCtor() &&
           testLength();
       }
 

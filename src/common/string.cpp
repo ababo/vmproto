@@ -15,10 +15,11 @@ namespace Ant {
 
     wostream &operator<<(wostream &out, const String &str) {
       wstring wstr;
+      wstr.reserve(str.length());
 
-#if WCHAR_SIZE == 4
+#ifndef SHORT_WCHAR
       utf8to32(str.s.begin(), str.s.end(), back_inserter(wstr));
-#elif WCHAR_SIZE == 2
+#else
       utf8to16(str.s.begin(), str.s.end(), back_inserter(wstr));
 #endif
 

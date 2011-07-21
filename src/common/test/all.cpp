@@ -5,7 +5,9 @@ namespace Ant {
     namespace Test {
 
       bool testCommon() {        
-        return testString();
+        return
+          testChar() &&
+          testString();
       }
       
     }

@@ -8,12 +8,20 @@ namespace Ant {
 
     class Exception : public std::exception {
     public:
-      virtual const char *what() const throw() { return "generic error"; }
+      virtual const char *what() const throw() {
+        return "generic error"; }
     };
 
     class EncodingException : public Exception {
     public:
-      virtual const char *what() const throw() { return "encoding error"; }
+      virtual const char *what() const throw() {
+        return "encoding error"; }
+    };
+
+    class EOFException : public Exception {
+    public:
+      virtual const char *what() const throw() {
+        return "unexpected end of file"; }
     };
 
   }
