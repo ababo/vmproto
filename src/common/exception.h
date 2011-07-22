@@ -6,23 +6,18 @@
 namespace Ant {
   namespace Common {
 
-    class Exception : public std::exception {
-    public:
-      virtual const char *what() const throw() {
-        return "generic error"; }
+#define EXCEPTION(name, parent, message) \
+    class name : public parent { \
+    public: \
+      virtual const char *what() const throw() { \
+        return message; } \
     };
 
-    class EncodingException : public Exception {
-    public:
-      virtual const char *what() const throw() {
-        return "encoding error"; }
-    };
-
-    class EOFException : public Exception {
-    public:
-      virtual const char *what() const throw() {
-        return "unexpected end of file"; }
-    };
+    EXCEPTION(Exception, std::exception, "generic error");
+    EXCEPTION(CodePointException, Exception, "invalid code point");
+    EXCEPTION(EncodingException, Exception, "bad encoding");
+    EXCEPTION(EndOfFileException, Exception, "unexpected end of file");
+    EXCEPTION(OutOfRangeException, Exception, "value out of range");
 
   }
 }

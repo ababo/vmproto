@@ -11,9 +11,10 @@ namespace Ant {
       friend std::istream &operator>>(std::istream &in, Char &chr);
     public:
       Char() : c(0) {}
-      Char(uint32_t cp);
+      Char(uint32_t cp) { *this = cp; }
 
       operator uint32_t() const { return c; }
+      Char &operator=(uint32_t cp);
 
     protected:
       uint32_t c;

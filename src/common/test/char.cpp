@@ -29,7 +29,7 @@ namespace {
       passed = false;
 
       try { in >> chr; }
-      catch(const EOFException&) { passed = true; }
+      catch(const EndOfFileException&) { passed = true; }
       catch(...) {}
     }
 

@@ -5,33 +5,35 @@
 namespace Ant {
   namespace Common {
 
-    using namespace std;
-    using namespace utf8;
+    Char &Char::operator=(uint32_t cp) {
+      if(!utf8::internal::is_code_point_valid(cp))
+        throw CodePointException();
 
-#define MAX_CP_BYTES 6
+      c = cp;
+    }
 
-    istream &operator>>(istream &in, Char &chr) {
-      char buf[MAX_CP_BYTES + 1];
+    std::istream &operator>>(std::istream &in, Char &chr) {
+      char buf[4 + 1];
 
       if(!in.good())
-        throw EOFException();
+        throw EndOfFileException();
 
       buf[0] = in.get();
-      int len = internal::sequence_length(buf);
+      int len = utf8::internal::sequence_length(buf);
       for(int i = 1; i < len; i++) {
         if(!in.good())
-          throw EOFException();
+          throw EndOfFileException();
 
         buf[i] = in.get();
       }
       buf[len++] = 0;
 
-      try { chr.c = peek_next(buf, buf + len); }
-      catch (const invalid_utf8&) {
+      try { chr.c = utf8::peek_next(buf, buf + len); }
+      catch (const utf8::invalid_utf8&) {
         throw EncodingException();
       }
-      catch (const invalid_code_point&) {
-        throw EncodingException();
+      catch (const utf8::invalid_code_point&) {
+        throw CodePointException();
       }
 
       return in;
