@@ -30,11 +30,10 @@ namespace Ant {
     public:
       Lexer(std::istream &text, Location location) : in(text) {}
       
-      void nextToken();
       Token readToken();
+
       Location location() const { return loc; }
       Token token() const { return tok; }
-
       const Common::String &string() const { return str; }
       uint64_t posInt() const { return pint; }
       int64_t negInt() const { return nint; }

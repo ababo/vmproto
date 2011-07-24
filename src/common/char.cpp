@@ -12,6 +12,16 @@ namespace Ant {
       c = cp;
     }
 
+    size_t Char::sequenceSize() const {
+      if(c < 0x80)
+        return 1;
+      if(c < 0x800)
+        return 2;
+      if(c < 0x10000)
+        return 3;
+      return 4;
+    }
+
     std::istream &operator>>(std::istream &in, Char &chr) {
       char buf[4 + 1];
 

@@ -16,6 +16,8 @@ namespace Ant {
       operator uint32_t() const { return c; }
       Char &operator=(uint32_t cp);
 
+      size_t sequenceSize() const;
+
     protected:
       uint32_t c;
     };
