@@ -15,6 +15,14 @@ namespace {
 namespace Ant {
   namespace Common {
 
+    Char String::Iterator::operator*() const {
+      if (i < 0 || i >= s.size())
+        throw OperationException();
+      
+      uint32_t chr = utf8::unchecked::peek_next(&s[i]);
+      return *reinterpret_cast<Char*>(&chr);
+    }
+
     String::String(const char *str) : s(str) {
       throwIfInvalid(s);
     }

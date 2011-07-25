@@ -1,16 +1,8 @@
 #include "lexer.h"
-#include "../common/char.h"
 
 namespace {
-  using namespace std;
-  using namespace Ant::Lang;
-  using namespace Ant::Common;
 
-  inline bool updateLocation(Char chr, Location &loc) {
-    if(chr == '\n')
-      ++loc.line, loc.column = 1;
-    else ++loc.column;
-  }
+  using namespace Ant::Common;
 
   inline bool isWhitespace(Char chr) {
     return chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n';
@@ -24,51 +16,109 @@ namespace {
     return chr == '\n';
   }
 
-  inline void ungetChar(istream &in, Char chr) {
-    for(int i = chr.sequenceSize(); i; i--)
-      in.unget();
+  inline bool isOpen(Char chr) {
+    return chr == '(';
   }
 
-  void skipWhitespaces(istream &in, Location &loc) {
-    bool insideLineComment = false;
+  inline bool isClose(Char chr) {
+    return chr == ')';
+  }
 
-    while(in.good()) {
-      Char chr;
-      in >> chr;
+  inline bool isDelimiter(Char chr) {
+    return
+      isWhitespace(chr) ||
+      isLineCommentBegin(chr) ||
+      isOpen(chr) ||
+      isClose(chr); 
+  }
 
-      updateLocation(chr, loc);
-
-      if(isLineCommentBegin(chr)) {
-        insideLineComment = true;
-        continue;
-      }
-
-      if(insideLineComment) {
-        if(isLineCommentEnd(chr))
-          insideLineComment = false;
-        continue;
-      }
-
-      if(isWhitespace(chr))
-        continue;
-
-      ungetChar(in, chr);
-      break;
-    }
+  inline bool isDot(Char chr) {
+    return chr == '.';
   }
 
 }
 
 namespace Ant {
   namespace Lang {
+    using namespace Common;
+
+    inline bool Lexer::updateLocation(Char chr) {
+      if(chr == '\n')
+        ++loc.line, loc.column = 1;
+      else ++loc.column;
+    }
+
+    inline void Lexer::ungetChar(Char chr) {
+      for(int i = chr.sequenceSize(); i; i--)
+        in.unget();
+    }
+
+    void Lexer::skipWhitespaces() {
+      bool insideLineComment = false;
+      
+      while(in.good()) {
+        Char chr;
+        in >> chr;
+
+        if(isLineCommentBegin(chr)) {
+          insideLineComment = true;
+          updateLocation(chr);
+          continue;
+        }
+
+        if(insideLineComment) {
+          if(isLineCommentEnd(chr))
+            insideLineComment = false;
+          updateLocation(chr);
+          continue;
+        }
+
+        if(isWhitespace(chr)) {
+          updateLocation(chr);
+          continue;
+        }
+
+        ungetChar(chr);
+        break;
+      }
+    }
+
+    Token Lexer::recognizeToken(const String &str) {
+      if(str.length() == 1 && isDot(*str.begin()))
+        return TOKEN_DOT;
+
+
+      return TOKEN_SYMBOL;
+    }
 
     Token Lexer::readToken() {
-      while (in.good()) {
-        skipWhitespaces(in, loc);
+      skipWhitespaces();
+      if(!in.good())
+        return TOKEN_EOF;
 
+      Char chr;
+      String str;
+
+      do {
+        in >> chr;
+
+        if(isDelimiter(chr))
+          break;
+
+        updateLocation(chr);
+
+        str.push_back(chr);
+      }
+      while(in.good());
+
+      if(!str.size()) {
+        updateLocation(chr);
+        return isOpen(chr) ? TOKEN_OPEN : TOKEN_CLOSE;
       }
 
-      return TOKEN_EOF;
+      ungetChar(chr);
+
+      return recognizeToken(str);
     }
 
   }

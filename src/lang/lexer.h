@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <istream>
 
+#include "../common/char.h"
 #include "../common/string.h"
 
 namespace Ant {
@@ -15,7 +16,7 @@ namespace Ant {
     };
 
     enum Token {
-      TOKEN_EOF,
+      TOKEN_EOF = 0,
       TOKEN_OPEN,
       TOKEN_CLOSE,
       TOKEN_DOT,
@@ -40,6 +41,11 @@ namespace Ant {
       double real() const { return rl; }
 
     protected:
+      inline bool updateLocation(Common::Char chr);
+      inline void ungetChar(Common::Char chr);
+      void skipWhitespaces();
+      Token recognizeToken(const Common::String &str);
+
       std::istream &in;
       Location loc;
       Token tok;

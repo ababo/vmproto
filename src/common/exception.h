@@ -18,6 +18,7 @@ namespace Ant {
     EXCEPTION(EncodingException, Exception, "bad encoding");
     EXCEPTION(EndOfFileException, Exception, "unexpected end of file");
     EXCEPTION(OutOfRangeException, Exception, "value out of range");
+    EXCEPTION(OperationException, Exception, "bad operation");
 
   }
 }
