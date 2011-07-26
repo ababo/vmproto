@@ -21,7 +21,7 @@ namespace Ant {
       TOKEN_CLOSE,
       TOKEN_DOT,
       TOKEN_SYMBOL,
-      TOKEN_STR_LIT,
+      TOKEN_STRING,
       TOKEN_POS_INT,
       TOKEN_NEG_INT,
       TOKEN_REAL
@@ -44,7 +44,8 @@ namespace Ant {
       bool updateLocation(Common::Char chr);
       void ungetChar(Common::Char chr);
       void skipWhitespaces();
-      Token recognizeToken(const Common::String &str);
+      Token readNumberOrSymbol(const Common::String &str);
+      Token readString();
 
       std::istream &in;
       Location loc;

@@ -53,36 +53,13 @@ namespace {
 #define LONG_SYMBOL2 "\xD0\x9D\xD0\xB0\x2D\xD1\x80" \
   "\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xBE\xD0\xBC"
 
-  bool testSymbols() {
-    PREPARE_LEXER(LONG_SYMBOL1 " " LONG_SYMBOL2 " 12.23a q13 1..3. -.");
-
-    try {
-      passed = lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == LONG_SYMBOL1;
-      passed = passed && lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == LONG_SYMBOL2;
-      passed = passed && lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == "12.23";
-      passed = passed && lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == "q13";
-      passed = passed && lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == "1..3";
-      passed = passed && lex.readToken() == TOKEN_SYMBOL;
-      passed = passed && lex.string() == "-.";
-      passed = passed && lex.readToken() == TOKEN_EOF;
-    }
-    catch(...) { passed = false; }
-
-    return printTestResult(subj, "symbols", passed);
-  }
-
-  bool testStrLiterals() {
+  bool testStrings() {
     PREPARE_LEXER("\"" LONG_SYMBOL2 "\"\"\\\"quote\\\"\" \"eof");
 
     try {
-      passed = lex.readToken() == TOKEN_STR_LIT;
-      passed = passed && lex.string() == LONG_SYMBOL1;
-      passed = passed && lex.readToken() == TOKEN_STR_LIT;
+      passed = lex.readToken() == TOKEN_STRING;
+      passed = passed && lex.string() == LONG_SYMBOL2;
+      passed = passed && lex.readToken() == TOKEN_STRING;
       passed = passed && lex.string() == "\"quote\"";
     }
     catch(...) { passed = false; }
@@ -94,7 +71,7 @@ namespace {
       catch(const EndOfFileException&) { passed = true; }
     }    
  
-    return printTestResult(subj, "strLiterals", passed);
+    return printTestResult(subj, "strings", passed);
   }
 
   bool testPosInts() {
@@ -187,6 +164,29 @@ namespace {
     return printTestResult(subj, "reals", passed);
   }
 
+  bool testSymbols() {
+    PREPARE_LEXER(LONG_SYMBOL1 " " LONG_SYMBOL2 " 12.23a q13 1..3. -.");
+
+    try {
+      passed = lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == LONG_SYMBOL1;
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == LONG_SYMBOL2;
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "12.23a";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "q13";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "1..3.";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "-.";
+      passed = passed && lex.readToken() == TOKEN_EOF;
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "symbols", passed);
+  }
+
 }
 
 namespace Ant {
@@ -198,11 +198,11 @@ namespace Ant {
 
         passed = testWhitespaces();
         passed = passed && testDelimiters();
-        passed = passed && testSymbols();
-        passed = passed && testStrLiterals();
+        passed = passed && testStrings();
         passed = passed && testPosInts();
         passed = passed && testNegInts();
         passed = passed && testReals();
+        passed = passed && testSymbols();
 
         return passed;
       }

@@ -1,4 +1,9 @@
+#include <sstream>
+#include <cstdio>
+
 #include "lexer.h"
+#include "../platform.h"
+#include "../common/exception.h"
 
 namespace {
 
@@ -24,16 +29,51 @@ namespace {
     return chr == ')';
   }
 
+  inline bool isStringDelimiter(Char chr) {
+    return chr == '"';
+  }
+
   inline bool isDelimiter(Char chr) {
     return
       isWhitespace(chr) ||
       isLineCommentBegin(chr) ||
       isOpen(chr) ||
-      isClose(chr); 
+      isClose(chr) ||
+      isStringDelimiter(chr);
   }
 
   inline bool isDot(Char chr) {
     return chr == '.';
+  }
+
+  inline bool isEscapeChar(Char chr) {
+    return chr == '\\';
+  }
+
+  int signIfInteger(const std::string &str) {
+    if(str.empty())
+      return 0;
+
+    int i = 0, sign = 1;
+    if(str[0] == '+')
+      ++i;
+    else if(str[0] == '-')
+      sign = -1, ++i;
+
+    if(i == str.length())
+      return 0;
+
+    bool zero = true;
+    for(; i < str.length(); i++)
+      if(str[i] >= '1' && str[i] <= '9')
+        zero = false;
+      else if(str[i] != '0')
+        return 0;
+
+    if(zero)
+      sign = 1;
+
+    return sign;
   }
 
 }
@@ -81,10 +121,62 @@ namespace Ant {
       }
     }
 
-    Token Lexer::recognizeToken(const String &str) {
-      if(str.length() == 1 && isDot(*str.begin()))
-        return TOKEN_DOT;
+    Token Lexer::readString() {
+      Char chr;
+      String str;
 
+      while(!chr.read(in).isEOF()) {
+        if(isEscapeChar(chr)) {
+          if(chr.read(in).isEOF())
+            break;
+
+          if(isEscapeChar(chr) || isStringDelimiter(chr)) {
+            str.push_back(chr);
+            continue;
+          }
+
+          throw EscapeCharException();
+        }
+
+        if(isStringDelimiter(chr)) {
+          this->str = str;
+          return TOKEN_STRING;
+        }
+
+        str.push_back(chr);
+      }
+
+      throw EndOfFileException();
+    }
+
+    Token Lexer::readNumberOrSymbol(const String &str) {
+      std::istringstream in(str);
+
+      int sign = signIfInteger(str);
+      
+      if(sign > 0) {
+        uint64_t pint;
+        if((in >> pint).fail())
+          throw OutOfRangeException();
+
+        this->pint = pint;
+        return TOKEN_POS_INT;
+      }
+
+      if(sign < 0) {
+        int64_t nint;
+        if((in >> nint).fail())
+          throw OutOfRangeException();
+
+        this->nint = nint;
+        return TOKEN_NEG_INT;
+      }
+
+      double rl;
+      if(!(in >> rl).fail() && in.eof()) {
+        this->rl = rl;
+        return TOKEN_REAL;
+      }
 
       this->str = str;
       return TOKEN_SYMBOL;
@@ -109,13 +201,20 @@ namespace Ant {
 
       if(!str.size()) {
         updateLocation(chr);
+
+        if(isStringDelimiter(chr))
+          return readString();
+
         return isOpen(chr) ? TOKEN_OPEN : TOKEN_CLOSE;
       }
 
       if(!chr.isEOF())
         ungetChar(chr);
 
-      return recognizeToken(str);
+      if(str.length() == 1 && isDot(*str.begin()))
+        return TOKEN_DOT;
+
+      return readNumberOrSymbol(str);
     }
 
   }
