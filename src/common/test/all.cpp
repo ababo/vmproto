@@ -5,9 +5,12 @@ namespace Ant {
     namespace Test {
 
       bool testCommon() {        
-        return
-          testChar() &&
-          testString();
+        bool passed;
+
+        passed = testChar();
+        passed = passed && testString();
+
+        return passed;
       }
       
     }

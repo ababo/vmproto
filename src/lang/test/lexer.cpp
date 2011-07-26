@@ -16,7 +16,7 @@ namespace {
 
 #define PREPARE_LEXER(buf_content) \
   const String buf = buf_content; \
-  stringstream in(buf); \
+  istringstream in(buf); \
   Location loc = { 0, 0 }; \
   Lexer lex(in, loc); \
   bool passed;
@@ -34,15 +34,15 @@ namespace {
     PREPARE_LEXER(".)).. .(.");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_DOT &&
-        lex.readToken() == TOKEN_CLOSE &&
-        lex.readToken() == TOKEN_CLOSE &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == ".." &&
-        lex.readToken() == TOKEN_DOT &&
-        lex.readToken() == TOKEN_OPEN &&
-        lex.readToken() == TOKEN_DOT &&
-        lex.readToken() == TOKEN_EOF;
+      passed = lex.readToken() == TOKEN_DOT;
+      passed = passed && lex.readToken() == TOKEN_CLOSE;
+      passed = passed && lex.readToken() == TOKEN_CLOSE;
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "..";
+      passed = passed && lex.readToken() == TOKEN_DOT;
+      passed = passed && lex.readToken() == TOKEN_OPEN;
+      passed = passed && lex.readToken() == TOKEN_DOT;
+      passed = passed && lex.readToken() == TOKEN_EOF;
     }
     catch(...) { passed = false; }
 
@@ -57,14 +57,19 @@ namespace {
     PREPARE_LEXER(LONG_SYMBOL1 " " LONG_SYMBOL2 " 12.23a q13 1..3. -.");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == LONG_SYMBOL1 &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == LONG_SYMBOL2 &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == "12.23" &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == "q13" &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == "1..3" &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == "-." &&
-        lex.readToken() == TOKEN_EOF;
+      passed = lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == LONG_SYMBOL1;
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == LONG_SYMBOL2;
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "12.23";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "q13";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "1..3";
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "-.";
+      passed = passed && lex.readToken() == TOKEN_EOF;
     }
     catch(...) { passed = false; }
 
@@ -75,9 +80,10 @@ namespace {
     PREPARE_LEXER("\"" LONG_SYMBOL2 "\"\"\\\"quote\\\"\" \"eof");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_STR_LIT && lex.string() == LONG_SYMBOL1 &&
-        lex.readToken() == TOKEN_STR_LIT && lex.string() == "\"quote\"";
+      passed = lex.readToken() == TOKEN_STR_LIT;
+      passed = passed && lex.string() == LONG_SYMBOL1;
+      passed = passed && lex.readToken() == TOKEN_STR_LIT;
+      passed = passed && lex.string() == "\"quote\"";
     }
     catch(...) { passed = false; }
 
@@ -95,13 +101,16 @@ namespace {
     PREPARE_LEXER("0 +0 -0 +2 18446744073709551615 18446744073709551616");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_POS_INT && lex.posInt() == 0 &&
-        lex.readToken() == TOKEN_POS_INT && lex.posInt() == 0 &&
-        lex.readToken() == TOKEN_POS_INT && lex.posInt() == 0 &&
-        lex.readToken() == TOKEN_POS_INT && lex.posInt() == 2 &&
-        lex.readToken() == TOKEN_POS_INT &&
-        lex.posInt() == 18446744073709551615ULL;
+      passed = lex.readToken() == TOKEN_POS_INT;
+      passed = passed && lex.posInt() == 0;
+      passed = passed && lex.readToken() == TOKEN_POS_INT;
+      passed = passed && lex.posInt() == 0;
+      passed = passed && lex.readToken() == TOKEN_POS_INT;
+      passed = passed && lex.posInt() == 0;
+      passed = passed && lex.readToken() == TOKEN_POS_INT;
+      passed = passed && lex.posInt() == 2;
+      passed = passed && lex.readToken() == TOKEN_POS_INT;
+      passed = passed && lex.posInt() == 18446744073709551615ULL;
     }
     catch(...) { passed = false; }
 
@@ -119,10 +128,10 @@ namespace {
     PREPARE_LEXER("-1 -9223372036854775808 -9223372036854775809");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_NEG_INT && lex.negInt() == -1 &&
-        lex.readToken() == TOKEN_NEG_INT &&
-        lex.negInt() == -9223372036854775807LL - 1LL;
+      passed = lex.readToken() == TOKEN_NEG_INT;
+      passed = passed && lex.negInt() == -1;
+      passed = passed && lex.readToken() == TOKEN_NEG_INT;
+      passed = passed && lex.negInt() == -9223372036854775807LL - 1LL;
     }
     catch(...) { passed = false; }
     
@@ -145,21 +154,33 @@ namespace {
     PREPARE_LEXER("0. -0. 0.1 -0.1 .0 .1 -.0 -2.1 1e2 .1E3 -.0e3 -1.e4 1e2.3");
 
     try {
-      passed =
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), 0) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), 0) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), .1) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), -.1) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), 0) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), .1) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), 0) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), -2.1) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), 1e2) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), .1e3) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), -.0e3) &&
-        lex.readToken() == TOKEN_REAL && dequal(lex.real(), -1e4) &&
-        lex.readToken() == TOKEN_SYMBOL && lex.string() == "1e2.3" &&
-        lex.readToken() == TOKEN_EOF;
+      passed = lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), 0);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), 0);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), .1);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), -.1);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), 0);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), .1);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), 0);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), -2.1);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), 1e2);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), .1e3);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), -.0e3);
+      passed = passed && lex.readToken() == TOKEN_REAL;
+      passed = passed && dequal(lex.real(), -1e4);
+      passed = passed && lex.readToken() == TOKEN_SYMBOL;
+      passed = passed && lex.string() == "1e2.3";
+      passed = passed && lex.readToken() == TOKEN_EOF;
     }
     catch(...) { passed = false; }
     
@@ -173,14 +194,17 @@ namespace Ant {
     namespace Test {
 
       bool testLexer() {
-        return
-          testWhitespaces() &&
-          testDelimiters() &&
-          testSymbols() &&
-          testStrLiterals() &&
-          testPosInts() &&
-          testNegInts() &&
-          testReals();
+        bool passed;
+
+        passed = testWhitespaces();
+        passed = passed && testDelimiters();
+        passed = passed && testSymbols();
+        passed = passed && testStrLiterals();
+        passed = passed && testPosInts();
+        passed = passed && testNegInts();
+        passed = passed && testReals();
+
+        return passed;
       }
 
     }

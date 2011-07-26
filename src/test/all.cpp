@@ -22,9 +22,12 @@ namespace Ant {
     }
 
     bool testAntOS() {
-      return
-        Ant::Common::Test::testCommon() &&
-        Ant::Lang::Test::testLang();
+      bool passed;
+
+      passed = Ant::Common::Test::testCommon();
+      passed = passed && Ant::Lang::Test::testLang();
+
+      return passed;
     }
 
   }

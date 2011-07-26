@@ -10,16 +10,20 @@ namespace Ant {
     class Char {
       friend std::istream &operator>>(std::istream &in, Char &chr);
     public:
-      Char() : c(0) {}
-      Char(uint32_t cp) { *this = cp; }
+      Char() : cp(0) {}
+      Char(uint32_t cp) : cp(cp) {}
 
-      operator uint32_t() const { return c; }
-      Char &operator=(uint32_t cp);
+      operator uint32_t() const { return cp; }
+      Char &operator=(uint32_t cp) { this->cp = cp; }
 
-      size_t sequenceSize() const;
+      bool isEOF() const;
+      bool isValid() const;
+      size_t seqSize() const;
+
+      Char read(std::istream &in);
 
     protected:
-      uint32_t c;
+      uint32_t cp;
     };
 
   }

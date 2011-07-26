@@ -42,24 +42,22 @@ namespace Ant {
   namespace Lang {
     using namespace Common;
 
-    inline bool Lexer::updateLocation(Char chr) {
+    bool Lexer::updateLocation(Char chr) {
       if(chr == '\n')
         ++loc.line, loc.column = 1;
       else ++loc.column;
     }
 
-    inline void Lexer::ungetChar(Char chr) {
-      for(int i = chr.sequenceSize(); i; i--)
+    void Lexer::ungetChar(Char chr) {
+      for(int i = chr.seqSize(); i; i--)
         in.unget();
     }
 
     void Lexer::skipWhitespaces() {
       bool insideLineComment = false;
-      
-      while(in.good()) {
-        Char chr;
-        in >> chr;
+      Char chr;
 
+      while(!chr.read(in).isEOF()) {
         if(isLineCommentBegin(chr)) {
           insideLineComment = true;
           updateLocation(chr);
@@ -88,35 +86,34 @@ namespace Ant {
         return TOKEN_DOT;
 
 
+      this->str = str;
       return TOKEN_SYMBOL;
     }
 
     Token Lexer::readToken() {
-      skipWhitespaces();
-      if(!in.good())
-        return TOKEN_EOF;
-
       Char chr;
       String str;
 
-      do {
-        in >> chr;
+      skipWhitespaces();
+      if(chr.read(in).isEOF())
+        return TOKEN_EOF;
 
+      do {
         if(isDelimiter(chr))
           break;
 
         updateLocation(chr);
-
         str.push_back(chr);
       }
-      while(in.good());
+      while(!chr.read(in).isEOF());
 
       if(!str.size()) {
         updateLocation(chr);
         return isOpen(chr) ? TOKEN_OPEN : TOKEN_CLOSE;
       }
 
-      ungetChar(chr);
+      if(!chr.isEOF())
+        ungetChar(chr);
 
       return recognizeToken(str);
     }

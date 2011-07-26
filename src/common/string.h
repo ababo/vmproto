@@ -17,27 +17,23 @@ namespace Ant {
                                              Char> {
       public:
         Iterator(const String &str, bool end)
-          : s(str.s) { i = end ? s.size() : 0; }
+          : str(str.str) { i = end ? str.size() : 0; }
 
         Char operator*() const;
-        Iterator &operator++();
-        Iterator &operator--();
-        Iterator &operator++(int);
-        Iterator &operator--(int);
 
       protected:
-        const std::string &s;
+        const std::string &str;
         int i;
       };
 
       String() {}
       String(const char *str);
 
-      operator const std::string&() const { return s; }
-      bool operator==(const std::string str) const { return str == s; }
+      operator const std::string&() const { return str; }
+      bool operator==(const String &str) const { return str.str == this->str; }
 
-      const char *c_str() const { return s.c_str(); }
-      size_t size() const { return s.size(); }
+      const char *c_str() const { return str.c_str(); }
+      size_t size() const { return str.size(); }
       size_t length() const;
 
       Iterator begin() const { return Iterator(*this, false); }
@@ -46,7 +42,7 @@ namespace Ant {
       void push_back(Char chr);
 
     protected:
-      std::string s;
+      std::string str;
     };
 
   }

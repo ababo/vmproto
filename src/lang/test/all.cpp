@@ -4,8 +4,12 @@ namespace Ant {
   namespace Lang {
     namespace Test {
 
-      bool testLang() {        
-        return testLexer();
+      bool testLang() {
+        bool passed;
+
+        passed = testLexer();
+
+        return passed;
       }
       
     }

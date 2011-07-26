@@ -42,9 +42,12 @@ namespace Ant {
     namespace Test {
 
       bool testString() {
-        return
-          testCtor() &&
-          testLength();
+        bool passed;
+
+        passed = testCtor();
+        passed = passed && testLength();
+
+        return passed;
       }
 
     }

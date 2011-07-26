@@ -41,8 +41,8 @@ namespace Ant {
       double real() const { return rl; }
 
     protected:
-      inline bool updateLocation(Common::Char chr);
-      inline void ungetChar(Common::Char chr);
+      bool updateLocation(Common::Char chr);
+      void ungetChar(Common::Char chr);
       void skipWhitespaces();
       Token recognizeToken(const Common::String &str);
 
