@@ -38,7 +38,7 @@ namespace Ant {
     }
 
     std::ostream &operator<<(std::ostream &out, const String &str) {
-      out << str.c_str();
+      return out << str.c_str();
     }
 
     std::wostream &operator<<(std::wostream &out, const String &str) {

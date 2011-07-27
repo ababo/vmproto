@@ -17,14 +17,17 @@ namespace {
 #define PREPARE_LEXER(buf_content) \
   const String buf = buf_content; \
   istringstream in(buf); \
-  Location loc = { 0, 0 }; \
+  Location loc; \
   Lexer lex(in, loc); \
   bool passed;
 
   bool testWhitespaces() {
     PREPARE_LEXER("; comment \n \r\t\n\r\n");
 
-    try { passed = lex.readToken() == TOKEN_EOF; }
+    try { 
+      passed = lex.readToken() == TOKEN_EOF;
+      passed = passed && lex.location() == Location(4, 1);
+    }
     catch(...) { passed = false; }
 
     return printTestResult(subj, "whitespaces", passed);
@@ -43,6 +46,7 @@ namespace {
       passed = passed && lex.readToken() == TOKEN_OPEN;
       passed = passed && lex.readToken() == TOKEN_DOT;
       passed = passed && lex.readToken() == TOKEN_EOF;
+      passed = passed && lex.location() == Location(1, 10);
     }
     catch(...) { passed = false; }
 
@@ -61,6 +65,7 @@ namespace {
       passed = passed && lex.string() == LONG_SYMBOL2;
       passed = passed && lex.readToken() == TOKEN_STRING;
       passed = passed && lex.string() == "\"quote\"";
+      passed = passed && lex.location() == Location(1, 24);
     }
     catch(...) { passed = false; }
 
@@ -71,6 +76,8 @@ namespace {
       catch(const EndOfFileException&) { passed = true; }
     }    
  
+    passed = passed && lex.location() == Location(1, 29);
+
     return printTestResult(subj, "strings", passed);
   }
 
@@ -88,6 +95,7 @@ namespace {
       passed = passed && lex.posInt() == 2;
       passed = passed && lex.readToken() == TOKEN_POS_INT;
       passed = passed && lex.posInt() == 18446744073709551615ULL;
+      passed = passed && lex.location() == Location(1, 32);
     }
     catch(...) { passed = false; }
 
@@ -97,6 +105,8 @@ namespace {
       try { lex.readToken(); }
       catch(const OutOfRangeException&) { passed = true; }
     }
+
+    passed = passed && lex.location() == Location(1, 33);
 
     return printTestResult(subj, "posInts", passed);
   }
@@ -109,6 +119,7 @@ namespace {
       passed = passed && lex.negInt() == -1;
       passed = passed && lex.readToken() == TOKEN_NEG_INT;
       passed = passed && lex.negInt() == -9223372036854775807LL - 1LL;
+      passed = passed && lex.location() == Location(1, 24);
     }
     catch(...) { passed = false; }
     
@@ -119,6 +130,7 @@ namespace {
       catch(const OutOfRangeException&) { passed = true; }
     }
 
+    passed = passed && lex.location() == Location(1, 25);
 
     return printTestResult(subj, "negInts", passed);
   }
@@ -158,6 +170,7 @@ namespace {
       passed = passed && lex.readToken() == TOKEN_SYMBOL;
       passed = passed && lex.string() == "1e2.3";
       passed = passed && lex.readToken() == TOKEN_EOF;
+      passed = passed && lex.location() == Location(1, 58);
     }
     catch(...) { passed = false; }
     
@@ -181,6 +194,7 @@ namespace {
       passed = passed && lex.readToken() == TOKEN_SYMBOL;
       passed = passed && lex.string() == "-.";
       passed = passed && lex.readToken() == TOKEN_EOF;
+      passed = passed && lex.location() == Location(1, 61);
     }
     catch(...) { passed = false; }
 

@@ -11,6 +11,12 @@ namespace Ant {
   namespace Lang {
 
     struct Location {
+      Location() : line(1), column(1) {}
+      Location(uint16_t line, uint16_t column) : line(line), column(column) {}
+
+      bool operator==(const Location &loc) const {
+        return line == loc.line && column == loc.column; }
+
       uint16_t line;
       uint16_t column;
     };
@@ -29,7 +35,7 @@ namespace Ant {
 
     class Lexer {
     public:
-      Lexer(std::istream &text, Location location) : in(text) {}
+      Lexer(std::istream &text, Location loc) : in(text), loc(loc) {}
       
       Token readToken();
 
@@ -41,7 +47,7 @@ namespace Ant {
       double real() const { return rl; }
 
     protected:
-      bool updateLocation(Common::Char chr);
+      void updateLocation(Common::Char chr);
       void ungetChar(Common::Char chr);
       void skipWhitespaces();
       Token readNumberOrSymbol(const Common::String &str);

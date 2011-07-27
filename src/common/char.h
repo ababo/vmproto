@@ -14,7 +14,7 @@ namespace Ant {
       Char(uint32_t cp) : cp(cp) {}
 
       operator uint32_t() const { return cp; }
-      Char &operator=(uint32_t cp) { this->cp = cp; }
+      Char &operator=(uint32_t cp) { this->cp = cp; return *this; }
 
       bool isEOF() const;
       bool isValid() const;

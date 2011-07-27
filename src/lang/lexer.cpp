@@ -82,7 +82,7 @@ namespace Ant {
   namespace Lang {
     using namespace Common;
 
-    bool Lexer::updateLocation(Char chr) {
+    void Lexer::updateLocation(Char chr) {
       if(chr == '\n')
         ++loc.line, loc.column = 1;
       else ++loc.column;
@@ -126,11 +126,14 @@ namespace Ant {
       String str;
 
       while(!chr.read(in).isEOF()) {
+        updateLocation(chr);
+
         if(isEscapeChar(chr)) {
           if(chr.read(in).isEOF())
             break;
 
           if(isEscapeChar(chr) || isStringDelimiter(chr)) {
+            updateLocation(chr);
             str.push_back(chr);
             continue;
           }
@@ -159,6 +162,7 @@ namespace Ant {
         if((in >> pint).fail())
           throw OutOfRangeException();
 
+        loc.column += str.size();
         this->pint = pint;
         return TOKEN_POS_INT;
       }
@@ -168,16 +172,19 @@ namespace Ant {
         if((in >> nint).fail())
           throw OutOfRangeException();
 
+        loc.column += str.size();
         this->nint = nint;
         return TOKEN_NEG_INT;
       }
 
       double rl;
       if(!(in >> rl).fail() && in.eof()) {
+        loc.column += str.size();
         this->rl = rl;
         return TOKEN_REAL;
       }
 
+      loc.column += str.length();
       this->str = str;
       return TOKEN_SYMBOL;
     }
@@ -188,13 +195,12 @@ namespace Ant {
 
       skipWhitespaces();
       if(chr.read(in).isEOF())
-        return TOKEN_EOF;
+        return tok = TOKEN_EOF;
 
       do {
         if(isDelimiter(chr))
           break;
 
-        updateLocation(chr);
         str.push_back(chr);
       }
       while(!chr.read(in).isEOF());
@@ -203,18 +209,20 @@ namespace Ant {
         updateLocation(chr);
 
         if(isStringDelimiter(chr))
-          return readString();
+          return tok = readString();
 
-        return isOpen(chr) ? TOKEN_OPEN : TOKEN_CLOSE;
+        return tok = isOpen(chr) ? TOKEN_OPEN : TOKEN_CLOSE;
       }
 
       if(!chr.isEOF())
         ungetChar(chr);
 
-      if(str.length() == 1 && isDot(*str.begin()))
-        return TOKEN_DOT;
+      if(str.length() == 1 && isDot(*str.begin())) {
+        updateLocation(chr);
+        return tok = TOKEN_DOT;
+      }
 
-      return readNumberOrSymbol(str);
+      return tok = readNumberOrSymbol(str);
     }
 
   }
