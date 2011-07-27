@@ -2,7 +2,6 @@
 #include <cstdio>
 
 #include "lexer.h"
-#include "../platform.h"
 #include "../common/exception.h"
 
 namespace {
