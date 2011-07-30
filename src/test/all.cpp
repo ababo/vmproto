@@ -4,6 +4,7 @@
 #include "all.h"
 #include "../common/test/all.h"
 #include "../lang/test/all.h"
+#include "../vm/test/all.h"
 
 namespace Ant {
   namespace Test {
@@ -26,6 +27,7 @@ namespace Ant {
 
       passed = Ant::Common::Test::testCommon();
       passed = passed && Ant::Lang::Test::testLang();
+      passed = passed && Ant::VM::Test::testVM();
 
       return passed;
     }

@@ -4,7 +4,7 @@
 namespace Ant {
   namespace Common {
     namespace Test {
-      
+
       bool testChar();
       bool testString();
 

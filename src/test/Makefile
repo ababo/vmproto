@@ -1,6 +1,7 @@
 PPATH = ../..
 DIRS = $(PPATH)/src/common/test \
-       $(PPATH)/src/lang/test
+       $(PPATH)/src/lang/test \
+       $(PPATH)/src/vm/test
 ODIR = $(PPATH)/bin/test
 
 _OBJS = all.o

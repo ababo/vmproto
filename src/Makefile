@@ -1,7 +1,8 @@
 PPATH = ..
 DIRS = $(PPATH)/src/test \
        $(PPATH)/src/common \
-       $(PPATH)/src/lang
+       $(PPATH)/src/lang \
+       $(PPATH)/src/vm
 ODIR = $(PPATH)/bin
 
 _OBJS = main.o

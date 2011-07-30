@@ -1,6 +1,5 @@
 #include <sstream>
 
-#include "all.h"
 #include "../char.h"
 #include "../exception.h"
 #include "../../test/all.h"

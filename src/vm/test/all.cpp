@@ -1,14 +1,13 @@
 #include "all.h"
 
 namespace Ant {
-  namespace Common {
+  namespace VM {
     namespace Test {
 
-      bool testCommon() {
+      bool testVM() {
         bool passed;
 
-        passed = testChar();
-        passed = passed && testString();
+        passed = testRuntime();
 
         return passed;
       }

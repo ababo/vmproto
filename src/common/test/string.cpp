@@ -1,4 +1,3 @@
-#include "all.h"
 #include "../string.h"
 #include "../exception.h"
 #include "../../test/all.h"
