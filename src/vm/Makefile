@@ -1,7 +1,7 @@
 PPATH = ../..
 ODIR = $(PPATH)/bin/vm
 
-_OBJS = runtime.o
+_OBJS = mbuilder.o runtime.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc

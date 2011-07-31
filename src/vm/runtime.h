@@ -6,6 +6,7 @@
 
 #include "uuid.h"
 #include "module.h"
+#include "../common/singleton.h"
 
 namespace Ant {
   namespace VM {
@@ -19,13 +20,17 @@ namespace Ant {
       uint8_t bytes[Bytes];
     };
 
-    class Runtime {
+    class Runtime : public Common::Singleton<Runtime> {
+      friend class Common::Singleton<Runtime>;
     public:
-      const UUID &addModule(Module *module);
+      void unpackModule(const UUID &moduleId);
 
       void callProcedure(const UUID &moduleId,
                          uint16_t moduleProc,
-                         std::vector<Variable&> &frame);
+                         std::vector<Variable&> &procFrame);
+
+    private:
+      Runtime() : Common::Singleton<Runtime>(0) {}
     };
 
   }

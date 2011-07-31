@@ -7,7 +7,8 @@ namespace Ant {
       bool testVM() {
         bool passed;
 
-        passed = testRuntime();
+        passed = testModuleBuilder();
+        passed = passed && testRuntime();
 
         return passed;
       }

@@ -5,6 +5,7 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
+      bool testModuleBuilder();
       bool testRuntime();
 
       bool testVM();
