@@ -9,7 +9,7 @@ namespace Ant {
       const UUID &buildFactorialModule() {
         ModuleBuilder builder(Runtime::instance());
 
-        return builder.finalizeModule();
+        return builder.createModule();
       }
 
     }
