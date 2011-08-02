@@ -1,6 +1,9 @@
 #ifndef __VM_INSTR_INCLUDED__
 #define __VM_INSTR_INCLUDED__
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace Ant {
   namespace VM {
 
@@ -18,18 +21,29 @@ namespace Ant {
       OpCode opcode() const {
         return static_cast<OpCode>(op); }
 
-      virtual size_t size() const = 0;
+      virtual size_t size() const { return 0; };
 
     protected:
       uint8_t op;
       uint8_t data[MAX_INSTR_SIZE - 1];
     };
 
+    static const RegId FIRST_CALL_REG = 16;
+    static const RegId FIRST_LOCAL_REG = 32768;
+
     class MOVM8Instr : public Instr {
     public:
       MOVM8Instr(uint64_t val, RegId to);
 
       uint64_t val() const;
+      RegId to() const;
+    };
+
+    class MOVN8Instr : public Instr {
+    public:
+      MOVN8Instr(RegId from, RegId to);
+
+      RegId from() const;
       RegId to() const;
     };
 
@@ -49,9 +63,9 @@ namespace Ant {
       RegId it() const;
     };
 
-    class JZInstr : public Instr {
+    class JNZInstr : public Instr {
     public:
-      JZInstr(int16_t offset);
+      JNZInstr(int16_t offset);
 
       int16_t offset() const;
     };
