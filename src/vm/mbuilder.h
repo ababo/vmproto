@@ -1,9 +1,6 @@
 #ifndef __VM_MBUILDER_INCLUDED__
 #define __VM_MBUILDER_INCLUDED__
 
-#include <stdint.h>
-#include <vector>
-
 #include "uuid.h"
 #include "module.h"
 #include "runtime.h"
@@ -16,20 +13,17 @@ namespace Ant {
     public:
       ModuleBuilder(Runtime &rt) : rt(rt) {}
 
-      VarTypeId addVarType(VarTypeId id);
-      VarTypeId addVarType(uint16_t bytes, 
-                           const std::vector<VarTypeId> &vrefs,
-                           const std::vector<ProcTypeId> &prefs,
-                           uint32_t count,
-                           VarTypeId id = 0);
-      ProcTypeId addProcType(ProcTypeId id);
-      ProcTypeId addProcType(const std::vector<VarTypeId> &frame,
-                             ProcTypeId id = 0);
-      ProcId addProc(ProcId id);
-      ProcId addProc(uint32_t flags,
-                     ProcTypeId ptypeId,
-                     const std::vector<Instr> &code,
-                     ProcId id = 0);
+      VarTypeId addVarType(int bytes, int count);
+      int addVarTypeVRef(VarTypeId id, VarTypeId vref);
+      int addVarTypePRef(VarTypeId id, FrameId pref);
+
+      RegId addReg(VarTypeId vtype);
+
+      FrameId addFrame();
+      RegId addFrameReg(FrameId id, VarTypeId vtype);
+
+      ProcId addProc(int flags, FrameId ioframe);
+      int addProcInstr(ProcId id, const Instr &instr);
 
       void resetModule();
       const UUID &createModule();

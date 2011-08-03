@@ -3,6 +3,14 @@
 namespace Ant {
   namespace VM {
 
+    AFRMInstr::AFRMInstr(FrameId frame) {
+
+    }
+
+    FFRMInstr::FFRMInstr() {
+
+    }
+
     MOVM8Instr::MOVM8Instr(uint64_t val, RegId to) {
 
     }
@@ -19,7 +27,7 @@ namespace Ant {
 
     }
 
-    JNZInstr::JNZInstr(int16_t offset) {
+    JNZInstr::JNZInstr(int offset) {
 
     }
 

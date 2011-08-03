@@ -4,17 +4,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "module.h"
+
 namespace Ant {
   namespace VM {
 
-    typedef uint16_t RegId;
+    typedef unsigned int RegId;
 
     enum OpCode {
-      OPCODE_ILL = 0,
-      OPCODE_MOVM8
+      OPCODE_ILL = 0
     };
 
-#define MAX_INSTR_SIZE 11
+#define MAX_INSTR_SIZE 13
 
     class Instr {
     public:
@@ -28,8 +29,17 @@ namespace Ant {
       uint8_t data[MAX_INSTR_SIZE - 1];
     };
 
-    static const RegId FIRST_CALL_REG = 16;
-    static const RegId FIRST_LOCAL_REG = 32768;
+    class AFRMInstr : public Instr {
+    public:
+      AFRMInstr(FrameId frame);
+
+      FrameId frame() const;
+    };
+
+    class FFRMInstr : public Instr {
+    public:
+      FFRMInstr();
+    };
 
     class MOVM8Instr : public Instr {
     public:
@@ -65,9 +75,9 @@ namespace Ant {
 
     class JNZInstr : public Instr {
     public:
-      JNZInstr(int16_t offset);
+      JNZInstr(int offset);
 
-      int16_t offset() const;
+      int offset() const;
     };
 
     class RETInstr : public Instr {

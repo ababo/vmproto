@@ -1,14 +1,16 @@
 #ifndef __VM_MODULE_INCLUDED__
 #define __VM_MODULE_INCLUDED__
 
-#include <stdint.h>
-
 namespace Ant {
   namespace VM {
 
-    typedef uint16_t VarTypeId;
-    typedef uint16_t ProcTypeId;
-    typedef uint16_t ProcId;
+    typedef unsigned int VarTypeId;
+    typedef unsigned int FrameId;
+    typedef unsigned int ProcId;
+
+    enum ProcFlag {
+      PFLAG_EXTERNAL = 0x1
+    };
 
     class Module {
 

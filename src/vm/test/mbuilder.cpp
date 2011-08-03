@@ -7,30 +7,25 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
-      using namespace std;
-
-      const UUID &buildFactorialModule() {
+      const UUID &createFactorialModule() {
         ModuleBuilder builder(Runtime::instance());
 
-        vector<VarTypeId> vtypes;
-        vector<ProcTypeId> ptypes;
-        VarTypeId wordTypeId = builder.addVarType(8, vtypes, ptypes, 1);
+        VarTypeId wordType = builder.addVarType(8, 1);
 
-        vtypes.push_back(wordTypeId);
-        ProcTypeId factTypeId = builder.addProcType(vtypes);
+        FrameId ioframe = builder.addFrame();
+        RegId ioreg = builder.addFrameReg(ioframe, wordType);
+        FrameId lframe = builder.addFrame();
+        RegId lreg = builder.addFrameReg(lframe, wordType);
 
-        vector<Instr> code;
-        code.push_back(MOVM8Instr(1, FIRST_LOCAL_REG));
-        code.push_back(MULInstr(FIRST_LOCAL_REG,
-                                FIRST_CALL_REG,
-                                FIRST_LOCAL_REG));
-        code.push_back(DECInstr(FIRST_CALL_REG));
-        code.push_back(JNZInstr(-2));
-        code.push_back(MOVN8Instr(FIRST_LOCAL_REG,
-                                  FIRST_CALL_REG));
-        code.push_back(RETInstr());
-
-        
+        ProcId proc = builder.addProc(PFLAG_EXTERNAL, ioreg);
+        builder.addProcInstr(proc, AFRMInstr(lframe));
+        builder.addProcInstr(proc, MOVM8Instr(1, lreg));
+        builder.addProcInstr(proc, MULInstr(ioreg, lreg, lreg));
+        builder.addProcInstr(proc, DECInstr(ioreg));
+        builder.addProcInstr(proc, JNZInstr(-2));
+        builder.addProcInstr(proc, MOVN8Instr(lreg, ioreg));
+        builder.addProcInstr(proc, FFRMInstr());
+        builder.addProcInstr(proc, RETInstr());
 
         return builder.createModule();
       }
@@ -51,7 +46,7 @@ namespace {
     bool passed;
 
     try {
-      buildFactorialModule();
+      createFactorialModule();
       // TODO: check the module
       passed = true;
     }

@@ -3,20 +3,27 @@
 namespace Ant {
   namespace VM {
 
+    VarTypeId ModuleBuilder::addVarType(int bytes, int count) {
+
+    }
+
+    FrameId ModuleBuilder::addFrame() {
+
+    }
+
+    RegId ModuleBuilder::addFrameReg(FrameId id, VarTypeId vtype) {
+
+    }
+
+    ProcId ModuleBuilder::addProc(int flags, FrameId ioframe) {
+
+    }
+
+    int ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
+
+    }
+
     const UUID &ModuleBuilder::createModule() {
-
-    }
-
-    VarTypeId ModuleBuilder::addVarType(uint16_t bytes, 
-                                        const std::vector<VarTypeId> &vrefs,
-                                        const std::vector<ProcTypeId> &prefs,
-                                        uint32_t count,
-                                        VarTypeId id) {
-
-    }
-
-    ProcTypeId ModuleBuilder::addProcType(const std::vector<VarTypeId> &frame,
-                                          ProcTypeId id) {
 
     }
 
