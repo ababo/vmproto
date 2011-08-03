@@ -17,7 +17,7 @@ namespace Ant {
       int addVarTypeVRef(VarTypeId id, VarTypeId vref);
       int addVarTypePRef(VarTypeId id, FrameId pref);
 
-      RegId addReg(VarTypeId vtype);
+      RegId addSharedReg(VarTypeId vtype);
 
       FrameId addFrame();
       RegId addFrameReg(FrameId id, VarTypeId vtype);

@@ -17,7 +17,7 @@ namespace Ant {
         FrameId lframe = builder.addFrame();
         RegId lreg = builder.addFrameReg(lframe, wordType);
 
-        ProcId proc = builder.addProc(PFLAG_EXTERNAL, ioreg);
+        ProcId proc = builder.addProc(PFLAG_EXTERNAL | PFLAG_FUNCTION, ioreg);
         builder.addProcInstr(proc, AFRMInstr(lframe));
         builder.addProcInstr(proc, MOVM8Instr(1, lreg));
         builder.addProcInstr(proc, MULInstr(ioreg, lreg, lreg));
