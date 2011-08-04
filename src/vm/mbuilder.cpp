@@ -7,15 +7,11 @@ namespace Ant {
 
     }
 
-    FrameId ModuleBuilder::addFrame() {
+    RegId ModuleBuilder::addReg(VarTypeId vtype) {
 
     }
 
-    RegId ModuleBuilder::addFrameReg(FrameId id, VarTypeId vtype) {
-
-    }
-
-    ProcId ModuleBuilder::addProc(int flags, FrameId ioframe) {
+    ProcId ModuleBuilder::addProc(int flags, RegId io) {
 
     }
 

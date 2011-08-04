@@ -3,11 +3,11 @@
 namespace Ant {
   namespace VM {
 
-    AFRMInstr::AFRMInstr(FrameId frame) {
+    ASTInstr::ASTInstr(RegId reg) {
 
     }
 
-    FFRMInstr::FFRMInstr() {
+    FSTInstr::FSTInstr() {
 
     }
 

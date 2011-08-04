@@ -7,10 +7,11 @@ namespace Ant {
   namespace VM {
 
     typedef unsigned int VarTypeId;
-    typedef unsigned int FrameId;
     typedef unsigned int ProcId;
+    typedef unsigned int RegId;
 
-    typedef const uint8_t *BinaryCode;
+    typedef const uint8_t *VMCode;
+    typedef const void *NativeCode;
 
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,

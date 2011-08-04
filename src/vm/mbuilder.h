@@ -15,14 +15,11 @@ namespace Ant {
 
       VarTypeId addVarType(int bytes, int count);
       int addVarTypeVRef(VarTypeId id, VarTypeId vref);
-      int addVarTypePRef(VarTypeId id, FrameId pref);
+      int addVarTypePRef(VarTypeId id, VarTypeId pref);
 
-      RegId addSharedReg(VarTypeId vtype);
+      RegId addReg(VarTypeId vtype);
 
-      FrameId addFrame();
-      RegId addFrameReg(FrameId id, VarTypeId vtype);
-
-      ProcId addProc(int flags, FrameId ioframe);
+      ProcId addProc(int flags, RegId io);
       int addProcInstr(ProcId id, const Instr &instr);
 
       void resetModule();

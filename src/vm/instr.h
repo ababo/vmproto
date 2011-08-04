@@ -9,8 +9,6 @@
 namespace Ant {
   namespace VM {
 
-    typedef unsigned int RegId;
-
     enum OpCode {
       OPCODE_ILL = 0
     };
@@ -19,13 +17,13 @@ namespace Ant {
 
     class Instr {
     public:
-      Instr(BinaryCode *code);
+      Instr(VMCode code);
 
       OpCode opcode() const {
         return static_cast<OpCode>(op); }
 
       size_t size() const;
-      BinaryCode data() const { return &op; }
+      VMCode data() const { return dat; }
 
     protected:
       Instr() {}
@@ -34,16 +32,16 @@ namespace Ant {
       uint8_t dat[MAX_INSTR_SIZE - 1];
     };
 
-    class AFRMInstr : public Instr {
+    class ASTInstr : public Instr {
     public:
-      AFRMInstr(FrameId frame);
+      ASTInstr(RegId reg);
 
-      FrameId frame() const;
+      RegId reg() const;
     };
 
-    class FFRMInstr : public Instr {
+    class FSTInstr : public Instr {
     public:
-      FFRMInstr();
+      FSTInstr();
     };
 
     class MOVM8Instr : public Instr {
