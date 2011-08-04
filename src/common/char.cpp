@@ -31,6 +31,8 @@ namespace Ant {
         cp = static_cast<uint32_t>(EOF);
         return *this;
       }
+      if(in.bad())
+        throw IOException();
 
       char buf[4 + 1];
       buf[0] = (char)chr;
@@ -40,6 +42,8 @@ namespace Ant {
         chr = in.get();
         if(chr == EOF)
           throw EndOfFileException();
+        if(in.bad())
+          throw IOException();
 
         buf[i] = (char)chr;
       }

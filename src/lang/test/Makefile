@@ -1,7 +1,7 @@
 PPATH = ../../..
 ODIR = $(PPATH)/bin/lang/test
 
-_OBJS = all.o lexer.o
+_OBJS = lexer.o all.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc

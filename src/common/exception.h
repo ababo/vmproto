@@ -20,6 +20,7 @@ namespace Ant {
     EXCEPTION(OutOfRangeException, Exception, "value out of range");
     EXCEPTION(OperationException, Exception, "bad operation");
     EXCEPTION(EscapeCharException, Exception, "bad escape character");
+    EXCEPTION(IOException, Exception, "input/output error");
 
   }
 }

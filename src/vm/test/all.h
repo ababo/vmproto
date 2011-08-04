@@ -9,6 +9,7 @@ namespace Ant {
 
       const UUID &createFactorialModule(Runtime &rt);
 
+      bool testUtils();
       bool testModuleBuilder();
       bool testRuntime();
 

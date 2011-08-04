@@ -25,12 +25,13 @@ namespace Ant {
         return static_cast<OpCode>(op); }
 
       size_t size() const;
+      BinaryCode data() const { return &op; }
 
     protected:
       Instr() {}
 
       uint8_t op;
-      uint8_t data[MAX_INSTR_SIZE - 1];
+      uint8_t dat[MAX_INSTR_SIZE - 1];
     };
 
     class AFRMInstr : public Instr {

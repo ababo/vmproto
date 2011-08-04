@@ -9,7 +9,8 @@ namespace Ant {
     typedef unsigned int VarTypeId;
     typedef unsigned int FrameId;
     typedef unsigned int ProcId;
-    typedef uint8_t *BinaryCode;
+
+    typedef const uint8_t *BinaryCode;
 
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,
