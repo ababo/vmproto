@@ -1,12 +1,15 @@
 #ifndef __VM_MODULE_INCLUDED__
 #define __VM_MODULE_INCLUDED__
 
+#include <stdint.h>
+
 namespace Ant {
   namespace VM {
 
     typedef unsigned int VarTypeId;
     typedef unsigned int FrameId;
     typedef unsigned int ProcId;
+    typedef uint8_t *BinaryCode;
 
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,

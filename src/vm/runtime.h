@@ -27,7 +27,7 @@ namespace Ant {
 
       void callProcedure(const UUID &moduleId,
                          uint16_t moduleProc,
-                         std::vector<Variable&> &procFrame);
+                         std::vector<Variable*> &ioframe);
 
     private:
       Runtime() : Common::Singleton<Runtime>(0) {}

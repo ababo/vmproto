@@ -7,8 +7,8 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
-      const UUID &createFactorialModule() {
-        ModuleBuilder builder(Runtime::instance());
+      const UUID &createFactorialModule(Runtime &rt) {
+        ModuleBuilder builder(rt);
 
         VarTypeId wordType = builder.addVarType(8, 1);
 
@@ -36,6 +36,7 @@ namespace Ant {
 
 namespace {
 
+  using namespace Ant::VM;
   using namespace Ant::Test;
   using namespace Ant::Common;
   using namespace Ant::VM::Test;
@@ -46,7 +47,7 @@ namespace {
     bool passed;
 
     try {
-      createFactorialModule();
+      createFactorialModule(Runtime::instance());
       // TODO: check the module
       passed = true;
     }

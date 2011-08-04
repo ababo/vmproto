@@ -19,12 +19,16 @@ namespace Ant {
 
     class Instr {
     public:
+      Instr(BinaryCode *code);
+
       OpCode opcode() const {
         return static_cast<OpCode>(op); }
 
-      virtual size_t size() const { return 0; };
+      size_t size() const;
 
     protected:
+      Instr() {}
+
       uint8_t op;
       uint8_t data[MAX_INSTR_SIZE - 1];
     };
