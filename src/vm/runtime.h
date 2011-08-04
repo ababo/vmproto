@@ -8,8 +8,6 @@
 namespace Ant {
   namespace VM {
 
-    typedef const void *NativeCode;
-
     struct Variable {};
 
     template <int ByteCount, int VRefCount, int PRefCount, int EltCount>

@@ -8,12 +8,12 @@ namespace Ant {
 
     using namespace Ant::Common;
 
-    int writeMultibyteInteger(uint64_t value, std::ostream &out) {
+    size_t writeMultibyteInteger(uint64_t value, std::ostream &out) {
       uint8_t byte;
-      int count = 0;
+      size_t size = 0;
 
       do {
-        bool last = ++count == 9;
+        bool last = ++size == 9;
 
         byte = value & (last ? 0xFF : 0x7F);
 
@@ -26,12 +26,13 @@ namespace Ant {
       }
       while(value);
 
-      return count;
+      return size;
     }
 
-    int readMultibyteInteger(std::istream &in, uint64_t &value) {
-      int chr, count = 0;
+    size_t readMultibyteInteger(std::istream &in, uint64_t &value) { 
       uint64_t tmp, val = 0;
+      size_t size = 0;
+      int chr;
 
       for(;;) {
         chr = in.get();
@@ -40,10 +41,10 @@ namespace Ant {
         if(in.bad())
           throw IOException();
 
-        bool last = count == 8;
+        bool last = size == 8;
 
         tmp = last ? chr : (chr & 0x7F);
-        tmp <<= 7 * count++;
+        tmp <<= 7 * size++;
         val |= tmp;
 
         if(last || !(chr & 0x80))
@@ -51,7 +52,7 @@ namespace Ant {
       };
 
       value = val;
-      return count;
+      return size;
     }
 
   }
