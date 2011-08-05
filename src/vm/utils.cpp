@@ -31,18 +31,27 @@ namespace Ant {
 
     int readMultibyteInteger(std::istream &in, uint64_t &value) {
       int chr, count = 0;
-      uint64_t val = 0;
+      uint64_t tmp, val = 0;
 
-      do {
+      for(;;) {
         chr = in.get();
         if(chr == EOF)
           throw EndOfFileException();
         if(in.bad())
           throw IOException();
 
-      } while(1);
+        bool last = count == 8;
 
-      return 0;
+        tmp = last ? chr : (chr & 0x7F);
+        tmp <<= 7 * count++;
+        val |= tmp;
+
+        if(last || !(chr & 0x80))
+          break;
+      };
+
+      value = val;
+      return count;
     }
 
   }
