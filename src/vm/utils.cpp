@@ -78,15 +78,14 @@ namespace Ant {
         for(int i = 49; i >= 0; i -= 7) {
           byte = uint8_t(value >> i) & 0x7F;
 
-          if(!i || byte || byte != 0x7F) {
+          if(!i || (neg && byte != 0x7F) || (!neg && byte)) {
             bool hbit = byte & 0x40;
             if(neg && !hbit)
-              extend = true, extention = 0x7F;
+              extend = true, extention = (i == 49) ? 0xFF : 0x7F;
             else if(!neg && hbit)
               extend = true, extention = 0;
 
-            int offset = 57 - i;
-            value <<= offset >>= offset;
+            value &= uint64_t(-1) >> (57 - i);
             break;
           }
         }
@@ -103,8 +102,15 @@ namespace Ant {
     }
 
     size_t readMBInt(std::istream &in, int64_t &value) {
+      uint64_t val;
+      size_t size = readMBUInt(in, val);
 
-      return 0;
+      int offset = 7 * size;
+      if(size < 9 && (val >> (offset - 1)) & 1)
+        val |= uint64_t(-1) << offset; 
+
+      value = int64_t(val);
+      return size;
     }
 
   }

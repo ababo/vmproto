@@ -19,22 +19,24 @@ namespace {
   };
 
   bool testMBUInts() {
-    bool passed = true;
     stringstream io;
     uint64_t val;
+    bool passed;
 
     try {
-      for(int i = 0; i < 9; i++) {
-        passed = passed && writeMBUInt(MB_MASKS[i], io) == i + 1;
-        if(i < 8)
-          passed = passed && writeMBUInt(MB_MASKS[i] + 1, io) == i + 2;
+      passed = writeMBUInt(0, io) == 1;
+      for(int i = 0; passed && i < 9; i++) {
+        passed = writeMBUInt(MB_MASKS[i], io) == i + 1;
+        if(passed && i < 8)
+          passed = writeMBUInt(MB_MASKS[i] + 1, io) == i + 2;
       }
 
-      for(int i = 0; i < 9; i++) {
-        passed = passed && readMBUInt(io, val) == i + 1;
+      passed = readMBUInt(io, val) == 1 && !val;
+      for(int i = 0; passed && i < 9; i++) {
+        passed = readMBUInt(io, val) == i + 1;
         passed = passed && val == MB_MASKS[i];
-        if(i < 8) {
-          passed = passed && readMBUInt(io, val) == i + 2;
+        if(passed && i < 8) {
+          passed = readMBUInt(io, val) == i + 2;
           passed = passed && val == MB_MASKS[i] + 1;
         }
       }
@@ -45,29 +47,31 @@ namespace {
   }
 
   bool testMBInts() {
-    bool passed = true;
     stringstream io;
     int64_t tmp, val;
+    bool passed;
 
     try {
-      for(int i = 0; i < 9; i++) {
+      passed = writeMBInt(0, io) == 1;
+      for(int i = 0; passed && i < 9; i++) {
         tmp = MB_MASKS[i] >> 1;
-        passed = passed && writeMBInt(tmp, io) == i + 1;
+        passed = writeMBInt(tmp, io) == i + 1;
         passed = passed && writeMBInt(-tmp - 1, io) == i + 1;
-        if(i < 8) {
-          passed = passed && writeMBInt(tmp + 1, io) == i + 2;
+        if(passed && i < 8) {
+          passed = writeMBInt(tmp + 1, io) == i + 2;
           passed = passed && writeMBInt(-tmp - 2, io) == i + 2;
         }
       }
 
-      for(int i = 0; i < 9; i++) {
+      passed = readMBInt(io, val) == 1 && !val;
+      for(int i = 0; passed && i < 9; i++) {
         tmp = MB_MASKS[i] >> 1;
-        passed = passed && readMBInt(io, val) == i + 1;
+        passed = readMBInt(io, val) == i + 1;
         passed = passed && val == tmp;
         passed = passed && readMBInt(io, val) == i + 1;
         passed = passed && val == -tmp - 1;
-        if(i < 8) {
-          passed = passed && readMBInt(io, val) == i + 2;
+        if(passed && i < 8) {
+          passed = readMBInt(io, val) == i + 2;
           passed = passed && val == tmp + 1;
           passed = passed && readMBInt(io, val) == i + 2;
           passed = passed && val == -tmp - 2;
