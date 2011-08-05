@@ -8,7 +8,7 @@ namespace Ant {
 
     using namespace Ant::Common;
 
-    size_t writeMultibyteInteger(uint64_t value, std::ostream &out) {
+    size_t writeMBUInt(uint64_t value, std::ostream &out) {
       uint8_t byte;
       size_t size = 0;
 
@@ -29,7 +29,7 @@ namespace Ant {
       return size;
     }
 
-    size_t readMultibyteInteger(std::istream &in, uint64_t &value) { 
+    size_t readMBUInt(std::istream &in, uint64_t &value) { 
       uint64_t tmp, val = 0;
       size_t size = 0;
       int chr;
@@ -53,6 +53,16 @@ namespace Ant {
 
       value = val;
       return size;
+    }
+
+    size_t writeMBInt(int64_t value, std::ostream &out) {
+
+      return 0;
+    }
+
+    size_t readMBInt(std::istream &in, int64_t &value) {
+
+      return 0;
     }
 
   }

@@ -13,35 +13,70 @@ namespace {
 
   const String subj = "Ant::VM::{Utils}";
 
-  static const uint64_t mbInts[] = {
+  const uint64_t MB_MASKS[9] = {
     0x7F, 0x3FFF, 0x1FFFFF, 0xFFFFFFF, 0x7FFFFFFFFLLU, 0x3FFFFFFFFFFLLU,
     0x1FFFFFFFFFFFFLLU, 0xFFFFFFFFFFFFFFLLU, 0xFFFFFFFFFFFFFFFFLLU
   };
 
-  bool testMultibyteIntegers() {
+  bool testMBUInts() {
     bool passed = true;
     stringstream io;
     uint64_t val;
 
     try {
       for(int i = 0; i < 9; i++) {
-        passed = passed && writeMultibyteInteger(mbInts[i], io) == i + 1;
+        passed = passed && writeMBUInt(MB_MASKS[i], io) == i + 1;
         if(i < 8)
-          passed = passed && writeMultibyteInteger(mbInts[i] + 1, io) == i + 2;
+          passed = passed && writeMBUInt(MB_MASKS[i] + 1, io) == i + 2;
       }
 
       for(int i = 0; i < 9; i++) {
-        passed = passed && readMultibyteInteger(io, val) == i + 1;
-        passed = passed && val == mbInts[i];
+        passed = passed && readMBUInt(io, val) == i + 1;
+        passed = passed && val == MB_MASKS[i];
         if(i < 8) {
-          passed = passed && readMultibyteInteger(io, val) == i + 2;
-          passed = passed && val == mbInts[i] + 1;
+          passed = passed && readMBUInt(io, val) == i + 2;
+          passed = passed && val == MB_MASKS[i] + 1;
         }
       }
     }
     catch(...) { passed = false; }
 
-    return printTestResult(subj, "multibyteIntegers", passed);
+    return printTestResult(subj, "mbUInts", passed);
+  }
+
+  bool testMBInts() {
+    bool passed = true;
+    stringstream io;
+    int64_t tmp, val;
+
+    try {
+      for(int i = 0; i < 9; i++) {
+        tmp = MB_MASKS[i] >> 1;
+        passed = passed && writeMBInt(tmp, io) == i + 1;
+        passed = passed && writeMBInt(-tmp - 1, io) == i + 1;
+        if(i < 8) {
+          passed = passed && writeMBInt(tmp + 1, io) == i + 2;
+          passed = passed && writeMBInt(-tmp - 2, io) == i + 2;
+        }
+      }
+
+      for(int i = 0; i < 9; i++) {
+        tmp = MB_MASKS[i] >> 1;
+        passed = passed && readMBInt(io, val) == i + 1;
+        passed = passed && val == tmp;
+        passed = passed && readMBInt(io, val) == i + 1;
+        passed = passed && val == -tmp - 1;
+        if(i < 8) {
+          passed = passed && readMBInt(io, val) == i + 2;
+          passed = passed && val == tmp + 1;
+          passed = passed && readMBInt(io, val) == i + 2;
+          passed = passed && val == -tmp - 2;
+        }
+      }
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "mbInts", passed);
   }
 
 }
@@ -53,7 +88,8 @@ namespace Ant {
       bool testUtils() {
         bool passed;
 
-        passed = testMultibyteIntegers();
+        passed = testMBUInts();
+        passed = passed && testMBInts();
 
         return passed;
       }

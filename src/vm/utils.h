@@ -9,8 +9,10 @@
 namespace Ant {
   namespace VM {
 
-    size_t writeMultibyteInteger(uint64_t value, std::ostream &out);
-    size_t readMultibyteInteger(std::istream &in, uint64_t &value);
+    size_t writeMBUInt(uint64_t value, std::ostream &out);
+    size_t readMBUInt(std::istream &in, uint64_t &value);
+    size_t writeMBInt(int64_t value, std::ostream &out);
+    size_t readMBInt(std::istream &in, int64_t &value);
 
   }
 }

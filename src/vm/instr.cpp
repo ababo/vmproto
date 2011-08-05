@@ -9,43 +9,15 @@ namespace Ant {
   namespace VM {
 
     using namespace std;
+    using namespace Ant::Common;
 
     Instr::Instr(VMCode code) {
       size_t size = reinterpret_cast<const Instr*>(code)->size();
+      
+      if(!size)
+        throw EncodingException();
+
       memcpy(dat, code, size);
-    }
-
-    void Instr::setParam(uint64_t p) {
-      ostringstream out;
-      writeMultibyteInteger(p, out);
-      memcpy(dat, out.str().data(), out.str().size());
-    }
-
-    void Instr::set2Params(uint64_t p1, uint64_t p2) {
-      ostringstream out;
-      writeMultibyteInteger(p1, out);
-      writeMultibyteInteger(p2, out);
-      memcpy(dat, out.str().data(), out.str().size());
-    }
-
-    void Instr::set3Params(uint64_t p1, uint64_t p2, uint64_t p3) {
-      ostringstream out;
-      writeMultibyteInteger(p1, out);
-      writeMultibyteInteger(p2, out);
-      writeMultibyteInteger(p3, out);
-      memcpy(dat, out.str().data(), out.str().size());
-    }
-
-    size_t Instr::size(int paramCount) const {
-      const char *buf = reinterpret_cast<const char*>(dat + 1);
-      istringstream in(string(buf, MAX_INSTR_SIZE - 1));
-      size_t size = 1;
-      uint64_t val;
-
-      for(int i = 0; i < paramCount; i++)
-        size += readMultibyteInteger(in, val);
-
-      return size;
     }
 
     size_t Instr::size() const {
@@ -62,14 +34,77 @@ namespace Ant {
       };
     }
 
+    void Instr::setParam(uint64_t p) {
+      ostringstream out;
+      writeMBUInt(p, out);
+      memcpy(dat, out.str().data(), out.str().size());
+    }
+
+    void Instr::setParam2(int64_t p) {
+      ostringstream out;
+      writeMBInt(p, out);
+      memcpy(dat, out.str().data(), out.str().size());
+    }
+
+    void Instr::set2Params(uint64_t p1, uint64_t p2) {
+      ostringstream out;
+      writeMBUInt(p1, out);
+      writeMBUInt(p2, out);
+      memcpy(dat, out.str().data(), out.str().size());
+    }
+
+    void Instr::set3Params(uint64_t p1, uint64_t p2, uint64_t p3) {
+      ostringstream out;
+      writeMBUInt(p1, out);
+      writeMBUInt(p2, out);
+      writeMBUInt(p3, out);
+      memcpy(dat, out.str().data(), out.str().size());
+    }
+
+#define INSTR_ISSTREAM(in) \
+    const char *buf = reinterpret_cast<const char*>(dat + 1); \
+    istringstream in(string(buf, MAX_INSTR_SIZE - 1));
+
+    size_t Instr::size(int paramCount) const {
+      INSTR_ISSTREAM(in);
+      size_t size = 1;
+      uint64_t val;
+
+      for(int i = 0; i < paramCount; i++)
+        size += readMBUInt(in, val);
+
+      return size;
+    }
+
+    uint64_t Instr::getParam(int index) const {
+      INSTR_ISSTREAM(in);
+      uint64_t val;
+
+      for(int i = 0; i < index; i++)
+        readMBUInt(in, val);
+
+      return val;
+    }
+
+    int64_t Instr::getParam2(int index) const {
+      INSTR_ISSTREAM(in);
+      int64_t val;
+
+      for(int i = 0; i < index; i++)
+        readMBInt(in, val);
+
+      return val;
+    }
+
     inline RegId Instr::assertRegId(RegId reg) {
-      if(reg > 0x3FFF)
-        throw Ant::Common::OutOfRangeException();
+      if(reg > 0x3FFF) // no more than 2 bytes
+        throw OutOfRangeException();
       return reg;
     }
 
     inline int Instr::assertInstrOffset(int offset) {
-      // ?
+      if(offset < -0x1FFF - 1 || offset > 0x1FFF) // no more than 2 bytes
+        throw OutOfRangeException();
       return offset;
     }
 
@@ -106,7 +141,7 @@ namespace Ant {
 
     JNZInstr::JNZInstr(int offset) {
       op = OPCODE_JNZ;
-      setParam(assertInstrOffset(offset));
+      setParam2(assertInstrOffset(offset));
     }
 
     RETInstr::RETInstr() {

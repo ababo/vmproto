@@ -37,11 +37,13 @@ namespace Ant {
       Instr() {}
 
       void setParam(uint64_t p);
+      void setParam2(int64_t p);
       void set2Params(uint64_t p1, uint64_t p2);
       void set3Params(uint64_t p1, uint64_t p2, uint64_t p3);
 
       size_t size(int paramCount) const;
       uint64_t getParam(int index) const;
+      int64_t getParam2(int index) const;
 
       static inline RegId assertRegId(RegId reg);
       static inline int assertInstrOffset(int offset);
@@ -106,7 +108,7 @@ namespace Ant {
       JNZInstr(int offset);
 
       size_t size() const { return Instr::size(1); }
-      int offset() const { return static_cast<int>(getParam(0)); }
+      int offset() const { return static_cast<int>(getParam2(0)); }
     };
 
     class RETInstr : public Instr {

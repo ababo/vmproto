@@ -5,7 +5,7 @@ namespace Ant {
   namespace Common {
     
     template <class T>
-      class Retained {
+    class Retained {
     public:
       Retained() : count(1) {}
       
