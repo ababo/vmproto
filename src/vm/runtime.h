@@ -8,16 +8,7 @@
 namespace Ant {
   namespace VM {
 
-    struct Variable {};
-
-    template <int ByteCount, int VRefCount, int PRefCount, int EltCount>
-    struct StaticVariable : public Variable {
-      struct {
-        uint8_t bytes[ByteCount];
-        Variable *vrefs[VRefCount];
-        NativeCode prefs[PRefCount];
-      } elts[EltCount];
-    };
+    static const int RESERVED_REGS_COUNT = 8;
 
     class Runtime : public Common::Singleton<Runtime> {
       friend class Common::Singleton<Runtime>;

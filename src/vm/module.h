@@ -13,6 +13,17 @@ namespace Ant {
     typedef const uint8_t *VMCode;
     typedef const void *NativeCode;
 
+    struct Variable {};
+
+    template <int ByteCount, int VRefCount, int PRefCount, int EltCount>
+    struct StaticVariable : public Variable {
+      struct {
+        uint8_t bytes[ByteCount];
+        Variable *vrefs[VRefCount];
+        NativeCode prefs[PRefCount];
+      } elts[EltCount];
+    };
+
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,
       PFLAG_FUNCTION = 0x2

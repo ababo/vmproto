@@ -97,13 +97,13 @@ namespace Ant {
     }
 
     inline RegId Instr::assertRegId(RegId reg) {
-      if(reg > 0x3FFF) // no more than 2 bytes
+      if(reg > MB_UINT_MAX(2))
         throw OutOfRangeException();
       return reg;
     }
 
     inline int Instr::assertInstrOffset(int offset) {
-      if(offset < -0x1FFF - 1 || offset > 0x1FFF) // no more than 2 bytes
+      if(offset < MB_INT_MIN(2) || offset > MB_INT_MAX(2))
         throw OutOfRangeException();
       return offset;
     }

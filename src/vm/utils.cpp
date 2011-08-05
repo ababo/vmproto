@@ -38,6 +38,11 @@ namespace Ant {
 
     using namespace Ant::Common;
 
+    const uint64_t MB_MASKS[9] = {
+      0x7F, 0x3FFF, 0x1FFFFF, 0xFFFFFFF, 0x7FFFFFFFFLLU, 0x3FFFFFFFFFFLLU,
+      0x1FFFFFFFFFFFFLLU, 0xFFFFFFFFFFFFFFLLU, 0xFFFFFFFFFFFFFFFFLLU
+    };
+
     size_t writeMBUInt(uint64_t value, std::ostream &out) {
       return writeMBUIntEx(value, out, false);
     }
