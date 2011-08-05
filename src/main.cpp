@@ -3,5 +3,5 @@
 using namespace Ant::Test;
 
 int main() {
-  return int(testAntOS());
+  return !int(testAntOS());
 }

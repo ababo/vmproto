@@ -1,8 +1,8 @@
+#include <sstream>
+
 #include "../../common/string.h"
 #include "../../test/all.h"
 #include "../utils.h"
-
-#include <sstream>
 
 namespace {
 
