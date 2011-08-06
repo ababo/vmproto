@@ -21,7 +21,7 @@ namespace Ant {
          !safeToAdd(bytes, sizeof(size_t)))
         throw RangeException();
 
-      MVarType vtype;
+      VarType vtype;
       vtype.count = count;
       vtype.bytes = bytes;
 
@@ -49,30 +49,28 @@ namespace Ant {
       if(io >= regs.size() + RESERVED_REGS_COUNT)
         throw NotFoundException();
 
-      MProc proc;
+      Proc proc;
       proc.flags = flags;
       proc.io = io;
-      proc.instrs = 0;
 
       procs.push_back(proc);
+      instrs.push_back(0);
       return ProcId(procs.size() - 1);
     }
 
     size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
       if(id >= procs.size())
         throw NotFoundException();
-      
-      MProc &proc = procs[id];
-      if(proc.instrs >= MB_UINT_MAX(4))
+      if(instrs[id] >= MB_UINT_MAX(4))
         throw RangeException();
 
       size_t size = instr.size();
-      proc.code.resize(proc.code.size() + size);
-      copy(instr.data(), instr.data() + size, back_inserter(proc.code));
-      return ++proc.instrs;
+      procs[id].code.resize(procs[id].code.size() + size);
+      copy(instr.data(), instr.data() + size, back_inserter(procs[id].code));
+      return ++instrs[id];
     }
 
-    const UUID &ModuleBuilder::createModule() {
+    void ModuleBuilder::createModule(Module &module) {
 
     }
 

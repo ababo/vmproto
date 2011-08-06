@@ -9,7 +9,7 @@ namespace Ant {
 
         passed = testUtils();
         passed = passed && testModuleBuilder();
-        passed = passed && testRuntime();
+        passed = passed && testModule();
 
         return passed;
       }

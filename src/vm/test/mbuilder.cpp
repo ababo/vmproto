@@ -7,8 +7,8 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
-      const UUID &createFactorialModule(Runtime &rt) {
-        ModuleBuilder builder(rt);
+      void createFactorialModule(Module &module) {
+        ModuleBuilder builder;
 
         VarTypeId wordType = builder.addVarType(1, 8);
 
@@ -25,7 +25,7 @@ namespace Ant {
         builder.addProcInstr(proc, FSTInstr());
         builder.addProcInstr(proc, RETInstr());
 
-        return builder.createModule();
+        builder.createModule(module);
       }
 
     }
@@ -42,19 +42,16 @@ namespace {
   const String subj = "Ant::VM::ModuleBuilder";
 
   bool testFactorial() {
-    Runtime &rt = Runtime::instance();
-    UUID module;
-
-    bool passed;
+    bool passed = true;
+    Module module;
 
     try {
-      module = createFactorialModule(rt);
-      // TODO: check the module properties
-      passed = true;
-    }
-    catch(...) { passed = false; }
+      createFactorialModule(module);
 
-    try { rt.deleteModule(module); }
+      // TODO: check the module properties
+
+      module.drop();
+    }
     catch(...) { passed = false; }
 
     return printTestResult(subj, "factorial", passed);

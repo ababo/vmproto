@@ -2,8 +2,9 @@
 #define __VM_MODULE_INCLUDED__
 
 #include <cstddef>
+#include <vector>
 
-#include "../common/farray.h"
+#include "../common/uuid.h"
 
 namespace Ant {
   namespace VM {
@@ -12,7 +13,8 @@ namespace Ant {
     typedef unsigned int ProcId;
     typedef unsigned int RegId;
 
-    typedef const unsigned char *VMCode;
+    typedef unsigned char VMCodeByte;
+    typedef const VMCodeByte *VMCode;
     typedef const void *NativeCode;
 
     struct Variable {};
@@ -29,14 +31,14 @@ namespace Ant {
     struct VarType {
       size_t count;
       size_t bytes;
-      Common::FixedArray<VarTypeId> vrefs;
-      Common::FixedArray<VarTypeId> prefs;
+      std::vector<VarTypeId> vrefs;
+      std::vector<VarTypeId> prefs;
     };
 
     struct Proc {
       unsigned int flags;
       VarTypeId io;
-      Common::FixedArray<unsigned char> code;
+      std::vector<VMCodeByte> code;
     };
 
     enum ProcFlag {
@@ -45,8 +47,36 @@ namespace Ant {
       PFLAG_FIRST_RESERVED = 0x4
     };
 
-    class Module {
+    const unsigned int RESERVED_REGS_COUNT = 8;
 
+    class Module {
+    public:
+      Module() {}
+      Module(const Common::UUID &id) : i(id) {}
+
+      const Common::UUID &id() const { return i; }
+      void id(const Common::UUID &id) { i = id; }
+
+      unsigned int varTypeCount() const;
+      unsigned int regCount() const;
+      unsigned int procCount() const;
+
+      void varTypeById(VarTypeId id, VarType &vtype) const;
+      VarTypeId regTypeById(RegId id) const;
+      void procById(ProcId id, Proc &proc) const;
+
+      bool isExistent() const;
+      bool isPacked() const;
+
+      void pack();
+      void unpack();
+      void drop();
+
+      void callFunc(ProcId func, Variable &io) const;
+      void callProc(ProcId proc, Variable &io);
+
+    protected:
+      Common::UUID i;
     };
 
   }
