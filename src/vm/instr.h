@@ -1,7 +1,7 @@
 #ifndef __VM_INSTR_INCLUDED__
 #define __VM_INSTR_INCLUDED__
 
-#include <stddef.h>
+#include <cstddef>
 #include <stdint.h>
 
 #include "module.h"

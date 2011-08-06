@@ -3,30 +3,46 @@
 
 #include <stdint.h>
 
+#include "../common/farray.h"
+
 namespace Ant {
   namespace VM {
 
-    typedef unsigned int VarTypeId;
-    typedef unsigned int ProcId;
-    typedef unsigned int RegId;
+    typedef uint16_t VarTypeId;
+    typedef uint16_t ProcId;
+    typedef uint16_t RegId;
 
     typedef const uint8_t *VMCode;
     typedef const void *NativeCode;
 
     struct Variable {};
 
-    template <int ByteCount, int VRefCount, int PRefCount, int EltCount>
+    template <int Bytes, int VRefs, int PRefs, int Count>
     struct StaticVariable : public Variable {
       struct {
-        uint8_t bytes[ByteCount];
-        Variable *vrefs[VRefCount];
-        NativeCode prefs[PRefCount];
-      } elts[EltCount];
+        uint8_t bytes[Bytes];
+        Variable *vrefs[VRefs];
+        NativeCode prefs[PRefs];
+      } elts[Count];
+    };
+
+    struct VarType {
+      uint32_t count;
+      uint32_t bytes;
+      Common::FixedArray<VarTypeId> vrefs;
+      Common::FixedArray<VarTypeId> prefs;
+    };
+
+    struct Proc {
+      uint16_t flags;
+      VarTypeId io;
+      Common::FixedArray<uint8_t> code;
     };
 
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,
-      PFLAG_FUNCTION = 0x2
+      PFLAG_FUNCTION = 0x2,
+      PFLAG_FIRST_RESERVED = 0x4
     };
 
     class Module {

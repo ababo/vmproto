@@ -159,7 +159,7 @@ namespace Ant {
       if(sign > 0) {
         uint64_t pint;
         if((in >> pint).fail())
-          throw OutOfRangeException();
+          throw RangeException();
 
         loc.column += str.size();
         this->pint = pint;
@@ -169,7 +169,7 @@ namespace Ant {
       if(sign < 0) {
         int64_t nint;
         if((in >> nint).fail())
-          throw OutOfRangeException();
+          throw RangeException();
 
         loc.column += str.size();
         this->nint = nint;

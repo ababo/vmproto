@@ -31,15 +31,22 @@ namespace Ant {
     protected:
       struct MVarType {
         uint32_t count;
-        uint16_t bytes;
+        uint32_t bytes;
         std::vector<VarTypeId> vrefs;
         std::vector<VarTypeId> prefs;
+      };
+      struct MProc {
+        uint16_t flags;
+        uint16_t io;
+        uint32_t instrs;
+        std::vector<uint8_t> code;
       };
 
       Runtime &rt;
 
       std::vector<MVarType> vtypes;
       std::vector<VarTypeId> regs;
+      std::vector<MProc> procs;
     };
 
   }

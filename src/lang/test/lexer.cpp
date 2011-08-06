@@ -103,7 +103,7 @@ namespace {
       passed = false;
 
       try { lex.readToken(); }
-      catch(const OutOfRangeException&) { passed = true; }
+      catch(const RangeException&) { passed = true; }
     }
 
     passed = passed && lex.location() == Location(1, 33);
@@ -127,7 +127,7 @@ namespace {
       passed = false;
 
       try { lex.readToken(); }
-      catch(const OutOfRangeException&) { passed = true; }
+      catch(const RangeException&) { passed = true; }
     }
 
     passed = passed && lex.location() == Location(1, 25);

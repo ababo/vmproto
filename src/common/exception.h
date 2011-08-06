@@ -17,10 +17,13 @@ namespace Ant {
     EXCEPTION(CodePointException, Exception, "invalid code point");
     EXCEPTION(EncodingException, Exception, "bad encoding");
     EXCEPTION(EndOfFileException, Exception, "unexpected end of file");
-    EXCEPTION(OutOfRangeException, Exception, "value out of range");
+    EXCEPTION(RangeException, Exception, "value out of range");
     EXCEPTION(OperationException, Exception, "bad operation");
     EXCEPTION(EscapeCharException, Exception, "bad escape character");
     EXCEPTION(IOException, Exception, "input/output error");
+    EXCEPTION(FlagsException, Exception, "invalid flags combination");
+    EXCEPTION(ArgumentException, Exception, "bad call argument");
+    EXCEPTION(NotFoundException, Exception, "object not found");
 
   }
 }

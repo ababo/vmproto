@@ -1,5 +1,4 @@
 #include <sstream>
-#include <memory.h>
 
 #include "instr.h"
 #include "utils.h"
@@ -17,7 +16,7 @@ namespace Ant {
       if(!size)
         throw EncodingException();
 
-      memcpy(dat, code, size);
+      copy(code, code + size, dat);
     }
 
     size_t Instr::size() const {
@@ -37,20 +36,20 @@ namespace Ant {
     void Instr::setParam(uint64_t p) {
       ostringstream out;
       writeMBUInt(p, out);
-      memcpy(dat, out.str().data(), out.str().size());
+      copy(out.str().begin(), out.str().end(), dat);
     }
 
     void Instr::setParam2(int64_t p) {
       ostringstream out;
       writeMBInt(p, out);
-      memcpy(dat, out.str().data(), out.str().size());
+      copy(out.str().begin(), out.str().end(), dat);
     }
 
     void Instr::set2Params(uint64_t p1, uint64_t p2) {
       ostringstream out;
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
-      memcpy(dat, out.str().data(), out.str().size());
+      copy(out.str().begin(), out.str().end(), dat);
     }
 
     void Instr::set3Params(uint64_t p1, uint64_t p2, uint64_t p3) {
@@ -58,7 +57,7 @@ namespace Ant {
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
       writeMBUInt(p3, out);
-      memcpy(dat, out.str().data(), out.str().size());
+      copy(out.str().begin(), out.str().end(), dat);
     }
 
 #define INSTR_ISSTREAM(in) \
@@ -98,13 +97,13 @@ namespace Ant {
 
     inline RegId Instr::assertRegId(RegId reg) {
       if(reg > MB_UINT_MAX(2))
-        throw OutOfRangeException();
+        throw RangeException();
       return reg;
     }
 
     inline int Instr::assertInstrOffset(int offset) {
-      if(offset < MB_INT_MIN(2) || offset > MB_INT_MAX(2))
-        throw OutOfRangeException();
+      if(offset < MB_INT_MIN(1) || offset > MB_INT_MAX(1))
+        throw RangeException();
       return offset;
     }
 
