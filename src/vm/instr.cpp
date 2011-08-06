@@ -10,7 +10,7 @@ namespace Ant {
     using namespace std;
     using namespace Ant::Common;
 
-    Instr::Instr(VMCode code) {
+    void Instr::set(VMCode code) {
       size_t size = reinterpret_cast<const Instr*>(code)->size();
       
       if(!size)

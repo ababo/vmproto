@@ -41,6 +41,15 @@ namespace {
 
   const String subj = "Ant::VM::ModuleBuilder";
 
+#define NEXT_OPCODE(prefix) \
+  instr.set(&proc.code[i]); \
+  i += instr.size(); \
+  passed = passed && instr.opcode() == OPCODE_##prefix;
+
+#define NEXT_INSTR(prefix) \
+  NEXT_OPCODE(prefix); \
+  prefix##Instr &i##prefix = static_cast<prefix##Instr&>(instr);
+
   bool testFactorial() {
     bool passed = true;
     Module module;
@@ -48,7 +57,47 @@ namespace {
     try {
       createFactorialModule(module);
 
-      // TODO: check the module properties
+      passed = module.varTypeCount() == 1;
+      if(passed) {
+        VarType vtype;
+        module.varTypeById(0, vtype);
+        passed = vtype.count == 1 && vtype.bytes == 8;
+        passed = passed && !vtype.vrefs.size() && !vtype.prefs.size();
+      }
+
+      passed = passed && module.regCount() == 2;
+      passed = passed && module.regTypeById(RESERVED_REGS_COUNT) == 0;
+      passed = passed && module.regTypeById(RESERVED_REGS_COUNT + 1) == 0;
+
+      passed = passed && module.procCount() == 1; 
+      if(passed) {
+        Proc proc;
+        module.procById(0, proc);
+        passed = proc.flags == PFLAG_EXTERNAL | PFLAG_FUNCTION;
+        passed = passed && proc.io == 0;
+
+        int i = 0;
+        Instr instr;
+        NEXT_INSTR(AST);
+        passed = passed && iAST.reg() == RESERVED_REGS_COUNT + 1;
+        NEXT_INSTR(MOVM8);
+        passed = passed && iMOVM8.val() == 1; 
+        passed = passed && iMOVM8.to() == RESERVED_REGS_COUNT + 1;
+        NEXT_INSTR(MUL);
+        passed = passed && iMUL.factor1() == RESERVED_REGS_COUNT;
+        passed = passed && iMUL.factor2() == RESERVED_REGS_COUNT + 1;
+        passed = passed && iMUL.product() == RESERVED_REGS_COUNT + 1;
+        NEXT_INSTR(DEC);
+        passed = passed && iDEC.it() == RESERVED_REGS_COUNT;
+        NEXT_INSTR(JNZ);
+        passed = passed && iJNZ.offset() == -2;
+        NEXT_INSTR(MOVN8);
+        passed = passed && iMOVN8.from() == RESERVED_REGS_COUNT + 1;
+        passed = passed && iMOVN8.to() == RESERVED_REGS_COUNT;
+        NEXT_OPCODE(FST);
+        NEXT_OPCODE(RET);
+        passed = passed && i == proc.code.size();
+      }
 
       module.drop();
     }

@@ -25,7 +25,10 @@ namespace Ant {
 
     class Instr {
     public:
-      Instr(VMCode code);
+      Instr() : op(OPCODE_ILL) {}
+      Instr(VMCode code) { set(code); }
+
+      void set(VMCode code);
 
       OpCode opcode() const { return OpCode(op); }
 
@@ -33,8 +36,6 @@ namespace Ant {
       VMCode data() const { return dat; }
 
     protected:
-      Instr() {}
-
       void setParam(uint64_t p);
       void setParam2(int64_t p);
       void set2Params(uint64_t p1, uint64_t p2);
