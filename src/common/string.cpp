@@ -1,6 +1,5 @@
 #include "string.h"
 #include "exception.h"
-#include "../platform.h"
 #include "utf8/source/utf8.h"
 
 namespace {

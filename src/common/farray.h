@@ -15,7 +15,10 @@ namespace Ant {
       typedef const T &const_reference;
       typedef size_t size_type;
 
+      FixedArray() : dat(NULL), sz(0) {}
       FixedArray(T *data, size_type size) : dat(data), sz(size) {}
+
+      void set(T *data, size_type size) { dat = data, sz = size; }
 
       size_type size() const { return sz; }
 

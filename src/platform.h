@@ -1,6 +1,0 @@
-#ifndef __PLATFORM_INCLUDED__
-#define __PLATFORM_INCLUDED__
-
-#undef SHORT_WCHAR
-
-#endif // __PLATFORM_INCLUDED__

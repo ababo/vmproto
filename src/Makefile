@@ -14,7 +14,7 @@ include $(PPATH)/src/Makefile.inc
 main: prereq $(OBJS)
 	$(LD) -o $(ODIR)/$(PROG) $(OBJS_ALL) $(LFLAGS)
 
-$(ODIR)/%.o: ./%.cpp ./*.h
+$(ODIR)/%.o: ./%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: prereq
