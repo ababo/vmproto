@@ -33,7 +33,7 @@ namespace Ant {
       OpCode opcode() const { return OpCode(op); }
 
       size_t size() const;
-      VMCode data() const { return dat; }
+      VMCode data() const { return &op; }
 
     protected:
       void setParam(uint64_t p);

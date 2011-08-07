@@ -16,7 +16,7 @@ namespace Ant {
       if(!size)
         throw EncodingException();
 
-      copy(code, code + size, dat);
+      copy(code, code + size, &op);
     }
 
     size_t Instr::size() const {
@@ -36,20 +36,23 @@ namespace Ant {
     void Instr::setParam(uint64_t p) {
       ostringstream out;
       writeMBUInt(p, out);
-      copy(out.str().begin(), out.str().end(), dat);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
     }
 
     void Instr::setParam2(int64_t p) {
       ostringstream out;
       writeMBInt(p, out);
-      copy(out.str().begin(), out.str().end(), dat);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
     }
 
     void Instr::set2Params(uint64_t p1, uint64_t p2) {
       ostringstream out;
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
-      copy(out.str().begin(), out.str().end(), dat);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
     }
 
     void Instr::set3Params(uint64_t p1, uint64_t p2, uint64_t p3) {
@@ -57,11 +60,12 @@ namespace Ant {
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
       writeMBUInt(p3, out);
-      copy(out.str().begin(), out.str().end(), dat);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
     }
 
 #define INSTR_ISSTREAM(in) \
-    const char *buf = reinterpret_cast<const char*>(dat + 1); \
+    const char *buf = reinterpret_cast<const char*>(dat); \
     istringstream in(string(buf, MAX_INSTR_SIZE - 1));
 
     size_t Instr::size(int paramCount) const {
@@ -79,7 +83,7 @@ namespace Ant {
       INSTR_ISSTREAM(in);
       uint64_t val;
 
-      for(int i = 0; i < index; i++)
+      for(int i = 0; i <= index; i++)
         readMBUInt(in, val);
 
       return val;
@@ -89,7 +93,7 @@ namespace Ant {
       INSTR_ISSTREAM(in);
       int64_t val;
 
-      for(int i = 0; i < index; i++)
+      for(int i = 0; i <= index; i++)
         readMBInt(in, val);
 
       return val;

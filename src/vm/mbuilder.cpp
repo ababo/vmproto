@@ -13,9 +13,8 @@ namespace {
   inline void setFixedArray(const vector<T> &it,
                             FixedArray<T> &target,
                             vector<T> &container) {
-    T *data = &container[container.size()];
     copy(it.begin(), it.end(), back_inserter(container));
-    target.set(data, it.size());
+    target.set(&container[container.size() - it.size()], it.size());
   }
 
 }
@@ -81,18 +80,20 @@ namespace Ant {
       if(instrs[id] >= MB_UINT_MAX(4))
         throw RangeException();
 
-      size_t size = instr.size();
-      procs[id].code.resize(procs[id].code.size() + size);
-      copy(instr.data(), instr.data() + size, back_inserter(procs[id].code));
-      return ++instrs[id];
+      copy(instr.data(), instr.data() + instr.size(),
+           back_inserter(procs[id].code));
+      return instrs[id]++;
     }
 
-    void ModuleBuilder::createModule(Module &module) {
-      Runtime::ModuleData moduleData;
+    void ModuleBuilder::fillVarTypes(Runtime::ModuleData &moduleData) const {
+      size_t size = 0;
+      for(int i = 0; i < vtypes.size(); i++)
+        size += vtypes[i].vrefs.size() + vtypes[i].prefs.size();
+      moduleData.refs.reserve(size);
 
       for(int i = 0; i < vtypes.size(); i++) {
         Runtime::VarTypeData vtypeData;
-        VarType &vtype = vtypes[i];
+        const VarType &vtype = vtypes[i];
 
         vtypeData.count = vtype.count;
         vtypeData.bytes = vtype.bytes;
@@ -101,12 +102,17 @@ namespace Ant {
 
         moduleData.vtypes.push_back(vtypeData);
       }
+    }
 
-      moduleData.regs = regs;
+    void ModuleBuilder::fillProcs(Runtime::ModuleData &moduleData) const {
+      size_t size = 0;
+      for(int i = 0; i < procs.size(); i++)
+        size += procs[i].code.size();
+      moduleData.code.reserve(size);
 
       for(int i = 0; i < procs.size(); i++) {
         Runtime::ProcData procData;
-        Proc &proc = procs[i];
+        const Proc &proc = procs[i];
 
         procData.flags = proc.flags;
         procData.io = proc.io;
@@ -114,10 +120,22 @@ namespace Ant {
 
         moduleData.procs.push_back(procData);
       }
+    }
+
+    void ModuleBuilder::createModule(Module &module) {
+      Runtime::ModuleData moduleData;
+      fillVarTypes(moduleData);
+      moduleData.regs = regs;
+      fillProcs(moduleData);
 
       UUID id = id.generate();
       Runtime::instance().insertModuleData(id, moduleData);
       module.id(id);
+
+      vtypes.clear();
+      regs.clear();
+      procs.clear();
+      instrs.clear();
     }
 
   }

@@ -12,10 +12,10 @@ namespace Ant {
     class FixedArray {
     public:
       typedef const T &const_reference;
-      typedef const T *const_iterator;
       typedef T &reference;
-      typedef T *iterator;
       typedef size_t size_type;
+      typedef const T *const_iterator;
+      typedef T *iterator;
 
       FixedArray() : dat(NULL), sz(0) {}
       FixedArray(T *data, size_type size) : dat(data), sz(size) {}

@@ -42,9 +42,11 @@ namespace {
   const String subj = "Ant::VM::ModuleBuilder";
 
 #define NEXT_OPCODE(prefix) \
-  instr.set(&proc.code[i]); \
-  i += instr.size(); \
-  passed = passed && instr.opcode() == OPCODE_##prefix;
+  if(passed) { \
+    instr.set(&proc.code[i]); \
+    i += instr.size(); \
+    passed = passed && instr.opcode() == OPCODE_##prefix; \
+}
 
 #define NEXT_INSTR(prefix) \
   NEXT_OPCODE(prefix); \
@@ -74,7 +76,7 @@ namespace {
         Proc proc;
         module.procById(0, proc);
         passed = proc.flags == PFLAG_EXTERNAL | PFLAG_FUNCTION;
-        passed = passed && proc.io == 0;
+        passed = passed && proc.io == RESERVED_REGS_COUNT;
 
         int i = 0;
         Instr instr;

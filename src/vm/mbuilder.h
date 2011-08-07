@@ -26,6 +26,9 @@ namespace Ant {
       void createModule(Module &module);
 
     protected:
+      void fillVarTypes(Runtime::ModuleData &moduleData) const;
+      void fillProcs(Runtime::ModuleData &moduleData) const;
+
       std::vector<VarType> vtypes;
       std::vector<VarTypeId> regs;
       std::vector<Proc> procs;

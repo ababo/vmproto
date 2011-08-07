@@ -47,6 +47,16 @@ namespace Ant {
         Common::FixedArray<VMCodeByte> code;
       };
       struct ModuleData {
+        ModuleData() {}
+        
+        ModuleData &operator=(ModuleData& moduleData) {
+          vtypes.swap(moduleData.vtypes);
+          refs.swap(moduleData.refs);
+          regs.swap(moduleData.regs);
+          procs.swap(moduleData.procs);
+          code.swap(moduleData.code);
+        }
+
         std::vector<VarTypeData> vtypes;
         std::vector<VarTypeId> refs;
         std::vector<VarTypeId> regs;
@@ -54,13 +64,18 @@ namespace Ant {
         std::vector<VMCodeByte> code;
       };
       typedef std::map<Common::UUID, ModuleData> ModuleDataMap;
+      typedef ModuleDataMap::value_type ModuleDataPair;
+      typedef ModuleDataMap::const_iterator ModuleDataConstIterator;
+      typedef ModuleDataMap::iterator ModuleDataIterator;
 
       const ModuleData *findModuleData(const Common::UUID &id) const {
-        ModuleDataMap::const_iterator i = modules.find(id);
+        ModuleDataConstIterator i = modules.find(id);
         return i != modules.end() ? &i->second : NULL;
       }
-      void insertModuleData(const Common::UUID &id, const ModuleData &data) {
-        modules.insert(ModuleDataMap::value_type(id, data));
+      void insertModuleData(const Common::UUID &id, ModuleData &moduleData) {
+        ModuleDataPair p = ModuleDataPair(id, ModuleData());
+        ModuleDataIterator i = modules.insert(p).first;
+        i->second = moduleData;
       }
       void dropModuleData(const Common::UUID &id) {
         modules.erase(id);
