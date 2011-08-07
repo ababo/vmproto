@@ -15,16 +15,8 @@ namespace {
   bool testCtor() {
     bool passed = true;
 
-    try { String s = NON_ASCII; }
-    catch (...) { passed = false; }
-
-    if(passed) {
-      passed = false;
-      
-      try { String s = NON_ASCII "\xD0"; }
-      catch (const EncodingException&) { passed = true; }
-      catch (...) {} 
-    }
+    ASSERT_NOTHROW({String s = NON_ASCII;});
+    ASSERT_THROW({String s = NON_ASCII "\xD0";}, EncodingException);
 
     return printTestResult(subj, "ctor", passed);
   }

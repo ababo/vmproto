@@ -15,7 +15,7 @@ namespace Ant {
       OPCODE_FST,
       OPCODE_MOVM8,
       OPCODE_MOVN8,
-      OPCODE_MUL,
+      OPCODE_UMUL,
       OPCODE_DEC,
       OPCODE_JNZ,
       OPCODE_RET
@@ -85,9 +85,9 @@ namespace Ant {
       RegId to() const { return RegId(getParam(1)); }
     };
 
-    class MULInstr : public Instr {
+    class UMULInstr : public Instr {
     public:
-      MULInstr(RegId factor1, RegId factor2, RegId product);
+      UMULInstr(RegId factor1, RegId factor2, RegId product);
 
       size_t size() const { return Instr::size(3); }
       RegId factor1() const { return RegId(getParam(0)); }

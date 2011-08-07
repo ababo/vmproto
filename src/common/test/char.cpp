@@ -25,23 +25,17 @@ namespace {
     catch (...) { passed = false; }
 
     if(passed) {
-      passed = false;
       in.str("\xD1");
       in.clear();
 
-      try { in >> chr; }
-      catch(const EndOfFileException&) { passed = true; }
-      catch(...) {}
+      ASSERT_THROW(in >> chr, EndOfFileException);
     }
 
     if(passed) {
-      passed = false;
       in.str("\xD1\xD1");
       in.clear();
 
-      try { in >> chr; }
-      catch(const EncodingException&) { passed = true; }
-      catch(...) {}
+      ASSERT_THROW(in >> chr, EncodingException);
     }
 
     return printTestResult(subj, "input", passed);

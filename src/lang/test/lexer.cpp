@@ -69,12 +69,7 @@ namespace {
     }
     catch(...) { passed = false; }
 
-    if(passed) {
-      passed = false;
-
-      try { lex.readToken(); }
-      catch(const EndOfFileException&) { passed = true; }
-    }    
+    ASSERT_THROW(lex.readToken(), EndOfFileException);
  
     passed = passed && lex.location() == Location(1, 29);
 
@@ -99,12 +94,7 @@ namespace {
     }
     catch(...) { passed = false; }
 
-    if(passed) {
-      passed = false;
-
-      try { lex.readToken(); }
-      catch(const RangeException&) { passed = true; }
-    }
+    ASSERT_THROW(lex.readToken(), RangeException);
 
     passed = passed && lex.location() == Location(1, 33);
 
@@ -122,13 +112,8 @@ namespace {
       passed = passed && lex.location() == Location(1, 24);
     }
     catch(...) { passed = false; }
-    
-    if(passed) {
-      passed = false;
 
-      try { lex.readToken(); }
-      catch(const RangeException&) { passed = true; }
-    }
+    ASSERT_THROW(lex.readToken(), RangeException);
 
     passed = passed && lex.location() == Location(1, 25);
 

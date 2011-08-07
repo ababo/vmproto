@@ -3,6 +3,23 @@
 
 #include "../common/string.h"
 
+#define ASSERT_THROW(code, exception) \
+  if(passed) { \
+    try { code; passed = false; } \
+    catch(const exception&) {} \
+    catch(...) { passed = false; } \
+  }
+
+#define ASSERT_NOTHROW(code) \
+  if(passed) { \
+    try { code; } \
+    catch(...) { passed = false; } \
+  }
+
+#define IGNORE_THROW(code) \
+  try { code; } \
+  catch(...) {}
+
 namespace Ant {
   namespace Test {
 

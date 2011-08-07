@@ -25,7 +25,7 @@ namespace Ant {
       case OPCODE_FST: return static_cast<const FSTInstr&>(*this).size();
       case OPCODE_MOVM8: return static_cast<const MOVM8Instr&>(*this).size();
       case OPCODE_MOVN8: return static_cast<const MOVN8Instr&>(*this).size();
-      case OPCODE_MUL: return static_cast<const MULInstr&>(*this).size();
+      case OPCODE_UMUL: return static_cast<const UMULInstr&>(*this).size();
       case OPCODE_DEC: return static_cast<const DECInstr&>(*this).size();
       case OPCODE_JNZ: return static_cast<const JNZInstr&>(*this).size();
       case OPCODE_RET: return static_cast<const RETInstr&>(*this).size();
@@ -100,6 +100,8 @@ namespace Ant {
     }
 
     inline RegId Instr::assertRegId(RegId reg) {
+      if(reg < RESERVED_REGS_COUNT) // temporarily
+        throw ArgumentException();
       if(reg > MB_UINT_MAX(2))
         throw RangeException();
       return reg;
@@ -130,8 +132,8 @@ namespace Ant {
       set2Params(assertRegId(from), assertRegId(to));
     }
 
-    MULInstr::MULInstr(RegId factor1, RegId factor2, RegId product) {
-      op = OPCODE_MUL;
+    UMULInstr::UMULInstr(RegId factor1, RegId factor2, RegId product) {
+      op = OPCODE_UMUL;
       set3Params(assertRegId(factor1),
                  assertRegId(factor2),
                  assertRegId(product));
