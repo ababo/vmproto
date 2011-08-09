@@ -27,8 +27,7 @@ namespace Ant {
     public:
       Instr(VMCode code);
 
-      OpCode opcode() const {
-        return static_cast<OpCode>(op); }
+      OpCode opcode() const { return OpCode(op); }
 
       size_t size() const;
       VMCode data() const { return dat; }
@@ -57,7 +56,7 @@ namespace Ant {
       ASTInstr(RegId reg);
 
       size_t size() const { return Instr::size(1); }
-      RegId reg() const { return static_cast<RegId>(getParam(0)); }
+      RegId reg() const { return RegId(getParam(0)); }
     };
 
     class FSTInstr : public Instr {
@@ -73,7 +72,7 @@ namespace Ant {
 
       size_t size() const { return Instr::size(2); }
       uint64_t val() const { return getParam(0); }
-      RegId to() const { return static_cast<RegId>(getParam(1)); }
+      RegId to() const { return RegId(getParam(1)); }
     };
 
     class MOVN8Instr : public Instr {
@@ -81,8 +80,8 @@ namespace Ant {
       MOVN8Instr(RegId from, RegId to);
 
       size_t size() const { return Instr::size(2); }
-      RegId from() const { return static_cast<RegId>(getParam(0)); }
-      RegId to() const { return static_cast<RegId>(getParam(1)); }
+      RegId from() const { return RegId(getParam(0)); }
+      RegId to() const { return RegId(getParam(1)); }
     };
 
     class MULInstr : public Instr {
@@ -90,9 +89,9 @@ namespace Ant {
       MULInstr(RegId factor1, RegId factor2, RegId product);
 
       size_t size() const { return Instr::size(3); }
-      RegId factor1() const { return static_cast<RegId>(getParam(0)); }
-      RegId factor2() const { return static_cast<RegId>(getParam(1)); }
-      RegId product() const { return static_cast<RegId>(getParam(2)); }
+      RegId factor1() const { return RegId(getParam(0)); }
+      RegId factor2() const { return RegId(getParam(1)); }
+      RegId product() const { return RegId(getParam(2)); }
     };
 
     class DECInstr : public Instr {
@@ -100,7 +99,7 @@ namespace Ant {
       DECInstr(RegId it);
 
       size_t size() const { return Instr::size(1); }
-      RegId it() const { return static_cast<RegId>(getParam(0)); }
+      RegId it() const { return RegId(getParam(0)); }
     };
 
     class JNZInstr : public Instr {
@@ -108,7 +107,7 @@ namespace Ant {
       JNZInstr(int offset);
 
       size_t size() const { return Instr::size(1); }
-      int offset() const { return static_cast<int>(getParam2(0)); }
+      int offset() const { return int(getParam2(0)); }
     };
 
     class RETInstr : public Instr {

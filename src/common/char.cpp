@@ -8,7 +8,7 @@ namespace Ant {
   namespace Common {
 
     bool Char::isEOF() const {
-      return cp == static_cast<uint32_t>(EOF);
+      return cp == uint32_t(EOF);
     }
 
     bool Char::isValid() const {
@@ -28,7 +28,7 @@ namespace Ant {
     Char Char::read(std::istream &in) {
       int chr = in.get();
       if(chr == EOF) {
-        cp = static_cast<uint32_t>(EOF);
+        cp = uint32_t(EOF);
         return *this;
       }
       if(in.bad())
