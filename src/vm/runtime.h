@@ -8,7 +8,7 @@
 namespace Ant {
   namespace VM {
 
-    static const int RESERVED_REGS_COUNT = 8;
+    static const unsigned int RESERVED_REGS_COUNT = 8;
 
     class Runtime : public Common::Singleton<Runtime> {
       friend class Common::Singleton<Runtime>;

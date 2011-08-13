@@ -83,7 +83,7 @@ namespace Ant {
         for(int i = 49; i >= 0; i -= 7) {
           byte = uint8_t(value >> i) & 0x7F;
 
-          if(!i || (neg && byte != 0x7F) || (!neg && byte)) {
+          if(!i || (neg ? (byte != 0x7F) : byte)) {
             bool hbit = byte & 0x40;
             if(neg && !hbit)
               extend = true, extention = (i == 49) ? 0xFF : 0x7F;

@@ -1,42 +1,42 @@
 #ifndef __VM_MODULE_INCLUDED__
 #define __VM_MODULE_INCLUDED__
 
-#include <stdint.h>
+#include <cstddef>
 
 #include "../common/farray.h"
 
 namespace Ant {
   namespace VM {
 
-    typedef uint16_t VarTypeId;
-    typedef uint16_t ProcId;
-    typedef uint16_t RegId;
+    typedef unsigned int VarTypeId;
+    typedef unsigned int ProcId;
+    typedef unsigned int RegId;
 
-    typedef const uint8_t *VMCode;
+    typedef const unsigned char *VMCode;
     typedef const void *NativeCode;
 
     struct Variable {};
 
-    template <int Bytes, int VRefs, int PRefs, int Count>
+    template <size_t Count, size_t Bytes, size_t VRefs, size_t PRefs>
     struct StaticVariable : public Variable {
       struct {
-        uint8_t bytes[Bytes];
+        unsigned char bytes[Bytes];
         Variable *vrefs[VRefs];
         NativeCode prefs[PRefs];
       } elts[Count];
     };
 
     struct VarType {
-      uint32_t count;
-      uint32_t bytes;
+      size_t count;
+      size_t bytes;
       Common::FixedArray<VarTypeId> vrefs;
       Common::FixedArray<VarTypeId> prefs;
     };
 
     struct Proc {
-      uint16_t flags;
+      unsigned int flags;
       VarTypeId io;
-      Common::FixedArray<uint8_t> code;
+      Common::FixedArray<unsigned char> code;
     };
 
     enum ProcFlag {

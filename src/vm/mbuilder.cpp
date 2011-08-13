@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "mbuilder.h"
+#include "../common/sarithm.h"
 #include "../common/exception.h"
 
 namespace Ant {
@@ -8,17 +9,21 @@ namespace Ant {
     using namespace std;
     using namespace Ant::Common;
 
-    VarTypeId ModuleBuilder::addVarType(int bytes, int count) {
+    VarTypeId ModuleBuilder::addVarType(size_t count, size_t bytes) {
       if(vtypes.size() >= MB_UINT_MAX(2))
         throw RangeException();
-      if(bytes < 0 || bytes > MB_UINT_MAX(4))
+      if(count > MB_UINT_MAX(4))
         throw RangeException();
-      if(count < 0 || count > MB_UINT_MAX(4))
+      if(bytes > MB_UINT_MAX(2))
+        throw RangeException();
+      if(count ?
+         !safeToMultiply(count, bytes) :
+         !safeToAdd(bytes, sizeof(size_t)))
         throw RangeException();
 
       MVarType vtype;
-      vtype.bytes = uint32_t(bytes);
-      vtype.count = uint32_t(count);
+      vtype.count = count;
+      vtype.bytes = bytes;
 
       vtypes.push_back(vtype);
       return VarTypeId(vtypes.size() - 1);
@@ -34,10 +39,10 @@ namespace Ant {
       return RegId(regs.size() + RESERVED_REGS_COUNT - 1);
     }
 
-    ProcId ModuleBuilder::addProc(int flags, RegId io) {
+    ProcId ModuleBuilder::addProc(unsigned int flags, RegId io) {
       if(procs.size() >= MB_UINT_MAX(2))
         throw RangeException();
-      if(flags < 0 || flags >= PFLAG_FIRST_RESERVED)
+      if(flags >= PFLAG_FIRST_RESERVED)
         throw FlagsException();
       if(io < RESERVED_REGS_COUNT)
         throw ArgumentException();
@@ -45,15 +50,15 @@ namespace Ant {
         throw NotFoundException();
 
       MProc proc;
-      proc.flags = uint16_t(flags);
-      proc.io = uint16_t(io);
+      proc.flags = flags;
+      proc.io = io;
       proc.instrs = 0;
 
       procs.push_back(proc);
       return ProcId(procs.size() - 1);
     }
 
-    int ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
+    size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
       if(id >= procs.size())
         throw NotFoundException();
       

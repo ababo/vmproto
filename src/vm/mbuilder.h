@@ -1,6 +1,7 @@
 #ifndef __VM_MBUILDER_INCLUDED__
 #define __VM_MBUILDER_INCLUDED__
 
+#include <cstddef>
 #include <vector>
 
 #include "uuid.h"
@@ -15,31 +16,31 @@ namespace Ant {
     public:
       ModuleBuilder(Runtime &rt) : rt(rt) {}
 
-      VarTypeId addVarType(int bytes, int count);
+      VarTypeId addVarType(size_t count, size_t bytes);
       void addVarTypeVRef(VarTypeId id, VarTypeId vref);
       void addVarTypePRef(VarTypeId id, VarTypeId pref);
 
       RegId addReg(VarTypeId vtype);
       RegId addReg(VarTypeId vtype, const Variable &constVar);
 
-      ProcId addProc(int flags, RegId io);
-      int addProcInstr(ProcId id, const Instr &instr);
+      ProcId addProc(unsigned int flags, RegId io);
+      size_t addProcInstr(ProcId id, const Instr &instr);
 
       void resetModule();
       const UUID &createModule();
 
     protected:
       struct MVarType {
-        uint32_t count;
-        uint32_t bytes;
+        size_t count;
+        size_t bytes;
         std::vector<VarTypeId> vrefs;
         std::vector<VarTypeId> prefs;
       };
       struct MProc {
-        uint16_t flags;
-        uint16_t io;
-        uint32_t instrs;
-        std::vector<uint8_t> code;
+        unsigned int flags;
+        VarTypeId io;
+        size_t instrs;
+        std::vector<unsigned char> code;
       };
 
       Runtime &rt;

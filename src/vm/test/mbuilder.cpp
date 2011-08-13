@@ -10,7 +10,7 @@ namespace Ant {
       const UUID &createFactorialModule(Runtime &rt) {
         ModuleBuilder builder(rt);
 
-        VarTypeId wordType = builder.addVarType(8, 1);
+        VarTypeId wordType = builder.addVarType(1, 8);
 
         RegId io = builder.addReg(wordType);
         RegId pr = builder.addReg(wordType);

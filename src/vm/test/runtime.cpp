@@ -18,7 +18,7 @@ namespace {
     Runtime &rt = Runtime::instance();
     UUID module;
 
-    StaticVariable<8, 0, 0, 1> io;
+    StaticVariable<1, 8, 0, 0> io;
     uint64_t &val = *reinterpret_cast<uint64_t*>(io.elts[0].bytes);
     ProcId proc = 0;
 

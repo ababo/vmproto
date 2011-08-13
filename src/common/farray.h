@@ -1,6 +1,8 @@
 #ifndef __COMMON_FARRAY_INCLUDED__
 #define __COMMON_FARRAY_INCLUDED__
 
+#include <cstddef>
+
 #include "exception.h"
 
 namespace Ant {
@@ -11,7 +13,7 @@ namespace Ant {
     public: 
       typedef T &reference;
       typedef const T &const_reference;
-      typedef unsigned int size_type;
+      typedef size_t size_type;
 
       FixedArray(T *data, size_type size) : dat(data), sz(size) {}
 
