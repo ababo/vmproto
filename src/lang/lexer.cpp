@@ -1,8 +1,8 @@
-#include <sstream>
 #include <cstdio>
+#include <sstream>
 
-#include "lexer.h"
 #include "../common/exception.h"
+#include "lexer.h"
 
 namespace {
 

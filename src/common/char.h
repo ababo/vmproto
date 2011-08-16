@@ -1,8 +1,8 @@
 #ifndef __COMMON_CHAR_INCLUDED__
 #define __COMMON_CHAR_INCLUDED__
 
-#include <stdint.h>
 #include <istream>
+#include <stdint.h>
 
 namespace Ant {
   namespace Common {

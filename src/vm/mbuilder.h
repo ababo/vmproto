@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <vector>
 
-#include "module.h"
 #include "instr.h"
+#include "module.h"
 
 namespace Ant {
   namespace VM {

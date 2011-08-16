@@ -10,9 +10,11 @@ namespace Ant {
 
     template<class T>
     class FixedArray {
-    public: 
-      typedef T &reference;
+    public:
       typedef const T &const_reference;
+      typedef const T *const_iterator;
+      typedef T &reference;
+      typedef T *iterator;
       typedef size_t size_type;
 
       FixedArray() : dat(NULL), sz(0) {}
@@ -21,6 +23,11 @@ namespace Ant {
       void set(T *data, size_type size) { dat = data, sz = size; }
 
       size_type size() const { return sz; }
+
+      const_iterator begin() const { return dat; }
+      iterator begin() { return dat; }
+      const_iterator end() const { return dat + sz; }
+      iterator end() { return dat + sz; }
 
       reference at(size_type n) {
         if(n >= size)

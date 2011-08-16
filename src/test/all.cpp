@@ -1,10 +1,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "all.h"
 #include "../common/test/all.h"
 #include "../lang/test/all.h"
 #include "../vm/test/all.h"
+#include "all.h"
 
 namespace Ant {
   namespace Test {

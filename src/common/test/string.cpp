@@ -1,6 +1,6 @@
-#include "../string.h"
-#include "../exception.h"
 #include "../../test/all.h"
+#include "../exception.h"
+#include "../string.h"
 
 namespace {
 

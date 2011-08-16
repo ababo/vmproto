@@ -1,8 +1,8 @@
 #include <sstream>
 
+#include "../common/exception.h"
 #include "instr.h"
 #include "utils.h"
-#include "../common/exception.h"
 
 namespace Ant {
   namespace VM {

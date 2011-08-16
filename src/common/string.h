@@ -1,8 +1,8 @@
 #ifndef __COMMON_STRING_INCLUDED__
 #define __COMMON_STRING_INCLUDED__
 
-#include <string>
 #include <ostream>
+#include <string>
 
 #include "char.h"
 

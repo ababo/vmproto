@@ -2,9 +2,9 @@
 #define __VM_UTILS_INCLUDED__
 
 #include <cstddef>
-#include <stdint.h>
-#include <ostream>
 #include <istream>
+#include <ostream>
+#include <stdint.h>
 
 namespace Ant {
   namespace VM {

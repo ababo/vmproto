@@ -7,6 +7,7 @@
 
 namespace Ant {
   namespace Common {
+
     Ant::Common::UUID &Ant::Common::UUID::generate() {
       GENERATE(dat);
       return *this;

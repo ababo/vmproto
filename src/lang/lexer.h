@@ -1,8 +1,8 @@
 #ifndef __LANG_LEXER_INCLUDED__
 #define __LANG_LEXER_INCLUDED__
 
-#include <stdint.h>
 #include <istream>
+#include <stdint.h>
 
 #include "../common/char.h"
 #include "../common/string.h"

@@ -4,13 +4,31 @@
 #include <map>
 #include <vector>
 
-#include "module.h"
-#include "../common/uuid.h"
 #include "../common/farray.h"
 #include "../common/singleton.h"
+#include "../common/uuid.h"
 
 namespace Ant {
   namespace VM {
+
+    typedef unsigned int VarTypeId;
+    typedef unsigned int ProcId;
+    typedef unsigned int RegId;
+
+    typedef unsigned char VMCodeByte;
+    typedef const VMCodeByte *VMCode;
+    typedef const void *NativeCode;
+
+    struct Variable {};
+
+    template <size_t Count, size_t Bytes, size_t VRefs, size_t PRefs>
+    struct StaticVariable : public Variable {
+      struct {
+        unsigned char bytes[Bytes];
+        Variable *vrefs[VRefs];
+        NativeCode prefs[PRefs];
+      } elts[Count];
+    };
 
     class Runtime : public Common::Singleton<Runtime> {
       friend class Common::Singleton<Runtime>;
@@ -44,7 +62,7 @@ namespace Ant {
       void insertModuleData(const Common::UUID &id, const ModuleData &data) {
         modules.insert(ModuleDataMap::value_type(id, data));
       }
-      void removeModuleData(const Common::UUID &id) {
+      void dropModuleData(const Common::UUID &id) {
         modules.erase(id);
       }
 

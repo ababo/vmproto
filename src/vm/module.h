@@ -5,28 +5,10 @@
 #include <vector>
 
 #include "../common/uuid.h"
+#include "runtime.h"
 
 namespace Ant {
   namespace VM {
-
-    typedef unsigned int VarTypeId;
-    typedef unsigned int ProcId;
-    typedef unsigned int RegId;
-
-    typedef unsigned char VMCodeByte;
-    typedef const VMCodeByte *VMCode;
-    typedef const void *NativeCode;
-
-    struct Variable {};
-
-    template <size_t Count, size_t Bytes, size_t VRefs, size_t PRefs>
-    struct StaticVariable : public Variable {
-      struct {
-        unsigned char bytes[Bytes];
-        Variable *vrefs[VRefs];
-        NativeCode prefs[PRefs];
-      } elts[Count];
-    };
 
     struct VarType {
       size_t count;
@@ -52,10 +34,10 @@ namespace Ant {
     class Module {
     public:
       Module() {}
-      Module(const Common::UUID &id) : i(id) {}
+      Module(const Common::UUID &id) : _id(id) {}
 
-      const Common::UUID &id() const { return i; }
-      void id(const Common::UUID &id) { i = id; }
+      const Common::UUID &id() const { return _id; }
+      void id(const Common::UUID &id) { _id = id; }
 
       unsigned int varTypeCount() const;
       unsigned int regCount() const;
@@ -76,7 +58,9 @@ namespace Ant {
       void callProc(ProcId proc, Variable &io);
 
     protected:
-      Common::UUID i;
+      const Runtime::ModuleData &moduleData() const;
+
+      Common::UUID _id;
     };
 
   }

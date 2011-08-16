@@ -1,7 +1,7 @@
 #include <cstdio>
 
-#include "utils.h"
 #include "../common/exception.h"
+#include "utils.h"
 
 namespace {
 
