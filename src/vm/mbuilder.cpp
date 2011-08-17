@@ -122,6 +122,13 @@ namespace Ant {
       }
     }
 
+    void ModuleBuilder::resetModule() {
+      vtypes.clear();
+      regs.clear();
+      procs.clear();
+      instrs.clear();
+    }
+
     void ModuleBuilder::createModule(Module &module) {
       Runtime::ModuleData moduleData;
       fillVarTypes(moduleData);
@@ -132,10 +139,7 @@ namespace Ant {
       Runtime::instance().insertModuleData(id, moduleData);
       module.id(id);
 
-      vtypes.clear();
-      regs.clear();
-      procs.clear();
-      instrs.clear();
+      resetModule();
     }
 
   }

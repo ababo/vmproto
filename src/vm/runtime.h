@@ -47,8 +47,6 @@ namespace Ant {
         Common::FixedArray<VMCodeByte> code;
       };
       struct ModuleData {
-        ModuleData() {}
-        
         ModuleData &operator=(ModuleData& moduleData) {
           vtypes.swap(moduleData.vtypes);
           refs.swap(moduleData.refs);
