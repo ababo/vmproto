@@ -1,6 +1,6 @@
 #include "exception.h"
 #include "string.h"
-#include "utf8/source/utf8.h"
+#include "utf8/unchecked.h"
 
 namespace {
 

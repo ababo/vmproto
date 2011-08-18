@@ -2,7 +2,7 @@
 
 #include "char.h"
 #include "exception.h"
-#include "utf8/source/utf8.h"
+#include "utf8/checked.h"
 
 namespace Ant {
   namespace Common {

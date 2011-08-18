@@ -5,10 +5,13 @@ LD = g++
 MAKE = make
 PROG = program
 
-DEP = -I$(PPATH)/depend
+INC = -I$(PPATH)/depend/utf8/source
 OPT = -g
-CFLAGS = $(DEP) $(OPT) -D$(PLATFORM)
-LFLAGS =
+CFLLVM = `llvm-config --cppflags`
+CFLAGS = $(INC) $(OPT) -D$(PLATFORM) $(CFLLVM)
+
+LFLLVM = `llvm-config --ldflags --libs core jit native`
+LFLAGS = $(LFLLVM)
 
 # Platform specific macros: SHORT_WCHAR
 
