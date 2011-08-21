@@ -1,7 +1,8 @@
 #include "../common/exception.h"
 #include "../common/sarithm.h"
+#include "instr.h"
 #include "mbuilder.h"
-#include "runtime.h"
+#include "module.h"
 #include "utils.h"
 
 namespace {
@@ -60,29 +61,56 @@ namespace Ant {
         throw RangeException();
       if(flags >= PFLAG_FIRST_RESERVED)
         throw FlagsException();
-      if(io < RESERVED_REGS_COUNT)
-        throw ArgumentException();
-      if(io >= regs.size() + RESERVED_REGS_COUNT)
+      if(!regExists(io))
         throw NotFoundException();
 
       Proc proc;
       proc.flags = flags;
       proc.io = io;
-
       procs.push_back(proc);
-      instrs.push_back(0);
+
+      ProcCon con;
+      con.instrCount = 0;
+      con.instrTotal = 0;
+      con.stackBalance = 0;
+      procCons.push_back(con);
+
       return ProcId(procs.size() - 1);
+    }
+
+    void ModuleBuilder::applyStackAlloc(ProcId proc) {
+
+    }
+
+    void ModuleBuilder::applyStackFree(ProcId proc) {
+
+    }
+
+    void ModuleBuilder::applyInstrOffset(ProcId proc, int offset) {
+
     }
 
     size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
       if(id >= procs.size())
         throw NotFoundException();
-      if(instrs[id] >= MB_UINT_MAX(4))
+      if(procCons[id].instrCount >= MB_UINT_MAX(4))
         throw RangeException();
+      instr.assertConsistency(*this, id);
 
       copy(instr.data(), instr.data() + instr.size(),
            back_inserter(procs[id].code));
-      return instrs[id]++;
+
+      if(++procCons[id].instrCount > procCons[id].instrTotal)
+        procCons[id].instrTotal = procCons[id].instrCount;
+      return procCons[id].instrCount;
+    }
+
+    bool ModuleBuilder::moduleConsistent() const {
+      for(ProcId i = 0; i < procs.size(); i++)
+        if(procCons[i].instrCount != procCons[i].instrTotal)
+          return false;
+
+      return true;
     }
 
     void ModuleBuilder::fillVarTypes(Runtime::ModuleData &moduleData) const {
@@ -126,10 +154,13 @@ namespace Ant {
       vtypes.clear();
       regs.clear();
       procs.clear();
-      instrs.clear();
+      procCons.clear();
     }
 
     void ModuleBuilder::createModule(Module &module) {
+      if(!moduleConsistent())
+        throw OperationException();
+
       Runtime::ModuleData moduleData;
       fillVarTypes(moduleData);
       moduleData.regs = regs;

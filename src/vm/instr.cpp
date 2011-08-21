@@ -2,6 +2,7 @@
 
 #include "../common/exception.h"
 #include "instr.h"
+#include "mbuilder.h"
 #include "utils.h"
 
 namespace Ant {
@@ -19,18 +20,21 @@ namespace Ant {
       copy(code, code + size, &op);
     }
 
+#define VIRTUAL_CALL(assign, call, def) \
+    switch(op) { \
+    case OPCODE_AST: assign static_cast<const ASTInstr&>(*this).call; \
+    case OPCODE_FST: assign static_cast<const FSTInstr&>(*this).call; \
+    case OPCODE_MOVM8: assign static_cast<const MOVM8Instr&>(*this).call; \
+    case OPCODE_MOVN8: assign static_cast<const MOVN8Instr&>(*this).call; \
+    case OPCODE_UMUL: assign static_cast<const UMULInstr&>(*this).call; \
+    case OPCODE_DEC: assign static_cast<const DECInstr&>(*this).call; \
+    case OPCODE_JNZ: assign static_cast<const JNZInstr&>(*this).call; \
+    case OPCODE_RET: assign static_cast<const RETInstr&>(*this).call; \
+    default: assign def; \
+    }
+
     size_t Instr::size() const {
-      switch(op) {
-      case OPCODE_AST: return static_cast<const ASTInstr&>(*this).size();
-      case OPCODE_FST: return static_cast<const FSTInstr&>(*this).size();
-      case OPCODE_MOVM8: return static_cast<const MOVM8Instr&>(*this).size();
-      case OPCODE_MOVN8: return static_cast<const MOVN8Instr&>(*this).size();
-      case OPCODE_UMUL: return static_cast<const UMULInstr&>(*this).size();
-      case OPCODE_DEC: return static_cast<const DECInstr&>(*this).size();
-      case OPCODE_JNZ: return static_cast<const JNZInstr&>(*this).size();
-      case OPCODE_RET: return static_cast<const RETInstr&>(*this).size();
-      default: return 0;
-      };
+      VIRTUAL_CALL(return, size(), 0);
     }
 
     void Instr::setParam(uint64_t p) {
@@ -99,58 +103,52 @@ namespace Ant {
       return val;
     }
 
-    inline RegId Instr::assertRegId(RegId reg) {
-      if(reg < RESERVED_REGS_COUNT) // temporarily
-        throw ArgumentException();
-      if(reg > MB_UINT_MAX(2))
-        throw RangeException();
-      return reg;
+    void Instr::assertRegExists(const ModuleBuilder &mbuilder,
+                                RegId reg) const {
+      if(!mbuilder.regExists(reg))
+        throw NotFoundException();
     }
 
-    inline int Instr::assertInstrOffset(int offset) {
-      if(offset < MB_INT_MIN(1) || offset > MB_INT_MAX(1))
-        throw RangeException();
-      return offset;
+    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                  size_t minBytes, RegId reg) const {
+      assertRegExists(mbuilder, reg);
+
+      if(!mbuilder.regHasBytes(reg, minBytes))
+        throw OperationException();
     }
 
-    ASTInstr::ASTInstr(RegId reg) {
-      op = OPCODE_AST;
-      setParam(assertRegId(reg));
+    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                  size_t minBytes, RegId reg1,
+                                  RegId reg2) const {
+      assertRegHasBytes(mbuilder, reg1, minBytes);
+      assertRegHasBytes(mbuilder, reg2, minBytes);
     }
 
-    FSTInstr::FSTInstr() {
-      op = OPCODE_FST;
+    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                  size_t minBytes, RegId reg1, RegId reg2,
+                                  RegId reg3) const {
+      assertRegHasBytes(mbuilder, reg1, minBytes);
+      assertRegHasBytes(mbuilder, reg2, minBytes);
+      assertRegHasBytes(mbuilder, reg3, minBytes);
     }
 
-    MOVM8Instr::MOVM8Instr(uint64_t val, RegId to) {
-      op = OPCODE_MOVM8;
-      set2Params(val, assertRegId(to));
+    void Instr::applyASTInstr(ModuleBuilder &mbuilder, ProcId proc,
+                              RegId reg) const {
+      assertRegExists(mbuilder, reg);
+      mbuilder.applyFSTInstr(proc);
     }
 
-    MOVN8Instr::MOVN8Instr(RegId from, RegId to) {
-      op = OPCODE_MOVN8;
-      set2Params(assertRegId(from), assertRegId(to));
+    void Instr::applyFSTInstr(ModuleBuilder &mbuilder, ProcId proc) const {
+      mbuilder.applyFSTInstr(proc);
     }
 
-    UMULInstr::UMULInstr(RegId factor1, RegId factor2, RegId product) {
-      op = OPCODE_UMUL;
-      set3Params(assertRegId(factor1),
-                 assertRegId(factor2),
-                 assertRegId(product));
+    void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
+                                 int offset) const {
+      mbuilder.applyInstrOffset(proc, offset);
     }
 
-    DECInstr::DECInstr(RegId it) {
-      op = OPCODE_DEC;
-      setParam(assertRegId(it));
-    }
-
-    JNZInstr::JNZInstr(int offset) {
-      op = OPCODE_JNZ;
-      setParam2(assertInstrOffset(offset));
-    }
-
-    RETInstr::RETInstr() {
-      op = OPCODE_RET;
+    void Instr::assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+      VIRTUAL_CALL(, assertConsistency(mbuilder, proc), );
     }
 
   }

@@ -1,5 +1,6 @@
 #include "../../common/string.h"
 #include "../../test/all.h"
+#include "../instr.h"
 #include "../mbuilder.h"
 #include "../module.h"
 
@@ -41,7 +42,7 @@ namespace {
 
   const String subj = "Ant::VM::ModuleBuilder";
 
-  bool testConsistency() {
+  bool testRegConsistency() {
     bool passed = true;
     ModuleBuilder b;
     Module m;
@@ -50,7 +51,6 @@ namespace {
     RegId r = b.addReg(t), n = r + 1;
     ProcId p = b.addProc(0, r);
 
-    ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
     ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
     ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, r));}, OperationException);
     ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
@@ -58,17 +58,16 @@ namespace {
     ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
     ASSERT_THROW({b.addProcInstr(p, UMULInstr(r, r, r));}, OperationException);
     ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
+    ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
     ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, JNZInstr(-1));}, RangeException);
 
-    ASSERT_NOTHROW(b.addProcInstr(p, JNZInstr(1)));
-    ASSERT_THROW(b.createModule(m), OperationException);
-    ASSERT_NOTHROW(b.addProcInstr(p, RETInstr()));
-    ASSERT_NOTHROW(b.createModule(m));
-    IGNORE_THROW(m.drop());
+    return printTestResult(subj, "regConsistency", passed);
+  }
 
-    return printTestResult(subj, "consistency", passed);
+  bool testStackConsistency() {
+    bool passed = false;
+
+    return printTestResult(subj, "stackConsistency", passed);
   }
 
   bool testFactorialVTypes(const Module &module) {
@@ -186,7 +185,8 @@ namespace Ant {
       bool testModuleBuilder() {
         bool passed;
 
-        passed = testConsistency();
+        passed = testRegConsistency();
+        passed = passed && testStackConsistency();
         passed = passed && testFactorial();
 
         return passed;

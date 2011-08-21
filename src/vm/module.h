@@ -10,27 +10,6 @@
 namespace Ant {
   namespace VM {
 
-    struct VarType {
-      size_t count;
-      size_t bytes;
-      std::vector<VarTypeId> vrefs;
-      std::vector<VarTypeId> prefs;
-    };
-
-    struct Proc {
-      unsigned int flags;
-      VarTypeId io;
-      std::vector<VMCodeByte> code;
-    };
-
-    enum ProcFlag {
-      PFLAG_EXTERNAL = 0x1,
-      PFLAG_FUNCTION = 0x2,
-      PFLAG_FIRST_RESERVED = 0x4
-    };
-
-    const unsigned int RESERVED_REGS_COUNT = 8;
-
     class Module {
     public:
       Module() {}
