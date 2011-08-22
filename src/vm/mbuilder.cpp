@@ -26,6 +26,24 @@ namespace Ant {
     using namespace std;
     using namespace Ant::Common;
 
+    VarTypeId ModuleBuilder::assertVarTypeExists(VarTypeId id) const {
+      if(id >= vtypes.size())
+        throw NotFoundException();
+      return id;
+    }
+
+    RegId ModuleBuilder::assertRegExists(RegId id) const {
+      if((id -= RESERVED_REGS_COUNT) < 0 || id >= regs.size())
+        throw NotFoundException();
+      return id;
+    }
+
+    ProcId ModuleBuilder::assertProcExists(ProcId id) const {
+      if(id >= procs.size())
+        throw NotFoundException();
+      return id;
+    }
+
     VarTypeId ModuleBuilder::addVarType(size_t count, size_t bytes) {
       if(vtypes.size() >= MB_UINT_MAX(2))
         throw RangeException();
@@ -47,12 +65,7 @@ namespace Ant {
     }
 
     RegId ModuleBuilder::addReg(VarTypeId vtype) {
-      if(regs.size() >= MB_UINT_MAX(2))
-        throw RangeException();
-      if(vtype >= vtypes.size())
-        throw NotFoundException();
-
-      regs.push_back(vtype);
+      regs.push_back(assertVarTypeExists(vtype));
       return RegId(regs.size() + RESERVED_REGS_COUNT - 1);
     }
 
@@ -61,18 +74,14 @@ namespace Ant {
         throw RangeException();
       if(flags >= PFLAG_FIRST_RESERVED)
         throw FlagsException();
-      if(!regExists(io))
-        throw NotFoundException();
 
       Proc proc;
       proc.flags = flags;
-      proc.io = io;
+      proc.io = assertRegExists(io);
       procs.push_back(proc);
 
       ProcCon con;
       con.instrCount = 0;
-      con.instrTotal = 0;
-      con.stackBalance = 0;
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
@@ -91,24 +100,17 @@ namespace Ant {
     }
 
     size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
-      if(id >= procs.size())
-        throw NotFoundException();
-      if(procCons[id].instrCount >= MB_UINT_MAX(4))
+      if(procCons[assertProcExists(id)].instrCount >= MB_UINT_MAX(4))
         throw RangeException();
       instr.assertConsistency(*this, id);
 
       copy(instr.data(), instr.data() + instr.size(),
            back_inserter(procs[id].code));
 
-      if(++procCons[id].instrCount > procCons[id].instrTotal)
-        procCons[id].instrTotal = procCons[id].instrCount;
-      return procCons[id].instrCount;
+      return procCons[id].instrCount++;
     }
 
     bool ModuleBuilder::moduleConsistent() const {
-      for(ProcId i = 0; i < procs.size(); i++)
-        if(procCons[i].instrCount != procCons[i].instrTotal)
-          return false;
 
       return true;
     }

@@ -103,43 +103,30 @@ namespace Ant {
       return val;
     }
 
-    void Instr::assertRegExists(const ModuleBuilder &mbuilder,
-                                RegId reg) const {
-      if(!mbuilder.regExists(reg))
-        throw NotFoundException();
+    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder,
+                                 RegId reg) const {
+      return mbuilder.assertRegExists(reg);
     }
 
-    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                  size_t minBytes, RegId reg) const {
-      assertRegExists(mbuilder, reg);
+    RegId Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                   size_t minBytes, RegId reg) const {
+      VarType vtype;
+      mbuilder.varTypeById(mbuilder.regTypeById(reg), vtype);
 
-      if(!mbuilder.regHasBytes(reg, minBytes))
+      if(vtype.bytes < minBytes)
         throw OperationException();
+    
+      return reg;
     }
 
-    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                  size_t minBytes, RegId reg1,
-                                  RegId reg2) const {
-      assertRegHasBytes(mbuilder, reg1, minBytes);
-      assertRegHasBytes(mbuilder, reg2, minBytes);
+    void Instr::applyStackAlloc(ModuleBuilder &mbuilder,
+                                ProcId proc) const {
+      mbuilder.applyStackAlloc(proc);
     }
 
-    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                  size_t minBytes, RegId reg1, RegId reg2,
-                                  RegId reg3) const {
-      assertRegHasBytes(mbuilder, reg1, minBytes);
-      assertRegHasBytes(mbuilder, reg2, minBytes);
-      assertRegHasBytes(mbuilder, reg3, minBytes);
-    }
-
-    void Instr::applyASTInstr(ModuleBuilder &mbuilder, ProcId proc,
-                              RegId reg) const {
-      assertRegExists(mbuilder, reg);
-      mbuilder.applyFSTInstr(proc);
-    }
-
-    void Instr::applyFSTInstr(ModuleBuilder &mbuilder, ProcId proc) const {
-      mbuilder.applyFSTInstr(proc);
+    void Instr::applyStackFree(ModuleBuilder &mbuilder,
+                               ProcId proc) const {
+      mbuilder.applyStackFree(proc);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,

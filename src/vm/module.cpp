@@ -51,9 +51,7 @@ namespace Ant {
     VarTypeId Module::regTypeById(RegId id) const {
       const Runtime::ModuleData &data = moduleData();
 
-      if(id < RESERVED_REGS_COUNT)
-        throw ArgumentException();
-      if(id >= data.regs.size() + RESERVED_REGS_COUNT)
+      if((id -= RESERVED_REGS_COUNT) < 0 || id >= data.regs.size())
         throw NotFoundException();
 
       return data.regs[id - RESERVED_REGS_COUNT];

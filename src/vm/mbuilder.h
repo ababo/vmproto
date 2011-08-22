@@ -19,9 +19,15 @@ namespace Ant {
       unsigned int regCount() const { return regs.size(); }
       unsigned int procCount() const { return procs.size(); }
 
-      void varTypeById(VarTypeId id, VarType &vtype) const;
-      VarTypeId regTypeById(RegId id) const;
-      void procById(ProcId id, Proc &proc) const;
+      void varTypeById(VarTypeId id, VarType &vtype) const {
+        vtype = vtypes[assertVarTypeExists(id)];
+      }
+      VarTypeId regTypeById(RegId id) const {
+        return regs[assertRegExists(id)];
+      }
+      void procById(ProcId id, Proc &proc) const {
+        proc = procs[assertProcExists(id)];
+      }
 
       VarTypeId addVarType(size_t count, size_t bytes);
       void addVarTypeVRef(VarTypeId id, VarTypeId vref);
@@ -39,9 +45,12 @@ namespace Ant {
     protected:
       struct ProcCon {
         size_t instrCount;
-        size_t instrTotal;
-        unsigned int stackBalance;
+        // ...
       };
+
+      VarTypeId assertVarTypeExists(VarTypeId id) const;
+      RegId assertRegExists(RegId id) const;
+      ProcId assertProcExists(ProcId id) const;
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
