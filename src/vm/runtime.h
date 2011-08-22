@@ -49,8 +49,6 @@ namespace Ant {
       PFLAG_FIRST_RESERVED = 0x4
     };
 
-    const unsigned int RESERVED_REGS_COUNT = 8;
-
     class Runtime : public Common::Singleton<Runtime> {
       friend class Common::Singleton<Runtime>;
       friend class ModuleBuilder;

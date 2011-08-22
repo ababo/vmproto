@@ -15,13 +15,14 @@ namespace {
   const String subj = "Ant::VM::Module";
 
   bool testFactorial() {
-    StaticVariable<1, 8, 0, 0> io;
-    uint64_t &val = *reinterpret_cast<uint64_t*>(io.elts[0].bytes);
     bool passed = true;
-    ProcId proc = 0;
     Module module;
 
     try {
+      StaticVariable<1, 8, 0, 0> io;
+      uint64_t &val = *reinterpret_cast<uint64_t*>(io.elts[0].bytes);
+      ProcId proc = 0;
+
       createFactorialModule(module);
       module.unpack();
 
@@ -49,10 +50,10 @@ namespace {
       module.callFunc(proc, io);
       if(val != 2432902008176640000LLU)
         throw Exception();
-
-      module.drop();
     }
     catch(...) { passed = false; }
+
+    IGNORE_THROW(module.drop());
 
     return printTestResult(subj, "factorial", passed);
   }

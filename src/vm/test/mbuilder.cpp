@@ -21,7 +21,7 @@ namespace Ant {
         builder.addProcInstr(proc, MOVM8Instr(1, pr));
         builder.addProcInstr(proc, UMULInstr(io, pr, pr));
         builder.addProcInstr(proc, DECInstr(io));
-        builder.addProcInstr(proc, JNZInstr(-2));
+        builder.addProcInstr(proc, JNZInstr(io, -2));
         builder.addProcInstr(proc, MOVN8Instr(pr, io));
         builder.addProcInstr(proc, FSTInstr());
         builder.addProcInstr(proc, RETInstr());
@@ -44,28 +44,66 @@ namespace {
 
   bool testRegConsistency() {
     bool passed = true;
-    ModuleBuilder b;
-    Module m;
 
-    VarTypeId t = b.addVarType(1, 7);
-    RegId r = b.addReg(t), n = r + 1;
-    ProcId p = b.addProc(0, r);
+    try {
+      ModuleBuilder b;
+      Module m;
 
-    ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, r));}, OperationException);
-    ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(r, r));}, OperationException);
-    ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, UMULInstr(r, r, r));}, OperationException);
-    ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));}, NotFoundException);
-    ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
-    ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
+      VarTypeId t = b.addVarType(1, 7);
+      RegId r = b.addReg(t), n = r + 1;
+      ProcId p = b.addProc(0, r);
+
+      ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(r, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, UMULInstr(r, r, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
+    }
+    catch(...) { passed = false; }
 
     return printTestResult(subj, "regConsistency", passed);
   }
 
   bool testStackConsistency() {
-    bool passed = false;
+    bool passed = true;
+    Module m;
+
+    try {
+      ModuleBuilder b;
+      VarTypeId t = b.addVarType(1, 1);
+      RegId r = b.addReg(t);
+      ProcId p = b.addProc(0, r);
+
+      ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
+      b.addProcInstr(p, JNZInstr(r, 2));
+      ASSERT_THROW({b.addProcInstr(p, ASTInstr(r));}, OperationException);
+      b.addProcInstr(p, DECInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, ASTInstr(r));}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
+      ASSERT_THROW(b.createModule(m), OperationException);
+      b.addProcInstr(p, DECInstr(r));
+      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, JNZInstr(r, 3));
+      b.addProcInstr(p, ASTInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
+      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, JNZInstr(r, 4));
+      b.addProcInstr(p, ASTInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, 2));}, RangeException);
+      b.addProcInstr(p, JNZInstr(r, 1));
+      ASSERT_THROW(b.createModule(m), OperationException);
+      b.addProcInstr(p, FSTInstr());
+      ASSERT_THROW(b.createModule(m), OperationException);
+      b.addProcInstr(p, FSTInstr());
+      b.createModule(m);
+    }
+    catch(...) { passed = false; }
+
+    IGNORE_THROW(m.drop());
 
     return printTestResult(subj, "stackConsistency", passed);
   }
@@ -91,13 +129,12 @@ namespace {
     bool passed;
 
     passed = module.regCount() == 2;
-    passed = passed && module.regTypeById(RESERVED_REGS_COUNT) == 0;
-    passed = passed && module.regTypeById(RESERVED_REGS_COUNT + 1) == 0;
+    passed = passed && module.regTypeById(0) == 0;
+    passed = passed && module.regTypeById(1) == 0;
 
-    ASSERT_THROW({module.regTypeById(RESERVED_REGS_COUNT + 2);},
-                 NotFoundException);
+    ASSERT_THROW({module.regTypeById(2);}, NotFoundException);
 
-     return passed;
+    return passed;
   }
 
 #define NEXT_OPCODE(prefix) \
@@ -113,25 +150,27 @@ namespace {
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
+    RegId io = 0, pr = 1;
     Instr instr;
     int i = 0;
 
     NEXT_INSTR(AST);
-    passed = passed && iAST.reg() == RESERVED_REGS_COUNT + 1;
+    passed = passed && iAST.reg() == pr;
     NEXT_INSTR(MOVM8);
-    passed = passed && iMOVM8.val() == 1; 
-    passed = passed && iMOVM8.to() == RESERVED_REGS_COUNT + 1;
+    passed = passed && iMOVM8.val() == pr; 
+    passed = passed && iMOVM8.to() == pr;
     NEXT_INSTR(UMUL);
-    passed = passed && iUMUL.factor1() == RESERVED_REGS_COUNT;
-    passed = passed && iUMUL.factor2() == RESERVED_REGS_COUNT + 1;
-    passed = passed && iUMUL.product() == RESERVED_REGS_COUNT + 1;
+    passed = passed && iUMUL.factor1() == io;
+    passed = passed && iUMUL.factor2() == pr;
+    passed = passed && iUMUL.product() == pr;
     NEXT_INSTR(DEC);
-    passed = passed && iDEC.it() == RESERVED_REGS_COUNT;
+    passed = passed && iDEC.it() == io;
     NEXT_INSTR(JNZ);
+    passed = passed && iJNZ.it() == io;
     passed = passed && iJNZ.offset() == -2;
     NEXT_INSTR(MOVN8);
-    passed = passed && iMOVN8.from() == RESERVED_REGS_COUNT + 1;
-    passed = passed && iMOVN8.to() == RESERVED_REGS_COUNT;
+    passed = passed && iMOVN8.from() == pr;
+    passed = passed && iMOVN8.to() == io;
     NEXT_OPCODE(FST);
     NEXT_OPCODE(RET);
 
@@ -149,7 +188,7 @@ namespace {
     if(passed) {
       module.procById(0, proc);
       passed = proc.flags == PFLAG_EXTERNAL | PFLAG_FUNCTION;
-      passed = passed && proc.io == RESERVED_REGS_COUNT;
+      passed = passed && proc.io == 0;
       passed = passed && testFactorialInstrs(proc);
     }
 
@@ -160,9 +199,9 @@ namespace {
 
   bool testFactorial() {
     bool passed = true;
-    Module module;
 
     try {
+      Module module;
       createFactorialModule(module);
 
       passed = testFactorialVTypes(module);

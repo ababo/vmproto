@@ -33,7 +33,7 @@ namespace Ant {
     }
 
     RegId ModuleBuilder::assertRegExists(RegId id) const {
-      if((id -= RESERVED_REGS_COUNT) < 0 || id >= regs.size())
+      if(id >= regs.size())
         throw NotFoundException();
       return id;
     }
@@ -66,7 +66,7 @@ namespace Ant {
 
     RegId ModuleBuilder::addReg(VarTypeId vtype) {
       regs.push_back(assertVarTypeExists(vtype));
-      return RegId(regs.size() + RESERVED_REGS_COUNT - 1);
+      return RegId(regs.size() - 1);
     }
 
     ProcId ModuleBuilder::addProc(unsigned int flags, RegId io) {

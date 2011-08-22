@@ -40,8 +40,8 @@ namespace Ant {
 
     protected:
       void setParam(uint64_t p);
-      void setParam2(int64_t p);
       void set2Params(uint64_t p1, uint64_t p2);
+      void set2Params2(uint64_t p1, int64_t p2);
       void set3Params(uint64_t p1, uint64_t p2, uint64_t p3);
 
       size_t size(int paramCount) const;
@@ -162,10 +162,12 @@ namespace Ant {
     class JNZInstr : public Instr {
       friend class Instr;
     public:
-      JNZInstr(int offset) { op = OPCODE_JNZ; setParam2(offset); }
+      JNZInstr(RegId it, int offset) {
+        op = OPCODE_JNZ; set2Params2(it, offset); }
 
-      size_t size() const { return Instr::size(1); }
-      int offset() const { return int(getParam2(0)); }
+      size_t size() const { return Instr::size(2); }
+      RegId it() const { return RegId(getParam(0)); }
+      int offset() const { return int(getParam2(1)); }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {

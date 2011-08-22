@@ -51,10 +51,10 @@ namespace Ant {
     VarTypeId Module::regTypeById(RegId id) const {
       const Runtime::ModuleData &data = moduleData();
 
-      if((id -= RESERVED_REGS_COUNT) < 0 || id >= data.regs.size())
+      if(id >= data.regs.size())
         throw NotFoundException();
 
-      return data.regs[id - RESERVED_REGS_COUNT];
+      return data.regs[id];
     }
 
     void Module::procById(ProcId id, Proc &proc) const {

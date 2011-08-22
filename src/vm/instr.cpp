@@ -44,17 +44,18 @@ namespace Ant {
       copy(str.begin(), str.end(), dat);
     }
 
-    void Instr::setParam2(int64_t p) {
-      ostringstream out;
-      writeMBInt(p, out);
-      string str = out.str();
-      copy(str.begin(), str.end(), dat);
-    }
-
     void Instr::set2Params(uint64_t p1, uint64_t p2) {
       ostringstream out;
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
+    }
+
+    void Instr::set2Params2(uint64_t p1, int64_t p2) {
+      ostringstream out;
+      writeMBUInt(p1, out);
+      writeMBInt(p2, out);
       string str = out.str();
       copy(str.begin(), str.end(), dat);
     }
@@ -114,7 +115,7 @@ namespace Ant {
       mbuilder.varTypeById(mbuilder.regTypeById(reg), vtype);
 
       if(vtype.bytes < minBytes)
-        throw OperationException();
+        throw TypeException();
     
       return reg;
     }
