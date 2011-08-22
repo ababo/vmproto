@@ -20,21 +20,24 @@ namespace Ant {
       copy(code, code + size, &op);
     }
 
-#define VIRTUAL_CALL(assign, call, def) \
+#define VIRTUAL_CASE(op, left, mod, call) \
+    case OPCODE_##op: left static_cast<mod op##Instr&>(*this).call; break;
+
+#define VIRTUAL_CALL(left, mod, call, def) \
     switch(op) { \
-    case OPCODE_AST: assign static_cast<const ASTInstr&>(*this).call; \
-    case OPCODE_FST: assign static_cast<const FSTInstr&>(*this).call; \
-    case OPCODE_MOVM8: assign static_cast<const MOVM8Instr&>(*this).call; \
-    case OPCODE_MOVN8: assign static_cast<const MOVN8Instr&>(*this).call; \
-    case OPCODE_UMUL: assign static_cast<const UMULInstr&>(*this).call; \
-    case OPCODE_DEC: assign static_cast<const DECInstr&>(*this).call; \
-    case OPCODE_JNZ: assign static_cast<const JNZInstr&>(*this).call; \
-    case OPCODE_RET: assign static_cast<const RETInstr&>(*this).call; \
-    default: assign def; \
+      VIRTUAL_CASE(AST, left, mod, call); \
+      VIRTUAL_CASE(FST, left, mod, call); \
+      VIRTUAL_CASE(MOVM8, left, mod, call); \
+      VIRTUAL_CASE(MOVN8, left, mod, call); \
+      VIRTUAL_CASE(UMUL, left, mod, call); \
+      VIRTUAL_CASE(DEC, left, mod, call); \
+      VIRTUAL_CASE(JNZ, left, mod, call); \
+      VIRTUAL_CASE(RET, left, mod, call); \
+      default: left def; \
     }
 
     size_t Instr::size() const {
-      VIRTUAL_CALL(return, size(), 0);
+      VIRTUAL_CALL(return, const, size(), 0);
     }
 
     void Instr::setParam(uint64_t p) {
@@ -104,13 +107,12 @@ namespace Ant {
       return val;
     }
 
-    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder,
-                                 RegId reg) const {
+    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg){
       return mbuilder.assertRegExists(reg);
     }
 
     RegId Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                   size_t minBytes, RegId reg) const {
+                                   size_t minBytes, RegId reg) {
       VarType vtype;
       mbuilder.varTypeById(mbuilder.regTypeById(reg), vtype);
 
@@ -120,23 +122,25 @@ namespace Ant {
       return reg;
     }
 
-    void Instr::applyStackAlloc(ModuleBuilder &mbuilder,
-                                ProcId proc) const {
+    void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc) {
       mbuilder.applyStackAlloc(proc);
     }
 
-    void Instr::applyStackFree(ModuleBuilder &mbuilder,
-                               ProcId proc) const {
+    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {
       mbuilder.applyStackFree(proc);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
-                                 int offset) const {
+                                 int offset) {
       mbuilder.applyInstrOffset(proc, offset);
     }
 
+    void Instr::applyDefault(ModuleBuilder &mbuilder, ProcId proc) {
+      mbuilder.applyDefault(proc);
+    }
+
     void Instr::assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-      VIRTUAL_CALL(, assertConsistency(mbuilder, proc), );
+      VIRTUAL_CALL(, const, assertConsistency(mbuilder, proc), );
     }
 
   }

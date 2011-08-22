@@ -44,8 +44,9 @@ namespace Ant {
 
     protected:
       struct ProcCon {
+        typedef std::vector<size_t> Frame;
+        std::vector<Frame> frames;
         size_t instrCount;
-        // ...
       };
 
       VarTypeId assertVarTypeExists(VarTypeId id) const;
@@ -58,8 +59,10 @@ namespace Ant {
       void applyStackAlloc(ProcId proc);
       void applyStackFree(ProcId proc);
       void applyInstrOffset(ProcId proc, int offset);
+      void applyInstrIndex(ProcId proc, size_t index);
+      void applyDefault(ProcId proc);
 
-      bool moduleConsistent() const;
+      void assertConsistency() const;
 
       std::vector<VarType> vtypes;
       std::vector<VarTypeId> regs;

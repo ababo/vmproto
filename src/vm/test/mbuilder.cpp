@@ -47,19 +47,18 @@ namespace {
 
     try {
       ModuleBuilder b;
-      Module m;
-
       VarTypeId t = b.addVarType(1, 7);
       RegId r = b.addReg(t), n = r + 1;
       ProcId p = b.addProc(0, r);
 
+      ASSERT_THROW({b.addProc(0, n);}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(r, r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, UMULInstr(r, r, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));},NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
     }

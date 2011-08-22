@@ -48,13 +48,14 @@ namespace Ant {
       uint64_t getParam(int index) const;
       int64_t getParam2(int index) const;
 
-      RegId assertRegExists(const ModuleBuilder &mbuilder, RegId reg) const;
-      RegId assertRegHasBytes(const ModuleBuilder &mbuilder, size_t minBytes,
-                              RegId reg) const;
-      void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc) const;
-      void applyStackFree(ModuleBuilder &mbuilder, ProcId proc) const;
-      void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
-                            int offset) const;
+      static RegId assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
+      static RegId assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                     size_t minBytes, RegId reg);
+      static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc);
+      static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc);
+      static void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
+                                   int offset);
+      static void applyDefault(ModuleBuilder &mbuilder, ProcId proc);
 
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const;
 
@@ -102,8 +103,9 @@ namespace Ant {
       RegId to() const { return RegId(getParam(1)); }
 
     protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId) const {
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, 8, to());
+        Instr::applyDefault(mbuilder, proc);
       }
     };
 
@@ -119,9 +121,10 @@ namespace Ant {
       RegId to() const { return RegId(getParam(1)); }
 
     protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId) const {
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, 8, from());
         Instr::assertRegHasBytes(mbuilder, 8, to());
+        Instr::applyDefault(mbuilder, proc);
       }
     };
 
@@ -138,10 +141,11 @@ namespace Ant {
       RegId product() const { return RegId(getParam(2)); }
 
     protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId) const {
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, 8, factor1());
         Instr::assertRegHasBytes(mbuilder, 8, factor2());
         Instr::assertRegHasBytes(mbuilder, 8, product());
+        Instr::applyDefault(mbuilder, proc);
       }
     };
 
@@ -154,8 +158,9 @@ namespace Ant {
       RegId it() const { return RegId(getParam(0)); }
 
     protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId) const {
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, 8, it());
+        Instr::applyDefault(mbuilder, proc);
       }
     };
 
@@ -183,7 +188,9 @@ namespace Ant {
       size_t size() const { return 1; }
 
     protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {}
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::applyDefault(mbuilder, proc);
+      }
     };
 
   }
