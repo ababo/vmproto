@@ -1,5 +1,6 @@
 #include "../exception.h"
 #include "instr.h"
+#include "llvm/Intrinsics.h"
 #include "llvm/Module.h"
 #include "runtime.h"
 
@@ -8,6 +9,26 @@ namespace Ant {
 
     using namespace std;
     using namespace llvm;
+
+    Value *Runtime::ModuleData::LLVMContext::regValue(RegId reg) const {
+      RegMapConstIterator iter = regStates.find(reg);
+      return iter != regStates.end() ? iter->second.top() : NULL;;
+    }
+
+    void Runtime::ModuleData::LLVMContext::pushRegValue(RegId reg,
+                                                        Value *val) {
+      RegMapIterator iter = regStates.find(reg);
+      if(iter == regStates.end())
+        iter = regStates.insert(RegMapPair(reg, RegState())).first;
+      iter->second.push(val);
+    }
+
+    void Runtime::ModuleData::LLVMContext::popRegValue(RegId reg) {
+      RegMapIterator iter = regStates.find(reg);
+      iter->second.pop();
+      if(!iter->second.size())
+        regStates.erase(iter);
+    }
 
     void Runtime::ModuleData::assertNotDropped() const {
       if(dropped)
@@ -107,16 +128,25 @@ namespace Ant {
       for(size_t i = 0; i < context.blockIndexes.size(); i++)
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
+
+      context.pushRegValue(procs[context.proc].io, context.func->arg_begin());
     }
 
     void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
                                               const ASTInstr &instr) {
+      Function *ss = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::stacksave);
+      BasicBlock *block = context.blocks[context.blockIndex];
+      context.stackPtrs.push(CallInst::Create(ss, "", block));
 
+      RegId reg = instr.reg();
+      context.pushRegValue(reg, new AllocaInst(llvmTypes[reg], "", block));
     }
 
     void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
                                               const FSTInstr &instr) {
-
+      Function *sr = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::stackrestore);
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
@@ -155,9 +185,9 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
       Instr instr;
-      for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
-          i++, j += instr.size()) {
-        instr.set(&procs[context.proc].code[j]);
+      for(size_t i = 0; i < procs[context.proc].code.size();
+          i += instr.size()) {
+        instr.set(&procs[context.proc].code[i]);
 
         switch(instr.opcode()) {
           INSTR_CASE(AST);
@@ -169,6 +199,11 @@ namespace Ant {
           INSTR_CASE(JNZ);
           INSTR_CASE(RET);
         }
+
+        context.instrIndex++;
+        if(context.blockIndex + 1 < context.blocks.size() &&
+           context.blockIndexes[context.blockIndex + 1] == context.instrIndex)
+          context.blockIndex++;
       }
     }
 
@@ -189,7 +224,7 @@ namespace Ant {
         func->setCallingConv(external ? CallingConv::C : CallingConv::Fast);
         llvmFuncs.push_back(func);
 
-        LLVMContext context = { proc, func };
+        LLVMContext context = { proc, func, 0, 0 };
         prepareLLVMContext(context);
         emitLLVMCode(context);
       }

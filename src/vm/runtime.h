@@ -43,7 +43,7 @@ namespace Ant {
 
     struct Proc {
       unsigned int flags;
-      VarTypeId io;
+      RegId io;
       std::vector<VMCodeByte> code;
     };
 
@@ -75,17 +75,29 @@ namespace Ant {
       };
       struct ProcData {
         unsigned int flags;
-        VarTypeId io;
+        RegId io;
         FixedArray<VMCodeByte> code;
       };
       struct ModuleData : Retained<ModuleData> {
         struct LLVMContext {
+          typedef struct { RegId reg; llvm::Value *val; } _;
+          typedef std::stack<llvm::Value*> RegState;
+          typedef std::map<RegId, RegState> RegMap;
+          typedef RegMap::value_type RegMapPair;
+          typedef RegMap::iterator RegMapIterator;
+          typedef RegMap::const_iterator RegMapConstIterator;
+
+          llvm::Value *regValue(RegId reg) const;
+          void pushRegValue(RegId reg, llvm::Value *val);
+          void popRegValue(RegId reg);
+
           ProcId proc;
           llvm::Function *func;
+          size_t instrIndex, blockIndex;
           std::vector<size_t> blockIndexes;
           std::vector<llvm::BasicBlock*> blocks;
-          std::stack<llvm::CallInst*> stackPtrs;
-          std::map<RegId, std::stack<llvm::Value*> > regs;
+          std::stack<llvm::Value*> stackPtrs;
+          RegMap regStates;
         };
 
         ModuleData() : dropped(false), llvmModule(NULL) {}

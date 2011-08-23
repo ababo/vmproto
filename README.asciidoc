@@ -1,1 +1,1 @@
-The README is not ready yet.
+Attempt to develop a simple and elegant distributed OS.
