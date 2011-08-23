@@ -73,7 +73,7 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId t = b.addVarType(1, 1);
+      VarTypeId t = b.addVarType(1, 8);
       RegId r = b.addReg(t);
       ProcId p = b.addProc(0, r);
 
@@ -81,10 +81,8 @@ namespace {
       b.addProcInstr(p, JNZInstr(r, 2));
       ASSERT_THROW({b.addProcInstr(p, ASTInstr(r));}, OperationException);
       b.addProcInstr(p, DECInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, ASTInstr(r));}, OperationException);
       ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, DECInstr(r));
       b.addProcInstr(p, ASTInstr(r));
       b.addProcInstr(p, JNZInstr(r, 3));
       b.addProcInstr(p, ASTInstr(r));
@@ -92,11 +90,17 @@ namespace {
       b.addProcInstr(p, FSTInstr());
       b.addProcInstr(p, JNZInstr(r, 4));
       b.addProcInstr(p, ASTInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, 2));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 1));
       ASSERT_THROW(b.createModule(m), OperationException);
       b.addProcInstr(p, FSTInstr());
       ASSERT_THROW(b.createModule(m), OperationException);
+      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, JNZInstr(r, 2));
+      ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
+      b.addProcInstr(p, JNZInstr(r, 0));
       b.addProcInstr(p, FSTInstr());
       b.createModule(m);
     }

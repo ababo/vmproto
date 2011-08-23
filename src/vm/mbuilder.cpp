@@ -140,7 +140,7 @@ namespace Ant {
         for(int i = 0; i < con.frames.size() - 1; i++)
           for(int j = 1; j < con.frames[i].size(); j++)
             if(con.frames[i][j] >= frame[0] &&
-               index >= con.frames[i][j] - 1)
+               index >= con.frames[i][j])
               throw RangeException();
       }
       else if(index < frame[0])
@@ -157,7 +157,7 @@ namespace Ant {
         for(int j = 1; j < con.frames[i].size(); j++)
           if(con.frames[i][j] >= frame[0] &&
              con.instrCount == con.frames[i][j] - 1)
-            throw RangeException();
+            throw OperationException();
     }
 
     size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
