@@ -12,11 +12,12 @@ namespace Ant {
 
     class Module {
     public:
-      Module() {}
-      Module(const UUID &id) : _id(id) {}
+      Module() { init(UUID()); }
+      Module(const UUID &id) { init(id); }
+      ~Module() { id(UUID()); }
 
       const UUID &id() const { return _id; }
-      void id(const UUID &id) { _id = id; }
+      void id(const UUID &id);
 
       unsigned int varTypeCount() const;
       unsigned int regCount() const;
@@ -37,9 +38,14 @@ namespace Ant {
       void callProc(ProcId proc, Variable &io);
 
     protected:
-      const Runtime::ModuleData &moduleData() const;
+      void init(const UUID &id) {
+        _id = id, iter = Runtime::instance().modules.end();
+      }
+
+      Runtime::ModuleData &moduleData() const;
 
       UUID _id;
+      mutable Runtime::ModuleDataIterator iter;
     };
 
   }

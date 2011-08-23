@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../farray.h"
+#include "../retained.h"
 #include "../singleton.h"
 #include "../uuid.h"
 
@@ -65,15 +66,22 @@ namespace Ant {
         VarTypeId io;
         FixedArray<VMCodeByte> code;
       };
-      struct ModuleData {
-        ModuleData &operator=(ModuleData& moduleData) {
-          vtypes.swap(moduleData.vtypes);
-          refs.swap(moduleData.refs);
-          regs.swap(moduleData.regs);
-          procs.swap(moduleData.procs);
-          code.swap(moduleData.code);
-        }
+      struct ModuleData : Retained<ModuleData> {
+        ModuleData() : dropped(false) {}
 
+        unsigned int varTypeCount() const;
+        unsigned int regCount() const;
+        unsigned int procCount() const;
+
+        void varTypeById(VarTypeId id, VarType &vtype) const;
+        VarTypeId regTypeById(RegId id) const;
+        void procById(ProcId id, Proc &proc) const;
+
+        void take(ModuleData& moduleData);
+
+        void assertNotDropped() const;
+
+        bool dropped;
         std::vector<VarTypeData> vtypes;
         std::vector<VarTypeId> refs;
         std::vector<VarTypeId> regs;
@@ -82,21 +90,12 @@ namespace Ant {
       };
       typedef std::map<UUID, ModuleData> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;
-      typedef ModuleDataMap::const_iterator ModuleDataConstIterator;
       typedef ModuleDataMap::iterator ModuleDataIterator;
 
-      const ModuleData *findModuleData(const UUID &id) const {
-        ModuleDataConstIterator i = modules.find(id);
-        return i != modules.end() ? &i->second : NULL;
-      }
-      void insertModuleData(const UUID &id, ModuleData &moduleData) {
-        ModuleDataPair p = ModuleDataPair(id, ModuleData());
-        ModuleDataIterator i = modules.insert(p).first;
-        i->second = moduleData;
-      }
-      void dropModuleData(const UUID &id) {
-        modules.erase(id);
-      }
+      ModuleDataIterator retainModuleData(const UUID &id);
+      void releaseModuleData(ModuleDataIterator moduleDataIter);
+      void insertModuleData(const UUID &id, ModuleData &moduleData);
+      void dropModuleData(ModuleDataIterator moduleDataIter);
 
       ModuleDataMap modules;
 

@@ -1,6 +1,5 @@
 #include "../exception.h"
 #include "module.h"
-#include "runtime.h"
 
 namespace Ant {
   namespace VM {
@@ -8,65 +7,56 @@ namespace Ant {
     using namespace std;
     using namespace Ant;
 
-    const Runtime::ModuleData &Module::moduleData() const {
-      const Runtime::ModuleData *data =
-        Runtime::instance().findModuleData(_id);
+    void Module::id(const UUID &id) {
+      _id = id;
 
-      if(!data)
-        throw NotFoundException();
+      Runtime &rt = Runtime::instance();
+      if(iter != rt.modules.end()) {
+        rt.releaseModuleData(iter);
+        iter = rt.modules.end();
+      }
+    }
 
-      return *data;
+    Runtime::ModuleData &Module::moduleData() const {
+      Runtime &rt = Runtime::instance();
+
+      if(iter == rt.modules.end()) {
+        iter = rt.retainModuleData(_id);
+
+        if(iter == rt.modules.end())
+          throw NotFoundException();
+      }        
+
+      return iter->second;
     }
 
     unsigned int Module::varTypeCount() const {
-      return moduleData().vtypes.size();
+      return moduleData().varTypeCount();
     }
 
     unsigned int Module::regCount() const {
-      return moduleData().regs.size();
+      return moduleData().regCount();
     }
 
     unsigned int Module::procCount() const {
-      return moduleData().procs.size();
+      return moduleData().procCount();
     }
 
     void Module::varTypeById(VarTypeId id, VarType &vtype) const {
-      const Runtime::ModuleData &data = moduleData();
-
-      if(id >= data.vtypes.size())
-        throw NotFoundException();
-
-      const Runtime::VarTypeData vtypeData = data.vtypes[id];
-      vtype.count = vtypeData.count;
-      vtype.bytes = vtypeData.bytes;
-      vtype.vrefs.assign(vtypeData.vrefs.begin(), vtypeData.vrefs.end());
-      vtype.prefs.assign(vtypeData.prefs.begin(), vtypeData.prefs.end());
+      moduleData().varTypeById(id, vtype);
     }
 
     VarTypeId Module::regTypeById(RegId id) const {
-      const Runtime::ModuleData &data = moduleData();
-
-      if(id >= data.regs.size())
-        throw NotFoundException();
-
-      return data.regs[id];
+      moduleData().regTypeById(id);
     }
 
     void Module::procById(ProcId id, Proc &proc) const {
-      const Runtime::ModuleData &data = moduleData();
-
-      if(id >= data.procs.size())
-        throw NotFoundException();
-
-      const Runtime::ProcData procData = data.procs[id];
-      proc.flags = procData.flags;
-      proc.io = procData.io;
-      proc.code.assign(procData.code.begin(), procData.code.end());
+      moduleData().procById(id, proc);
     }
 
     void Module::drop() {
       moduleData();
-      Runtime::instance().dropModuleData(_id);
+      Runtime::instance().dropModuleData(iter);
     }
 
     void Module::unpack() {
@@ -74,7 +64,6 @@ namespace Ant {
     }
 
     void Module::callFunc(ProcId func, Variable &io) const {
-
 
     }
 
