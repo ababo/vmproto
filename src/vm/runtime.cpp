@@ -1,8 +1,12 @@
 #include "../exception.h"
+#include "llvm/Module.h"
 #include "runtime.h"
 
 namespace Ant {
   namespace VM {
+
+    using namespace std;
+    using namespace llvm;
 
     void Runtime::ModuleData::assertNotDropped() const {
       if(dropped)
@@ -58,6 +62,77 @@ namespace Ant {
       proc.code.assign(procData.code.begin(), procData.code.end());
     }
 
+    bool Runtime::ModuleData::isPacked() const {
+      assertNotDropped();
+      return !llvmModule;
+    }
+
+    bool Runtime::ModuleData::isDropped() const {
+      return dropped;
+    }
+
+    void Runtime::ModuleData::pack() {
+      assertNotDropped();
+
+      if(llvmModule) {
+        llvmTypes.clear();
+        llvmFuncs.clear();
+        delete llvmModule;
+        llvmModule = NULL;
+      }
+    }
+
+    void Runtime::ModuleData::createLLVMTypes() {
+      llvmTypes.reserve(vtypes.size());
+      for(VarTypeId vtype = 0; vtype < vtypes.size(); vtype++) {
+        const Type *byte = IntegerType::get(llvmModule->getContext(), 8);
+        llvmTypes.push_back(ArrayType::get(byte, vtypes[vtype].bytes));
+      }
+    }
+
+    void Runtime::ModuleData::createLLVMFuncs() {
+      llvmFuncs.reserve(procs.size());
+      for(ProcId proc = 0; proc < procs.size(); proc++) {
+        vector<const Type*> argTypes;
+        argTypes.push_back(llvmTypes[procs[proc].io]);
+        const Type *voidType = Type::getVoidTy(llvmModule->getContext());
+        FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
+
+        GlobalValue::LinkageTypes link = procs[proc].flags & PFLAG_EXTERNAL ?
+          GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage;
+        Function *func = Function::Create(ftype, link, "", llvmModule);
+        func->setCallingConv(CallingConv::C);
+        llvmFuncs.push_back(func);
+
+      }
+    }
+
+    void Runtime::ModuleData::unpack() {
+      assertNotDropped();
+
+      if(isPacked())
+        try {
+          llvmModule = new Module("", getGlobalContext());
+          createLLVMTypes();
+          createLLVMFuncs();
+        }
+        catch(...) { pack(); throw; }
+    }
+
+    void Runtime::ModuleData::drop() {
+      assertNotDropped();
+
+      pack();
+
+      vtypes.clear();
+      refs.clear();
+      regs.clear();
+      procs.clear();
+      code.clear();
+
+      dropped = true;
+    }
+
     void Runtime::ModuleData::take(ModuleData& moduleData) {
       vtypes.swap(moduleData.vtypes);
       refs.swap(moduleData.refs);
@@ -69,7 +144,7 @@ namespace Ant {
     Runtime::ModuleDataIterator Runtime::retainModuleData(const UUID &id) {
       ModuleDataIterator i = modules.find(id);
 
-      if(i != modules.end() && !i->second.dropped) {
+      if(i != modules.end() && !i->second.isDropped()) {
         i->second.retain();
         return i;
       }
@@ -81,7 +156,7 @@ namespace Ant {
       ModuleData &data = moduleDataIter->second;
 
       data.release();
-      if(data.retainCount() == 1 && data.dropped)
+      if(data.retainCount() == 1 && data.isDropped())
         modules.erase(moduleDataIter);
     }
 
@@ -89,11 +164,6 @@ namespace Ant {
       ModuleDataPair p = ModuleDataPair(id, ModuleData());
       ModuleDataIterator i = modules.insert(p).first;
       i->second.take(moduleData);
-    }
-
-    void Runtime::dropModuleData(ModuleDataIterator moduleDataIter) {
-      moduleDataIter->second.assertNotDropped();
-      moduleDataIter->second.dropped = true;
     }
 
   }

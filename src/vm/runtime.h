@@ -8,6 +8,8 @@
 #include "../retained.h"
 #include "../singleton.h"
 #include "../uuid.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Support/IRBuilder.h"
 
 namespace Ant {
   namespace VM {
@@ -67,7 +69,7 @@ namespace Ant {
         FixedArray<VMCodeByte> code;
       };
       struct ModuleData : Retained<ModuleData> {
-        ModuleData() : dropped(false) {}
+        ModuleData() : dropped(false), llvmModule(NULL) {}
 
         unsigned int varTypeCount() const;
         unsigned int regCount() const;
@@ -77,16 +79,32 @@ namespace Ant {
         VarTypeId regTypeById(RegId id) const;
         void procById(ProcId id, Proc &proc) const;
 
+        bool isPacked() const;
+        bool isDropped() const;
+
+        void pack();
+        void unpack();
+        void drop();
+
         void take(ModuleData& moduleData);
 
         void assertNotDropped() const;
+        void assertUnpacked() const;
+
+        void createLLVMTypes();
+        void createLLVMFuncs();
 
         bool dropped;
+
         std::vector<VarTypeData> vtypes;
         std::vector<VarTypeId> refs;
         std::vector<VarTypeId> regs;
         std::vector<ProcData> procs;
         std::vector<VMCodeByte> code;
+
+        llvm::Module *llvmModule;
+        std::vector<llvm::Type*> llvmTypes;
+        std::vector<llvm::Function*> llvmFuncs;
       };
       typedef std::map<UUID, ModuleData> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;
@@ -95,12 +113,13 @@ namespace Ant {
       ModuleDataIterator retainModuleData(const UUID &id);
       void releaseModuleData(ModuleDataIterator moduleDataIter);
       void insertModuleData(const UUID &id, ModuleData &moduleData);
-      void dropModuleData(ModuleDataIterator moduleDataIter);
 
       ModuleDataMap modules;
+      llvm::IRBuilder<> llvmBuilder;
 
     private:
-      Runtime() : Singleton<Runtime>(0) {}
+      Runtime() : Singleton<Runtime>(0),
+                  llvmBuilder(llvm::getGlobalContext()) {}
     };
 
   }

@@ -54,13 +54,20 @@ namespace Ant {
       moduleData().procById(id, proc);
     }
 
-    void Module::drop() {
-      moduleData();
-      Runtime::instance().dropModuleData(iter);
+    bool Module::isPacked() const {
+      return moduleData().isPacked();
+    }
+
+    void Module::pack() {
+      moduleData().pack();
     }
 
     void Module::unpack() {
+      moduleData().unpack();
+    }
 
+    void Module::drop() {
+      moduleData().drop();
     }
 
     void Module::callFunc(ProcId func, Variable &io) const {
