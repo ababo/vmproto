@@ -81,19 +81,22 @@ namespace Ant {
         struct LLVMContext {
           struct Alloc {
             RegId reg;
+            llvm::Value *ptr;
             llvm::Value *value;
           };
 
+          llvm::Value *allocPtr();
           llvm::Value *&regValue(RegId reg);
-          void pushAlloc(RegId reg, llvm::Value *value);
+          void pushAlloc(RegId reg, llvm::Value *ptr, llvm::Value *value);
           void popAlloc();
+
+          llvm::BasicBlock *jumpBlock(size_t jumpIndex);
 
           ProcId proc;
           llvm::Function *func;
           size_t instrIndex, blockIndex;
           std::vector<size_t> blockIndexes;
           std::vector<llvm::BasicBlock*> blocks;
-          std::vector<llvm::Value*> stackPtrs;
           std::vector<Alloc> allocs;
         };
 

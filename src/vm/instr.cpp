@@ -152,6 +152,10 @@ namespace Ant {
       VIRTUAL_CALL(, const, assertConsistency(mbuilder, proc), );
     }
 
+    bool Instr::breaks() const {
+      VIRTUAL_CALL(return, const, breaks(), false);
+    }
+
     bool Instr::jumps() const {
       VIRTUAL_CALL(return, const, jumps(), false);
     }

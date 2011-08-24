@@ -13,12 +13,7 @@ namespace Ant {
 
     const unsigned char *data() const { return dat; }
 
-    bool operator<(const UUID &uuid) const {
-      for(int i = UUID_SIZE - 1; i >= 0; i--)
-        if(uuid.dat[i] != dat[i])
-          return uuid.dat[i] > dat[i];
-      return false;
-    }
+    bool operator<(const UUID &uuid) const;
 
     UUID &generate();
 

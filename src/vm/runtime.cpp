@@ -10,22 +10,39 @@ namespace Ant {
     using namespace std;
     using namespace llvm;
 
+    llvm::Value *Runtime::ModuleData::LLVMContext::allocPtr() {
+      return allocs.back().ptr;
+    }
+
     llvm::Value *&Runtime::ModuleData::LLVMContext::regValue(RegId reg) {
       for(int i = allocs.size() - 1; i >= 0; i--)
         if(allocs[i].reg == reg)
           return allocs[i].value;
+
       throw BugException();
     }
 
     void Runtime::ModuleData::LLVMContext::pushAlloc(RegId reg,
+                                                     llvm::Value *ptr,
                                                      llvm::Value *value) {
       allocs.push_back(Alloc());
       allocs.back().reg = reg;
+      allocs.back().ptr = ptr;
       allocs.back().value = value;
     }
 
     void Runtime::ModuleData::LLVMContext::popAlloc() {
       allocs.pop_back();
+    }
+
+    BasicBlock *Runtime::ModuleData::LLVMContext::jumpBlock(size_t jumpIndex) {
+      vector<size_t>::iterator iter = lower_bound(blockIndexes.begin(),
+                                                  blockIndexes.end(),
+                                                  jumpIndex);
+      if(iter == blockIndexes.end())
+        throw BugException();
+
+      return blocks[distance(blockIndexes.begin(), iter)];
     }
 
     void Runtime::ModuleData::assertNotDropped() const {
@@ -112,13 +129,23 @@ namespace Ant {
 
     void Runtime::ModuleData::prepareLLVMContext(LLVMContext &context) {
       Instr instr;
+      bool prevBreaks = false;
       context.blockIndexes.push_back(0);
       for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
           i++, j += instr.size()) {
-        instr.set(&procs[context.proc].code[j]);
+        if(prevBreaks) {
+          context.blockIndexes.push_back(i);
+          prevBreaks = false;
+        }
 
-        if(instr.jumps())
-          context.blockIndexes.push_back(instr.jumpIndex(i));
+        instr.set(&procs[context.proc].code[j]);
+        if(instr.jumps()) {
+          size_t ji = instr.jumpIndex(i);
+          context.blockIndexes.push_back(i + 1);
+          if(ji != i + 1)
+            context.blockIndexes.push_back(ji);
+        }
+        else prevBreaks = instr.breaks();
       }
       sort(context.blockIndexes.begin(), context.blockIndexes.end());
 
@@ -127,65 +154,89 @@ namespace Ant {
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
 
-      context.pushAlloc(procs[context.proc].io, context.func->arg_begin());
+      Function *ss = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::stacksave);
+      context.pushAlloc(procs[context.proc].io,
+                        CallInst::Create(ss, "", context.blocks[0]),
+                        context.func->arg_begin());
     }
 
     void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
                                               const ASTInstr &instr) {
       BasicBlock *block = context.blocks[context.blockIndex];
-
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
-      context.stackPtrs.push_back(CallInst::Create(ss, "", block));
-
       RegId reg = instr.reg();
-      Type * type = llvmTypes[regs[reg]];
+      Type *type = llvmTypes[regs[reg]];
       Constant *zeros = ConstantAggregateZero::get(type);
       Value *var = new AllocaInst(type, "", block);
-      context.pushAlloc(reg, new StoreInst(var, zeros, block));
+      context.pushAlloc(reg, CallInst::Create(ss, "", block),
+                        new StoreInst(var, zeros, block));
     }
 
     void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
                                               const FSTInstr &instr) {
       BasicBlock *block = context.blocks[context.blockIndex];
-
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
-      vector<Value*> args(1, context.stackPtrs.back());
+      vector<Value*> args(1, context.allocPtr());
       CallInst::Create(sr, args.begin(), args.end(), "", block);
-      context.stackPtrs.pop_back();
-
       context.popAlloc();
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
                                                 const MOVM8Instr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      APInt i(64, instr.val(), false);
+      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
+      Value *&to = context.regValue(instr.to());
+      to = new StoreInst(to, c, block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVN8(LLVMContext &context,
                                                 const MOVN8Instr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      Value *from = context.regValue(instr.from());
+      Value *&to = context.regValue(instr.to());
+      to = new StoreInst(to, from, block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeUMUL(LLVMContext &context,
                                                const UMULInstr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      Value *factor1 = context.regValue(instr.factor1());
+      Value *factor2 = context.regValue(instr.factor2());
+      Value *&product = context.regValue(instr.product());
+      product = BinaryOperator::Create(Instruction::Mul, factor1, factor2, "",
+                                       block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeDEC(LLVMContext &context,
                                               const DECInstr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      APInt i(64, 1, false);
+      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
+      Value *&it = context.regValue(instr.it());
+      it = BinaryOperator::Create(Instruction::Sub, it, c, "", block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeJNZ(LLVMContext &context,
                                               const JNZInstr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      APInt i(64, 0, false);
+      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
+      Value *it = context.regValue(instr.it());
+      ICmpInst* cmp = new ICmpInst(*block, ICmpInst::ICMP_NE, it, c);
+      size_t jindex = instr.jumpIndex(context.instrIndex);
+      BasicBlock *jblock = context.jumpBlock(jindex);
+      BasicBlock *nblock = context.blocks[context.blockIndex + 1];
+      BranchInst::Create(jblock, nblock, cmp, block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
-
+      BasicBlock *block = context.blocks[context.blockIndex];
+      ReturnInst::Create(llvmModule->getContext(), block);
     }
 
 #define INSTR_CASE(op) \
@@ -214,6 +265,9 @@ namespace Ant {
            context.blockIndexes[context.blockIndex + 1] == context.instrIndex)
           context.blockIndex++;
       }
+
+      if(!context.blocks.back()->getTerminator())
+        ReturnInst::Create(llvmModule->getContext(), context.blocks.back());
     }
 
     void Runtime::ModuleData::ModuleData::createLLVMFuncs() {
