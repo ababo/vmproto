@@ -3,6 +3,8 @@
 
 #include <string.h>
 
+#include "string.h"
+
 namespace Ant {
 
 #define UUID_SIZE 16
@@ -18,6 +20,7 @@ namespace Ant {
     }
 
     UUID &generate();
+    String str() const;
 
   protected:
     unsigned char dat[UUID_SIZE];

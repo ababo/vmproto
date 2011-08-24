@@ -8,8 +8,7 @@
 #include "../retained.h"
 #include "../singleton.h"
 #include "../uuid.h"
-#include "llvm/LLVMContext.h"
-#include "llvm/Support/IRBuilder.h"
+#include "llvm/Module.h"
 
 namespace Ant {
   namespace VM {
@@ -81,13 +80,13 @@ namespace Ant {
         struct LLVMContext {
           struct Alloc {
             RegId reg;
-            llvm::Value *ptr;
-            llvm::Value *value;
+            llvm::Value *sptr;
+            llvm::Value *vptr;
           };
 
-          llvm::Value *allocPtr();
-          llvm::Value *&regValue(RegId reg);
-          void pushAlloc(RegId reg, llvm::Value *ptr, llvm::Value *value);
+          llvm::Value *sptr();
+          llvm::Value *vptr(RegId reg);
+          void pushAlloc(RegId reg, llvm::Value *sptr, llvm::Value *vptr);
           void popAlloc();
 
           llvm::BasicBlock *jumpBlock(size_t jumpIndex);
@@ -100,7 +99,8 @@ namespace Ant {
           std::vector<Alloc> allocs;
         };
 
-        ModuleData() : dropped(false), llvmModule(NULL) {}
+        ModuleData(const UUID &id)
+          : dropped(false), llvmModule(NULL), id(id) {}
 
         unsigned int varTypeCount() const;
         unsigned int regCount() const;
@@ -124,7 +124,7 @@ namespace Ant {
         void assertNotDropped() const;
         void assertUnpacked() const;
 
-        void createLLVMTypes();
+        const llvm::Type *getLLVMTypeById(VarTypeId id) const;
         void createLLVMFuncs();
         void prepareLLVMContext(LLVMContext &context);
         void emitLLVMCode(LLVMContext &context);
@@ -137,6 +137,7 @@ namespace Ant {
         void emitLLVMCodeJNZ(LLVMContext &context, const JNZInstr &instr);
         void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
 
+        const UUID &id;
         bool dropped;
 
         std::vector<VarTypeData> vtypes;
@@ -146,8 +147,6 @@ namespace Ant {
         std::vector<VMCodeByte> code;
 
         llvm::Module *llvmModule;
-        std::vector<llvm::Type*> llvmTypes;
-        std::vector<llvm::Function*> llvmFuncs;
       };
       typedef std::map<UUID, ModuleData> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;
@@ -158,11 +157,9 @@ namespace Ant {
       void insertModuleData(const UUID &id, ModuleData &moduleData);
 
       ModuleDataMap modules;
-      llvm::IRBuilder<> llvmBuilder;
 
     private:
-      Runtime() : Singleton<Runtime>(0),
-                  llvmBuilder(llvm::getGlobalContext()) {}
+      Runtime() : Singleton<Runtime>(0) {}
     };
 
   }

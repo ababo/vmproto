@@ -243,12 +243,12 @@ namespace Ant {
     void ModuleBuilder::createModule(Module &module) {
       assertConsistency();
 
-      Runtime::ModuleData moduleData;
+      UUID id = id.generate();
+      Runtime::ModuleData moduleData(id);
       fillVarTypes(moduleData);
       moduleData.regs = regs;
       fillProcs(moduleData);
 
-      UUID id = id.generate();
       Runtime::instance().insertModuleData(id, moduleData);
       module.id(id);
 

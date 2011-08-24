@@ -1,7 +1,14 @@
+#include <set>
+#include <sstream>
+
 #include "../exception.h"
 #include "instr.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Constants.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/DerivedTypes.h"
+#include "llvm/Instructions.h"
 #include "llvm/Intrinsics.h"
-#include "llvm/Module.h"
 #include "runtime.h"
 
 namespace Ant {
@@ -10,25 +17,25 @@ namespace Ant {
     using namespace std;
     using namespace llvm;
 
-    llvm::Value *Runtime::ModuleData::LLVMContext::allocPtr() {
-      return allocs.back().ptr;
+    Value *Runtime::ModuleData::LLVMContext::sptr() {
+      return allocs.back().sptr;
     }
 
-    llvm::Value *&Runtime::ModuleData::LLVMContext::regValue(RegId reg) {
+    Value *Runtime::ModuleData::LLVMContext::vptr(RegId reg) {
       for(int i = allocs.size() - 1; i >= 0; i--)
         if(allocs[i].reg == reg)
-          return allocs[i].value;
+          return allocs[i].vptr;
 
       throw BugException();
     }
 
     void Runtime::ModuleData::LLVMContext::pushAlloc(RegId reg,
-                                                     llvm::Value *ptr,
-                                                     llvm::Value *value) {
+                                                     llvm::Value *sptr,
+                                                     llvm::Value *vptr) {
       allocs.push_back(Alloc());
       allocs.back().reg = reg;
-      allocs.back().ptr = ptr;
-      allocs.back().value = value;
+      allocs.back().sptr = sptr;
+      allocs.back().vptr = vptr;
     }
 
     void Runtime::ModuleData::LLVMContext::popAlloc() {
@@ -112,41 +119,37 @@ namespace Ant {
       assertNotDropped();
 
       if(llvmModule) {
-        llvmTypes.clear();
-        llvmFuncs.clear();
         delete llvmModule;
         llvmModule = NULL;
       }
     }
 
-    void Runtime::ModuleData::createLLVMTypes() {
-      llvmTypes.reserve(vtypes.size());
-      for(VarTypeId vtype = 0; vtype < vtypes.size(); vtype++) {
-        const Type *byte = IntegerType::get(llvmModule->getContext(), 8);
-        llvmTypes.push_back(ArrayType::get(byte, vtypes[vtype].bytes));
-      }
+#define TYPE_INT(bits) IntegerType::get(llvmModule->getContext(), bits)
+
+    const Type *Runtime::ModuleData::getLLVMTypeById(VarTypeId id) const {
+      return ArrayType::get(TYPE_INT(8), vtypes[id].bytes);
     }
 
     void Runtime::ModuleData::prepareLLVMContext(LLVMContext &context) {
-      Instr instr;
       bool prevBreaks = false;
-      context.blockIndexes.push_back(0);
+      set<size_t> indexes;
+      Instr instr;
+      indexes.insert(0);
       for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
           i++, j += instr.size()) {
         if(prevBreaks) {
-          context.blockIndexes.push_back(i);
+          indexes.insert(i);
           prevBreaks = false;
         }
 
         instr.set(&procs[context.proc].code[j]);
         if(instr.jumps()) {
-          size_t ji = instr.jumpIndex(i);
-          context.blockIndexes.push_back(i + 1);
-          if(ji != i + 1)
-            context.blockIndexes.push_back(ji);
+          indexes.insert(i + 1);
+          indexes.insert(instr.jumpIndex(i));
         }
         else prevBreaks = instr.breaks();
       }
+      context.blockIndexes.assign(indexes.begin(), indexes.end());
       sort(context.blockIndexes.begin(), context.blockIndexes.end());
 
       context.blocks.reserve(context.blockIndexes.size());
@@ -158,85 +161,87 @@ namespace Ant {
                         context.func->arg_begin());
     }
 
+#define CURRENT_BLOCK context.blocks[context.blockIndex]
+
     void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
                                               const ASTInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
-      Type *type = llvmTypes[regs[reg]];
+      const Type *type = getLLVMTypeById(regs[reg]);
       Constant *zeros = ConstantAggregateZero::get(type);
-      Value *ptr = CallInst::Create(ss, "", block);
-      Value *var = new AllocaInst(type, "", block);
-      context.pushAlloc(reg, ptr, new StoreInst(var, zeros, block));
+      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK);
+      Value *vptr = new AllocaInst(type, "", CURRENT_BLOCK);
+      new StoreInst(zeros, vptr, CURRENT_BLOCK);
+      context.pushAlloc(reg, sptr, vptr);
     }
 
     void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
                                               const FSTInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
-      vector<Value*> args(1, context.allocPtr());
-      CallInst::Create(sr, args.begin(), args.end(), "", block);
+      vector<Value*> args(1, context.sptr());
+      CallInst::Create(sr, args.begin(), args.end(), "", CURRENT_BLOCK);
       context.popAlloc();
     }
 
-#define TYPE_I64 IntegerType::get(llvmModule->getContext(), 64)
-#define BITCAST_TO_I64(val) new BitCastInst(val, TYPE_I64, "", block)
+#define CONST_I64(val, signed) \
+    ConstantInt::get(llvmModule->getContext(), APInt(64, val, signed))
+#define TYPE_PTR(type) PointerType::get(type, 0)
+#define BITCAST_PI64(ptr) \
+    new BitCastInst(ptr, TYPE_PTR(TYPE_INT(64)), "", CURRENT_BLOCK)
 
     void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
                                                 const MOVM8Instr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      APInt i(64, instr.val(), false);
-      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
-      Value *to = context.regValue(instr.to());
-      new StoreInst(BITCAST_TO_I64(to), c, block);
+      Value *to = BITCAST_PI64(context.vptr(instr.to()));
+      new StoreInst(CONST_I64(instr.val(), false), to, CURRENT_BLOCK);
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVN8(LLVMContext &context,
                                                 const MOVN8Instr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      Value *from = context.regValue(instr.from());
-      Value *&to = context.regValue(instr.to());
-      to = new StoreInst(to, from, block);
+      Value *from = BITCAST_PI64(context.vptr(instr.from()));
+      Value *to = BITCAST_PI64(context.vptr(instr.to()));
+      Value *val = new LoadInst(from, "", CURRENT_BLOCK);
+      new StoreInst(val, to, CURRENT_BLOCK);
     }
+
+#define BIN_OP(op, val1, val2) \
+    BinaryOperator::Create(Instruction::op, val1, val2, "", CURRENT_BLOCK)
 
     void Runtime::ModuleData::emitLLVMCodeUMUL(LLVMContext &context,
                                                const UMULInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      Value *factor1 = context.regValue(instr.factor1());
-      Value *factor2 = context.regValue(instr.factor2());
-      Value *&product = context.regValue(instr.product());
-      product = BinaryOperator::Create(Instruction::Mul, factor1, factor2, "",
-                                       block);
+      Value *factor1 = BITCAST_PI64(context.vptr(instr.factor1()));
+      Value *factor2 = BITCAST_PI64(context.vptr(instr.factor2()));
+      Value *product = BITCAST_PI64(context.vptr(instr.product()));
+      Value *val1 = new LoadInst(factor1, "", CURRENT_BLOCK);
+      Value *val2 = new LoadInst(factor2, "", CURRENT_BLOCK);
+      Value *val3 = BIN_OP(Mul, val1, val2);
+      new StoreInst(val3, product, CURRENT_BLOCK);
     }
 
     void Runtime::ModuleData::emitLLVMCodeDEC(LLVMContext &context,
                                               const DECInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      APInt i(64, 1, false);
-      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
-      Value *&it = context.regValue(instr.it());
-      it = BinaryOperator::Create(Instruction::Sub, it, c, "", block);
+      Value *it = BITCAST_PI64(context.vptr(instr.it()));
+      Value *val = new LoadInst(it, "", CURRENT_BLOCK);
+      val = BIN_OP(Sub, val, CONST_I64(1, false));
+      new StoreInst(val, it, CURRENT_BLOCK);
     }
 
     void Runtime::ModuleData::emitLLVMCodeJNZ(LLVMContext &context,
                                               const JNZInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      APInt i(64, 0, false);
-      ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
-      Value *it = context.regValue(instr.it());
-      ICmpInst* cmp = new ICmpInst(*block, ICmpInst::ICMP_NE, it, c);
+      Value *it = BITCAST_PI64(context.vptr(instr.it()));
+      Value *val = new LoadInst(it, "", CURRENT_BLOCK);
+      ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE,
+                                   val, CONST_I64(0, false));
       size_t jindex = instr.jumpIndex(context.instrIndex);
       BasicBlock *jblock = context.jumpBlock(jindex);
       BasicBlock *nblock = context.blocks[context.blockIndex + 1];
-      BranchInst::Create(jblock, nblock, cmp, block);
+      BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
     }
 
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
-      BasicBlock *block = context.blocks[context.blockIndex];
-      ReturnInst::Create(llvmModule->getContext(), block);
+      ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
     }
 
 #define INSTR_CASE(op) \
@@ -271,11 +276,9 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::ModuleData::createLLVMFuncs() {
-      llvmFuncs.reserve(procs.size());
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
-        argTypes.push_back(PointerType::get(llvmTypes[procs[proc].io], 0));
-
+        argTypes.push_back(TYPE_PTR(getLLVMTypeById(procs[proc].io)));
         const Type *voidType = Type::getVoidTy(llvmModule->getContext());
         FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
 
@@ -283,14 +286,19 @@ namespace Ant {
         GlobalValue::LinkageTypes link = external ?
           GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage;
 
-        Function *func = Function::Create(ftype, link, "", llvmModule);
+        ostringstream out;
+        out << proc;
+
+        Function *func = Function::Create(ftype, link, out.str(), llvmModule);
         func->setCallingConv(external ? CallingConv::C : CallingConv::Fast);
-        llvmFuncs.push_back(func);
 
         LLVMContext context = { proc, func, 0, 0 };
         prepareLLVMContext(context);
         emitLLVMCode(context);
         func->dump();
+
+        if(!verifyFunction(*func))
+          throw BugException();
       }
     }
 
@@ -299,8 +307,8 @@ namespace Ant {
 
       if(isPacked())
         try {
-          llvmModule = new Module("", getGlobalContext());
-          createLLVMTypes();
+          string str = id.str();
+          llvmModule = new Module(str, getGlobalContext());
           createLLVMFuncs();
         }
         catch(...) { pack(); throw; }
@@ -352,7 +360,7 @@ namespace Ant {
     }
 
     void Runtime::insertModuleData(const UUID &id, ModuleData &moduleData) {
-      ModuleDataPair p = ModuleDataPair(id, ModuleData());
+      ModuleDataPair p = ModuleDataPair(id, ModuleData(id));
       ModuleDataIterator i = modules.insert(p).first;
       i->second.take(moduleData);
     }

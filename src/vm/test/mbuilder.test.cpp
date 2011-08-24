@@ -17,6 +17,9 @@ namespace Ant {
         RegId pr = builder.addReg(wordType);
 
         ProcId proc = builder.addProc(PFLAG_EXTERNAL | PFLAG_FUNCTION, io);
+        builder.addProcInstr(proc, JNZInstr(io, 3));
+        builder.addProcInstr(proc, MOVM8Instr(1, io));
+        builder.addProcInstr(proc, RETInstr());
         builder.addProcInstr(proc, ASTInstr(pr));
         builder.addProcInstr(proc, MOVM8Instr(1, pr));
         builder.addProcInstr(proc, UMULInstr(io, pr, pr));
@@ -160,9 +163,13 @@ namespace {
     passed = passed && instr.opcode() == OPCODE_##prefix; \
 }
 
-#define NEXT_INSTR(prefix) \
+#define NEXT_INSTR_D(prefix) \
   NEXT_OPCODE(prefix); \
   prefix##Instr &i##prefix = static_cast<prefix##Instr&>(instr);
+
+#define NEXT_INSTR(prefix) \
+  NEXT_OPCODE(prefix); \
+  i##prefix = static_cast<prefix##Instr&>(instr);
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
@@ -170,21 +177,28 @@ namespace {
     Instr instr;
     int i = 0;
 
-    NEXT_INSTR(AST);
+    NEXT_INSTR_D(JNZ);
+    passed = passed && iJNZ.it() == io;
+    passed = passed && iJNZ.offset() == 3;
+    NEXT_INSTR_D(MOVM8);
+    passed = passed && iMOVM8.val() == 1; 
+    passed = passed && iMOVM8.to() == io;
+    NEXT_OPCODE(RET);
+    NEXT_INSTR_D(AST);
     passed = passed && iAST.reg() == pr;
     NEXT_INSTR(MOVM8);
     passed = passed && iMOVM8.val() == pr; 
     passed = passed && iMOVM8.to() == pr;
-    NEXT_INSTR(UMUL);
+    NEXT_INSTR_D(UMUL);
     passed = passed && iUMUL.factor1() == io;
     passed = passed && iUMUL.factor2() == pr;
     passed = passed && iUMUL.product() == pr;
-    NEXT_INSTR(DEC);
+    NEXT_INSTR_D(DEC);
     passed = passed && iDEC.it() == io;
     NEXT_INSTR(JNZ);
     passed = passed && iJNZ.it() == io;
     passed = passed && iJNZ.offset() == -2;
-    NEXT_INSTR(MOVN8);
+    NEXT_INSTR_D(MOVN8);
     passed = passed && iMOVN8.from() == pr;
     passed = passed && iMOVN8.to() == io;
     NEXT_OPCODE(FST);
