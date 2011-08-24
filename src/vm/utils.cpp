@@ -1,11 +1,11 @@
 #include <cstdio>
 
-#include "../common/exception.h"
+#include "../exception.h"
 #include "utils.h"
 
 namespace {
 
-  using namespace Ant::Common;
+  using namespace Ant;
 
   size_t writeMBUIntEx(uint64_t value, std::ostream &out, bool extend) {
     uint8_t byte;
@@ -35,8 +35,6 @@ namespace {
 
 namespace Ant {
   namespace VM {
-
-    using namespace Ant::Common;
 
     const uint64_t MB_MASKS[9] = {
       0x7F, 0x3FFF, 0x1FFFFF, 0xFFFFFFF, 0x7FFFFFFFFLLU, 0x3FFFFFFFFFFLLU,

@@ -1,15 +1,15 @@
-#include "../../common/exception.h"
-#include "../../common/string.h"
-#include "../../test/all.h"
+#include "../../exception.h"
+#include "../../string.h"
+#include "../../test/test.h"
 #include "../module.h"
-#include "all.h"
+#include "vm.test.h"
 
 namespace {
 
   using namespace std;
+  using namespace Ant;
   using namespace Ant::VM;
   using namespace Ant::Test;
-  using namespace Ant::Common;
   using namespace Ant::VM::Test;
 
   const String subj = "Ant::VM::Module";

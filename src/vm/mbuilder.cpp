@@ -1,5 +1,5 @@
-#include "../common/exception.h"
-#include "../common/sarithm.h"
+#include "../exception.h"
+#include "../sarithm.h"
 #include "instr.h"
 #include "mbuilder.h"
 #include "module.h"
@@ -8,7 +8,7 @@
 namespace {
 
   using namespace std;
-  using namespace Ant::Common;
+  using namespace Ant;
 
   template <class T>
   inline void setFixedArray(const vector<T> &it,
@@ -24,7 +24,6 @@ namespace Ant {
   namespace VM {
 
     using namespace std;
-    using namespace Ant::Common;
 
     VarTypeId ModuleBuilder::assertVarTypeExists(VarTypeId id) const {
       if(id >= vtypes.size())

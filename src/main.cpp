@@ -1,4 +1,4 @@
-#include "test/all.h"
+#include "test/test.h"
 
 using namespace Ant::Test;
 

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "../common/uuid.h"
+#include "../uuid.h"
 #include "runtime.h"
 
 namespace Ant {
@@ -13,10 +13,10 @@ namespace Ant {
     class Module {
     public:
       Module() {}
-      Module(const Common::UUID &id) : _id(id) {}
+      Module(const UUID &id) : _id(id) {}
 
-      const Common::UUID &id() const { return _id; }
-      void id(const Common::UUID &id) { _id = id; }
+      const UUID &id() const { return _id; }
+      void id(const UUID &id) { _id = id; }
 
       unsigned int varTypeCount() const;
       unsigned int regCount() const;
@@ -39,7 +39,7 @@ namespace Ant {
     protected:
       const Runtime::ModuleData &moduleData() const;
 
-      Common::UUID _id;
+      UUID _id;
     };
 
   }

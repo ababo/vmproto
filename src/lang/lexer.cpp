@@ -1,12 +1,12 @@
 #include <cstdio>
 #include <sstream>
 
-#include "../common/exception.h"
+#include "../exception.h"
 #include "lexer.h"
 
 namespace {
 
-  using namespace Ant::Common;
+  using namespace Ant;
 
   inline bool isWhitespace(Char chr) {
     return chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n';
@@ -79,7 +79,6 @@ namespace {
 
 namespace Ant {
   namespace Lang {
-    using namespace Common;
 
     void Lexer::updateLocation(Char chr) {
       if(chr == '\n')

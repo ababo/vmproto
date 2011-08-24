@@ -1,5 +1,5 @@
-#ifndef __VM_TEST_ALL_INCLUDED__
-#define __VM_TEST_ALL_INCLUDED__
+#ifndef __VM_TEST_INCLUDED__
+#define __VM_TEST_INCLUDED__
 
 #include "../module.h"
 
@@ -18,4 +18,4 @@ namespace Ant {
   }
 }
 
-#endif // __VM_TEST_ALL_INCLUDED__
+#endif // __VM_TEST_INCLUDED__

@@ -1,15 +1,15 @@
 #include <sstream>
 
-#include "../../test/all.h"
 #include "../char.h"
 #include "../exception.h"
+#include "test.h"
 
 namespace {
 
-  using namespace Ant::Common;
+  using namespace Ant;
   using namespace Ant::Test;
 
-  const String subj = "Ant::Common::Char";
+  const String subj = "Ant::Char";
 
   bool testInput() {
     bool passed = true;
@@ -44,17 +44,15 @@ namespace {
 }
 
 namespace Ant {
-  namespace Common {
-    namespace Test {
+  namespace Test {
 
-      bool testChar() {
-        bool passed;
+    bool testChar() {
+      bool passed;
 
-        passed = testInput();
+      passed = testInput();
 
-        return passed;
-      }
-
+      return passed;
     }
+
   }
 }

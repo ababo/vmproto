@@ -1,7 +1,7 @@
-#ifndef __TEST_ALL_INCLUDED__
-#define __TEST_ALL_INCLUDED__
+#ifndef __TEST_INCLUDED__
+#define __TEST_INCLUDED__
 
-#include "../common/string.h"
+#include "../string.h"
 
 #define ASSERT_THROW(code, exception) \
   if(passed) { \
@@ -23,13 +23,16 @@
 namespace Ant {
   namespace Test {
 
-    bool printTestResult(const Common::String subj,
-                         const Common::String test,
+    bool printTestResult(const String subj,
+                         const String test,
                          bool testPassed);
+
+    bool testChar();
+    bool testString();
 
     bool testAntOS();
 
   }
 }
 
-#endif // __TEST_ALL_INCLUDED__
+#endif // __TEST_INCLUDED__

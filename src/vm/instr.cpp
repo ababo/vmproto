@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "../common/exception.h"
+#include "../exception.h"
 #include "instr.h"
 #include "mbuilder.h"
 #include "utils.h"
@@ -9,7 +9,7 @@ namespace Ant {
   namespace VM {
 
     using namespace std;
-    using namespace Ant::Common;
+    using namespace Ant;
 
     void Instr::set(VMCode code) {
       size_t size = reinterpret_cast<const Instr*>(code)->size();

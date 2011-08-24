@@ -1,4 +1,4 @@
-#include "all.h"
+#include "vm.test.h"
 
 namespace Ant {
   namespace VM {

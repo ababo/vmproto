@@ -1,10 +1,9 @@
 PPATH = ../..
-DIRS = $(PPATH)/src/common/test \
-       $(PPATH)/src/lang/test \
+DIRS = $(PPATH)/src/lang/test \
        $(PPATH)/src/vm/test
 ODIR = $(PPATH)/bin/test
 
-_OBJS = all.o
+_OBJS = char.test.o string.test.o test.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc

@@ -1,16 +1,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include "../common/test/all.h"
-#include "../lang/test/all.h"
-#include "../vm/test/all.h"
-#include "all.h"
+#include "../lang/test/lang.test.h"
+#include "../vm/test/vm.test.h"
+#include "test.h"
 
 namespace Ant {
   namespace Test {
 
-    bool printTestResult(const Common::String subj,
-                         const Common::String test,
+    bool printTestResult(const String subj,
+                         const String test,
                          bool testPassed) {
       using namespace std;
 
@@ -25,7 +24,8 @@ namespace Ant {
     bool testAntOS() {
       bool passed;
 
-      passed = Ant::Common::Test::testCommon();
+      passed = testChar();
+      passed = passed && testString();
       passed = passed && Ant::Lang::Test::testLang();
       passed = passed && Ant::VM::Test::testVM();
 

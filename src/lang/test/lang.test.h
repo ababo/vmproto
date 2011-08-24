@@ -1,5 +1,5 @@
-#ifndef __LANG_TEST_ALL_INCLUDED__
-#define __LANG_TEST_ALL_INCLUDED__
+#ifndef __LANG_TEST_INCLUDED__
+#define __LANG_TEST_INCLUDED__
 
 namespace Ant {
   namespace Lang {
@@ -12,4 +12,4 @@ namespace Ant {
   }
 }
 
-#endif // __LANG_TEST_ALL_INCLUDED__
+#endif // __LANG_TEST_INCLUDED__

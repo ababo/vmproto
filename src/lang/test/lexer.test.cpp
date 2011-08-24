@@ -1,15 +1,15 @@
 #include <sstream>
 #include <cmath>
 
-#include "../../common/exception.h"
-#include "../../test/all.h"
+#include "../../exception.h"
+#include "../../test/test.h"
 #include "../lexer.h"
 
 namespace {
 
   using namespace std;
+  using namespace Ant;
   using namespace Ant::Test;
-  using namespace Ant::Common;
   using namespace Ant::Lang;
 
   const String subj = "Ant::Lang::Lexer";

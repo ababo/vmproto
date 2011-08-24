@@ -4,8 +4,8 @@
 #include <istream>
 #include <stdint.h>
 
-#include "../common/char.h"
-#include "../common/string.h"
+#include "../char.h"
+#include "../string.h"
 
 namespace Ant {
   namespace Lang {
@@ -41,23 +41,23 @@ namespace Ant {
 
       Location location() const { return loc; }
       Token token() const { return tok; }
-      const Common::String &string() const { return str; }
+      const String &string() const { return str; }
       uint64_t posInt() const { return pint; }
       int64_t negInt() const { return nint; }
       double real() const { return rl; }
 
     protected:
-      void updateLocation(Common::Char chr);
-      void ungetChar(Common::Char chr);
+      void updateLocation(Char chr);
+      void ungetChar(Char chr);
       void skipWhitespaces();
-      Token readNumberOrSymbol(const Common::String &str);
+      Token readNumberOrSymbol(const String &str);
       Token readString();
 
       std::istream &in;
       Location loc;
       Token tok;
 
-      Common::String str;
+      String str;
       uint64_t pint;
       int64_t nint;
       double rl;

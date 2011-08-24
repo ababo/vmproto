@@ -4,9 +4,9 @@
 #include <map>
 #include <vector>
 
-#include "../common/farray.h"
-#include "../common/singleton.h"
-#include "../common/uuid.h"
+#include "../farray.h"
+#include "../singleton.h"
+#include "../uuid.h"
 
 namespace Ant {
   namespace VM {
@@ -49,21 +49,21 @@ namespace Ant {
       PFLAG_FIRST_RESERVED = 0x4
     };
 
-    class Runtime : public Common::Singleton<Runtime> {
-      friend class Common::Singleton<Runtime>;
+    class Runtime : public Singleton<Runtime> {
+      friend class Singleton<Runtime>;
       friend class ModuleBuilder;
       friend class Module;
     protected:
       struct VarTypeData {
         size_t count;
         size_t bytes;
-        Common::FixedArray<VarTypeId> vrefs;
-        Common::FixedArray<VarTypeId> prefs;
+        FixedArray<VarTypeId> vrefs;
+        FixedArray<VarTypeId> prefs;
       };
       struct ProcData {
         unsigned int flags;
         VarTypeId io;
-        Common::FixedArray<VMCodeByte> code;
+        FixedArray<VMCodeByte> code;
       };
       struct ModuleData {
         ModuleData &operator=(ModuleData& moduleData) {
@@ -80,28 +80,28 @@ namespace Ant {
         std::vector<ProcData> procs;
         std::vector<VMCodeByte> code;
       };
-      typedef std::map<Common::UUID, ModuleData> ModuleDataMap;
+      typedef std::map<UUID, ModuleData> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;
       typedef ModuleDataMap::const_iterator ModuleDataConstIterator;
       typedef ModuleDataMap::iterator ModuleDataIterator;
 
-      const ModuleData *findModuleData(const Common::UUID &id) const {
+      const ModuleData *findModuleData(const UUID &id) const {
         ModuleDataConstIterator i = modules.find(id);
         return i != modules.end() ? &i->second : NULL;
       }
-      void insertModuleData(const Common::UUID &id, ModuleData &moduleData) {
+      void insertModuleData(const UUID &id, ModuleData &moduleData) {
         ModuleDataPair p = ModuleDataPair(id, ModuleData());
         ModuleDataIterator i = modules.insert(p).first;
         i->second = moduleData;
       }
-      void dropModuleData(const Common::UUID &id) {
+      void dropModuleData(const UUID &id) {
         modules.erase(id);
       }
 
       ModuleDataMap modules;
 
     private:
-      Runtime() : Common::Singleton<Runtime>(0) {}
+      Runtime() : Singleton<Runtime>(0) {}
     };
 
   }

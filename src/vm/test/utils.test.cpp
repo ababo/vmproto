@@ -1,15 +1,15 @@
 #include <sstream>
 
-#include "../../common/string.h"
-#include "../../test/all.h"
+#include "../../string.h"
+#include "../../test/test.h"
 #include "../utils.h"
 
 namespace {
 
   using namespace std;
+  using namespace Ant;
   using namespace Ant::VM;
   using namespace Ant::Test;
-  using namespace Ant::Common;
 
   const String subj = "Ant::VM::{Utils}";
 

@@ -1,4 +1,4 @@
-#include "all.h"
+#include "lang.test.h"
 
 namespace Ant {
   namespace Lang {
