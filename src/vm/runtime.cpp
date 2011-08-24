@@ -154,10 +154,7 @@ namespace Ant {
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
 
-      Function *ss = Intrinsic::getDeclaration(llvmModule,
-                                               Intrinsic::stacksave);
-      context.pushAlloc(procs[context.proc].io,
-                        CallInst::Create(ss, "", context.blocks[0]),
+      context.pushAlloc(procs[context.proc].io, NULL,
                         context.func->arg_begin());
     }
 
@@ -169,9 +166,9 @@ namespace Ant {
       RegId reg = instr.reg();
       Type *type = llvmTypes[regs[reg]];
       Constant *zeros = ConstantAggregateZero::get(type);
+      Value *ptr = CallInst::Create(ss, "", block);
       Value *var = new AllocaInst(type, "", block);
-      context.pushAlloc(reg, CallInst::Create(ss, "", block),
-                        new StoreInst(var, zeros, block));
+      context.pushAlloc(reg, ptr, new StoreInst(var, zeros, block));
     }
 
     void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
@@ -184,13 +181,16 @@ namespace Ant {
       context.popAlloc();
     }
 
+#define TYPE_I64 IntegerType::get(llvmModule->getContext(), 64)
+#define BITCAST_TO_I64(val) new BitCastInst(val, TYPE_I64, "", block)
+
     void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
                                                 const MOVM8Instr &instr) {
       BasicBlock *block = context.blocks[context.blockIndex];
       APInt i(64, instr.val(), false);
       ConstantInt *c = ConstantInt::get(llvmModule->getContext(), i);
-      Value *&to = context.regValue(instr.to());
-      to = new StoreInst(to, c, block);
+      Value *to = context.regValue(instr.to());
+      new StoreInst(BITCAST_TO_I64(to), c, block);
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVN8(LLVMContext &context,
@@ -290,6 +290,7 @@ namespace Ant {
         LLVMContext context = { proc, func, 0, 0 };
         prepareLLVMContext(context);
         emitLLVMCode(context);
+        func->dump();
       }
     }
 
@@ -317,6 +318,10 @@ namespace Ant {
       code.clear();
 
       dropped = true;
+    }
+
+    void Runtime::ModuleData::callProc(ProcId proc, Variable &io) {
+
     }
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {

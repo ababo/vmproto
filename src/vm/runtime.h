@@ -117,6 +117,8 @@ namespace Ant {
         void unpack();
         void drop();
 
+        void callProc(ProcId proc, Variable &io);
+
         void take(ModuleData& moduleData);
 
         void assertNotDropped() const;

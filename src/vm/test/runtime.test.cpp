@@ -27,27 +27,27 @@ namespace {
       module.unpack();
 
       val = 0;
-      module.callFunc(proc, io);
+      module.callProc(proc, io);
       if(val != 1)
         throw Exception();
 
       val = 1;
-      module.callFunc(proc, io);
+      module.callProc(proc, io);
       if(val != 1)
         throw Exception();
 
       val = 5;
-      module.callFunc(proc, io);
+      module.callProc(proc, io);
       if(val != 120)
         throw Exception();
 
       val = 10;
-      module.callFunc(proc, io);
+      module.callProc(proc, io);
       if(val != 3628800)
         throw Exception();
 
       val = 20;
-      module.callFunc(proc, io);
+      module.callProc(proc, io);
       if(val != 2432902008176640000LLU)
         throw Exception();
     }

@@ -34,7 +34,6 @@ namespace Ant {
       void unpack();
       void drop();
 
-      void callFunc(ProcId func, Variable &io) const;
       void callProc(ProcId proc, Variable &io);
 
     protected:

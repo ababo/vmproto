@@ -70,8 +70,8 @@ namespace Ant {
       moduleData().drop();
     }
 
-    void Module::callFunc(ProcId func, Variable &io) const {
-
+    void Module::callProc(ProcId proc, Variable &io) {
+      moduleData().callProc(proc, io);
     }
 
   }
