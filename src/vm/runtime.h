@@ -10,6 +10,8 @@
 #include "../uuid.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Module.h"
+#include "llvm/PassManager.h"
+#include "llvm/Target/TargetSelect.h"
 
 namespace Ant {
   namespace VM {
@@ -100,8 +102,8 @@ namespace Ant {
           std::vector<Alloc> allocs;
         };
 
-        ModuleData(const UUID &id)
-          : dropped(false), llvmModule(NULL), llvmEE(NULL), id(id) {}
+        ModuleData(const UUID &id) : id(id), dropped(false), llvmModule(NULL),
+                                     llvmFPM(NULL), llvmEE(NULL) {}
 
         unsigned int varTypeCount() const;
         unsigned int regCount() const;
@@ -125,7 +127,7 @@ namespace Ant {
         void assertNotDropped() const;
         void assertUnpacked() const;
 
-        const llvm::Type *getLLVMTypeById(VarTypeId id) const;
+        void prepareLLVMFPM();
         void createLLVMFuncs();
         void prepareLLVMContext(LLVMContext &context);
         void emitLLVMCode(LLVMContext &context);
@@ -137,6 +139,7 @@ namespace Ant {
         void emitLLVMCodeDEC(LLVMContext &context, const DECInstr &instr);
         void emitLLVMCodeJNZ(LLVMContext &context, const JNZInstr &instr);
         void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
+        const llvm::Type *getLLVMTypeById(VarTypeId id) const;
 
         const UUID &id;
         bool dropped;
@@ -148,6 +151,7 @@ namespace Ant {
         std::vector<VMCodeByte> code;
 
         llvm::Module *llvmModule;
+        llvm::FunctionPassManager *llvmFPM;
         llvm::ExecutionEngine *llvmEE;
       };
       typedef std::map<UUID, ModuleData> ModuleDataMap;
@@ -161,7 +165,7 @@ namespace Ant {
       ModuleDataMap modules;
 
     private:
-      Runtime() : Singleton<Runtime>(0) {}
+      Runtime() : Singleton<Runtime>(0) { llvm::InitializeNativeTarget(); }
     };
 
   }

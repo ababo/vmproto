@@ -6,7 +6,7 @@ MAKE = make
 PROG = program
 
 INC = -I$(PPATH)/depend/utf8/source
-OPT = -g -DDEBUG
+OPT = -g -DCONFIG_DEBUG
 CFLLVM = `llvm-config --cppflags`
 CFLAGS = $(INC) $(OPT) -D$(PLATFORM) $(CFLLVM)
 
@@ -16,7 +16,7 @@ LFLAGS = $(LFLLVM)
 # Platform specific macros: SHORT_WCHAR
 
 ifeq ($(PLATFORM),PLATFORM_LINUX)
-  LFLAGS += -luuid
+  LFLAGS += -rdynamic -luuid
 else
   $(error unsupported platform)
 endif

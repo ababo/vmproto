@@ -1,14 +1,18 @@
+#include <iostream>
 #include <set>
 #include <sstream>
 
 #include "../exception.h"
 #include "instr.h"
+#include "llvm/Analysis/Passes.h"
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/Constants.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/DerivedTypes.h"
 #include "llvm/Instructions.h"
 #include "llvm/Intrinsics.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Transforms/Scalar.h"
 #include "runtime.h"
 
 namespace Ant {
@@ -119,6 +123,10 @@ namespace Ant {
       assertNotDropped();
 
       if(llvmModule) {
+        delete llvmEE;
+        llvmEE = NULL;
+        delete llvmFPM;
+        llvmFPM = NULL;
         delete llvmModule;
         llvmModule = NULL;
       }
@@ -280,7 +288,7 @@ namespace Ant {
         ReturnInst::Create(llvmModule->getContext(), context.blocks.back());
     }
 
-    void Runtime::ModuleData::ModuleData::createLLVMFuncs() {
+    void Runtime::ModuleData::createLLVMFuncs() {
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
         argTypes.push_back(TYPE_PTR(getLLVMTypeById(procs[proc].io)));
@@ -301,10 +309,25 @@ namespace Ant {
         prepareLLVMContext(context);
         emitLLVMCode(context);
 
-#ifdef DEBUG
+#ifdef CONFIG_DEBUG
         func->dump();
+        llvmFPM->run(*func);
+        func->dump();
+#else
+        llvmFPM->run(*func);
 #endif
       }
+    }
+
+    void Runtime::ModuleData::prepareLLVMFPM() {
+      llvmFPM->add(new TargetData(*llvmEE->getTargetData()));
+      llvmFPM->add(createBasicAliasAnalysisPass());
+      llvmFPM->add(createInstructionCombiningPass());
+      llvmFPM->add(createReassociatePass());
+      llvmFPM->add(createGVNPass());
+      llvmFPM->add(createCFGSimplificationPass());
+
+      llvmFPM->doInitialization();
     }
 
     void Runtime::ModuleData::unpack() {
@@ -314,9 +337,21 @@ namespace Ant {
         try {
           string str = id.str();
           llvmModule = new Module(str, getGlobalContext());
+
+          llvmFPM = new FunctionPassManager(llvmModule);
+
+          llvmEE = EngineBuilder(llvmModule).setErrorStr(&str).create();
+          if(!llvmEE) {
+#ifdef CONFIG_DEBUG
+            cerr << endl << "Cannot load JIT (" << str << ")" << endl << endl;
+#endif
+            throw EnvironmentException();
+          }
+
+          prepareLLVMFPM();
           createLLVMFuncs();
 
-#ifdef DEBUG
+#ifdef CONFIG_DEBUG
           if(verifyModule(*llvmModule, PrintMessageAction))
             throw BugException();
 #endif
