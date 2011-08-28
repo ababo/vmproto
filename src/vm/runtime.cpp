@@ -1,4 +1,5 @@
 #include "../exception.h"
+#include "instr.h"
 #include "llvm/Module.h"
 #include "runtime.h"
 
@@ -90,20 +91,107 @@ namespace Ant {
       }
     }
 
-    void Runtime::ModuleData::createLLVMFuncs() {
+    void Runtime::ModuleData::prepareLLVMContext(LLVMContext &context) {
+      Instr instr;
+      context.blockIndexes.push_back(0);
+      for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
+          i++, j += instr.size()) {
+        instr.set(&procs[context.proc].code[j]);
+
+        if(instr.jumps())
+          context.blockIndexes.push_back(instr.jumpIndex(i));
+      }
+      sort(context.blockIndexes.begin(), context.blockIndexes.end());
+
+      context.blocks.reserve(context.blockIndexes.size());
+      for(size_t i = 0; i < context.blockIndexes.size(); i++)
+        context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
+                                                    "", context.func, 0));
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
+                                              const ASTInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
+                                              const FSTInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
+                                                const MOVM8Instr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeMOVN8(LLVMContext &context,
+                                                const MOVN8Instr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeUMUL(LLVMContext &context,
+                                               const UMULInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeDEC(LLVMContext &context,
+                                              const DECInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeJNZ(LLVMContext &context,
+                                              const JNZInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
+                                              const RETInstr &instr) {
+
+    }
+
+#define INSTR_CASE(op) \
+    case OPCODE_##op: \
+      emitLLVMCode##op(context, static_cast<op##Instr&>(instr)); break;
+
+    void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
+      Instr instr;
+      for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
+          i++, j += instr.size()) {
+        instr.set(&procs[context.proc].code[j]);
+
+        switch(instr.opcode()) {
+          INSTR_CASE(AST);
+          INSTR_CASE(FST);
+          INSTR_CASE(MOVM8);
+          INSTR_CASE(MOVN8);
+          INSTR_CASE(UMUL);
+          INSTR_CASE(DEC);
+          INSTR_CASE(JNZ);
+          INSTR_CASE(RET);
+        }
+      }
+    }
+
+    void Runtime::ModuleData::ModuleData::createLLVMFuncs() {
       llvmFuncs.reserve(procs.size());
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
-        argTypes.push_back(llvmTypes[procs[proc].io]);
+        argTypes.push_back(PointerType::get(llvmTypes[procs[proc].io], 0));
+
         const Type *voidType = Type::getVoidTy(llvmModule->getContext());
         FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
 
-        GlobalValue::LinkageTypes link = procs[proc].flags & PFLAG_EXTERNAL ?
+        bool external = procs[proc].flags & PFLAG_EXTERNAL;
+        GlobalValue::LinkageTypes link = external ?
           GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage;
+
         Function *func = Function::Create(ftype, link, "", llvmModule);
-        func->setCallingConv(CallingConv::C);
+        func->setCallingConv(external ? CallingConv::C : CallingConv::Fast);
         llvmFuncs.push_back(func);
 
+        LLVMContext context = { proc, func };
+        prepareLLVMContext(context);
+        emitLLVMCode(context);
       }
     }
 

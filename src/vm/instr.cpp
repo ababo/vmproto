@@ -143,5 +143,13 @@ namespace Ant {
       VIRTUAL_CALL(, const, assertConsistency(mbuilder, proc), );
     }
 
+    bool Instr::jumps() const {
+      VIRTUAL_CALL(return, const, jumps(), false);
+    }
+
+    size_t Instr::jumpIndex(size_t index) const {
+      VIRTUAL_CALL(return, const, jumpIndex(index), 0);
+    }
+
   }
 }

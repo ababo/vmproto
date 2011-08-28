@@ -2,6 +2,7 @@
 #define __VM_RUNTIME_INCLUDED__
 
 #include <map>
+#include <stack>
 #include <vector>
 
 #include "../farray.h"
@@ -52,6 +53,15 @@ namespace Ant {
       PFLAG_FIRST_RESERVED = 0x4
     };
 
+    class ASTInstr;
+    class FSTInstr;
+    class MOVM8Instr;
+    class MOVN8Instr;
+    class UMULInstr;
+    class DECInstr;
+    class JNZInstr;
+    class RETInstr;
+
     class Runtime : public Singleton<Runtime> {
       friend class Singleton<Runtime>;
       friend class ModuleBuilder;
@@ -69,6 +79,15 @@ namespace Ant {
         FixedArray<VMCodeByte> code;
       };
       struct ModuleData : Retained<ModuleData> {
+        struct LLVMContext {
+          ProcId proc;
+          llvm::Function *func;
+          std::vector<size_t> blockIndexes;
+          std::vector<llvm::BasicBlock*> blocks;
+          std::stack<llvm::CallInst*> stackPtrs;
+          std::map<RegId, std::stack<llvm::Value*> > regs;
+        };
+
         ModuleData() : dropped(false), llvmModule(NULL) {}
 
         unsigned int varTypeCount() const;
@@ -93,6 +112,16 @@ namespace Ant {
 
         void createLLVMTypes();
         void createLLVMFuncs();
+        void prepareLLVMContext(LLVMContext &context);
+        void emitLLVMCode(LLVMContext &context);
+        void emitLLVMCodeAST(LLVMContext &context, const ASTInstr &instr);
+        void emitLLVMCodeFST(LLVMContext &context, const FSTInstr &instr);
+        void emitLLVMCodeMOVM8(LLVMContext &context, const MOVM8Instr &instr);
+        void emitLLVMCodeMOVN8(LLVMContext &context, const MOVN8Instr &instr);
+        void emitLLVMCodeUMUL(LLVMContext &context, const UMULInstr &instr);
+        void emitLLVMCodeDEC(LLVMContext &context, const DECInstr &instr);
+        void emitLLVMCodeJNZ(LLVMContext &context, const JNZInstr &instr);
+        void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
 
         bool dropped;
 
