@@ -107,23 +107,32 @@ namespace Ant {
       return val;
     }
 
-    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg){
+    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg) {
       return mbuilder.assertRegExists(reg);
     }
 
-    RegId Instr::assertRegHasBytes(const ModuleBuilder &mbuilder,
+    RegId Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
+                                    RegId reg) {
+      mbuilder.assertRegExists(reg);
+      return mbuilder.assertRegAllocated(proc, reg);
+    }
+
+    RegId Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                    size_t minBytes, RegId reg) {
+      assertRegAllocated(mbuilder, proc, reg);
+
       VarType vtype;
       mbuilder.varTypeById(mbuilder.regTypeById(reg), vtype);
 
       if(vtype.bytes < minBytes)
         throw TypeException();
-    
+
       return reg;
     }
 
-    void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc) {
-      mbuilder.applyStackAlloc(proc);
+    void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
+                                RegId reg) {
+      mbuilder.applyStackAlloc(proc, reg);
     }
 
     void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {

@@ -10,24 +10,22 @@ namespace Ant {
     using namespace std;
     using namespace llvm;
 
-    Value *Runtime::ModuleData::LLVMContext::regValue(RegId reg) const {
-      RegMapConstIterator iter = regStates.find(reg);
-      return iter != regStates.end() ? iter->second.top() : NULL;;
+    llvm::Value *&Runtime::ModuleData::LLVMContext::regValue(RegId reg) {
+      for(int i = allocs.size() - 1; i >= 0; i--)
+        if(allocs[i].reg == reg)
+          return allocs[i].value;
+      throw BugException();
     }
 
-    void Runtime::ModuleData::LLVMContext::pushRegValue(RegId reg,
-                                                        Value *val) {
-      RegMapIterator iter = regStates.find(reg);
-      if(iter == regStates.end())
-        iter = regStates.insert(RegMapPair(reg, RegState())).first;
-      iter->second.push(val);
+    void Runtime::ModuleData::LLVMContext::pushAlloc(RegId reg,
+                                                     llvm::Value *value) {
+      allocs.push_back(Alloc());
+      allocs.back().reg = reg;
+      allocs.back().value = value;
     }
 
-    void Runtime::ModuleData::LLVMContext::popRegValue(RegId reg) {
-      RegMapIterator iter = regStates.find(reg);
-      iter->second.pop();
-      if(!iter->second.size())
-        regStates.erase(iter);
+    void Runtime::ModuleData::LLVMContext::popAlloc() {
+      allocs.pop_back();
     }
 
     void Runtime::ModuleData::assertNotDropped() const {
@@ -129,24 +127,35 @@ namespace Ant {
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
 
-      context.pushRegValue(procs[context.proc].io, context.func->arg_begin());
+      context.pushAlloc(procs[context.proc].io, context.func->arg_begin());
     }
 
     void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
                                               const ASTInstr &instr) {
+      BasicBlock *block = context.blocks[context.blockIndex];
+
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
-      BasicBlock *block = context.blocks[context.blockIndex];
-      context.stackPtrs.push(CallInst::Create(ss, "", block));
+      context.stackPtrs.push_back(CallInst::Create(ss, "", block));
 
       RegId reg = instr.reg();
-      context.pushRegValue(reg, new AllocaInst(llvmTypes[reg], "", block));
+      Type * type = llvmTypes[regs[reg]];
+      Constant *zeros = ConstantAggregateZero::get(type);
+      Value *var = new AllocaInst(type, "", block);
+      context.pushAlloc(reg, new StoreInst(var, zeros, block));
     }
 
     void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
                                               const FSTInstr &instr) {
+      BasicBlock *block = context.blocks[context.blockIndex];
+
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
+      vector<Value*> args(1, context.stackPtrs.back());
+      CallInst::Create(sr, args.begin(), args.end(), "", block);
+      context.stackPtrs.pop_back();
+
+      context.popAlloc();
     }
 
     void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,

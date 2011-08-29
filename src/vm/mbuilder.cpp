@@ -37,6 +37,15 @@ namespace Ant {
       return id;
     }
 
+    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegId reg) const {
+      const ProcCon &con = procCons[proc];
+      for(int i = con.allocs.size() - 1; i >= 0; i--)
+        if(con.allocs[i] == reg)
+          return reg;
+
+      throw OperationException();
+    }
+
     ProcId ModuleBuilder::assertProcExists(ProcId id) const {
       if(id >= procs.size())
         throw NotFoundException();
@@ -83,12 +92,13 @@ namespace Ant {
       con.instrCount = 0;
       con.frames.resize(1);
       con.frames.back().push_back(0);
+      con.allocs.push_back(io);
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
     }
 
-    void ModuleBuilder::applyStackAlloc(ProcId proc) {
+    void ModuleBuilder::applyStackAlloc(ProcId proc, RegId reg) {
       ProcCon &con = procCons[proc];
 
       for(int i = 0; i < con.frames.size(); i++)
@@ -98,6 +108,7 @@ namespace Ant {
 
       con.frames.resize(con.frames.size() + 1);
       con.frames.back().push_back(con.instrCount + 1);
+      con.allocs.push_back(reg);
     }
 
     void ModuleBuilder::applyStackFree(ProcId proc) {
@@ -112,6 +123,7 @@ namespace Ant {
           throw OperationException();
 
       con.frames.pop_back();
+      con.allocs.pop_back();
     }
 
     void ModuleBuilder::applyInstrOffset(ProcId proc, int offset) {

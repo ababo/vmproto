@@ -46,17 +46,19 @@ namespace Ant {
       struct ProcCon {
         typedef std::vector<size_t> Frame;
         std::vector<Frame> frames;
+        std::vector<RegId> allocs;
         size_t instrCount;
       };
 
       VarTypeId assertVarTypeExists(VarTypeId id) const;
       RegId assertRegExists(RegId id) const;
+      RegId assertRegAllocated(ProcId proc, RegId reg) const;
       ProcId assertProcExists(ProcId id) const;
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
 
-      void applyStackAlloc(ProcId proc);
+      void applyStackAlloc(ProcId proc, RegId reg);
       void applyStackFree(ProcId proc);
       void applyInstrOffset(ProcId proc, int offset);
       void applyInstrIndex(ProcId proc, size_t index);

@@ -2,7 +2,6 @@
 #define __VM_RUNTIME_INCLUDED__
 
 #include <map>
-#include <stack>
 #include <vector>
 
 #include "../farray.h"
@@ -80,24 +79,22 @@ namespace Ant {
       };
       struct ModuleData : Retained<ModuleData> {
         struct LLVMContext {
-          typedef struct { RegId reg; llvm::Value *val; } _;
-          typedef std::stack<llvm::Value*> RegState;
-          typedef std::map<RegId, RegState> RegMap;
-          typedef RegMap::value_type RegMapPair;
-          typedef RegMap::iterator RegMapIterator;
-          typedef RegMap::const_iterator RegMapConstIterator;
+          struct Alloc {
+            RegId reg;
+            llvm::Value *value;
+          };
 
-          llvm::Value *regValue(RegId reg) const;
-          void pushRegValue(RegId reg, llvm::Value *val);
-          void popRegValue(RegId reg);
+          llvm::Value *&regValue(RegId reg);
+          void pushAlloc(RegId reg, llvm::Value *value);
+          void popAlloc();
 
           ProcId proc;
           llvm::Function *func;
           size_t instrIndex, blockIndex;
           std::vector<size_t> blockIndexes;
           std::vector<llvm::BasicBlock*> blocks;
-          std::stack<llvm::Value*> stackPtrs;
-          RegMap regStates;
+          std::vector<llvm::Value*> stackPtrs;
+          std::vector<Alloc> allocs;
         };
 
         ModuleData() : dropped(false), llvmModule(NULL) {}

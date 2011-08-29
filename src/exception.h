@@ -24,6 +24,7 @@ namespace Ant {
   EXCEPTION(ArgumentException, Exception, "bad call argument");
   EXCEPTION(NotFoundException, Exception, "object not found");
   EXCEPTION(TypeException, Exception, "invalid object type");
+  EXCEPTION(BugException, Exception, "internal bug");
 
 }
 

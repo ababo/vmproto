@@ -61,6 +61,19 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));},NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
+
+      t = b.addVarType(1, 8);
+      n = b.addReg(t);
+
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
+      b.addProcInstr(p, ASTInstr(n));
+      b.addProcInstr(p, DECInstr(n));
+      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, DECInstr(n));
+      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, DECInstr(n));
+      b.addProcInstr(p, FSTInstr());
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
     }
     catch(...) { passed = false; }
 
