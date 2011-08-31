@@ -1,7 +1,7 @@
 #ifndef __UUID_INCLUDED__
 #define __UUID_INCLUDED__
 
-#include <algorithm>
+#include <string.h>
 
 namespace Ant {
 
@@ -9,11 +9,13 @@ namespace Ant {
 
   class UUID {
   public:
-    UUID() { std::fill(dat, dat + sizeof(dat), 0); }
+    UUID() { memset(dat, 0, sizeof(dat)); }
 
     const unsigned char *data() const { return dat; }
 
-    bool operator<(const UUID &uuid) const;
+    bool operator<(const UUID &uuid) const {
+      return memcmp(dat, uuid.dat, sizeof(dat));
+    }
 
     UUID &generate();
 

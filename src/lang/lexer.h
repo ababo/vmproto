@@ -15,7 +15,8 @@ namespace Ant {
       Location(uint16_t line, uint16_t column) : line(line), column(column) {}
 
       bool operator==(const Location &loc) const {
-        return line == loc.line && column == loc.column; }
+        return line == loc.line && column == loc.column;
+      }
 
       uint16_t line;
       uint16_t column;
