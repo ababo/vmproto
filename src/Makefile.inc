@@ -6,7 +6,7 @@ MAKE = make
 PROG = program
 
 INC = -I$(PPATH)/depend/utf8/source
-OPT = -g
+OPT = -g -DDEBUG
 CFLLVM = `llvm-config --cppflags`
 CFLAGS = $(INC) $(OPT) -D$(PLATFORM) $(CFLLVM)
 

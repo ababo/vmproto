@@ -8,6 +8,7 @@
 #include "../retained.h"
 #include "../singleton.h"
 #include "../uuid.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Module.h"
 
 namespace Ant {
@@ -100,7 +101,7 @@ namespace Ant {
         };
 
         ModuleData(const UUID &id)
-          : dropped(false), llvmModule(NULL), id(id) {}
+          : dropped(false), llvmModule(NULL), llvmEE(NULL), id(id) {}
 
         unsigned int varTypeCount() const;
         unsigned int regCount() const;
@@ -147,6 +148,7 @@ namespace Ant {
         std::vector<VMCodeByte> code;
 
         llvm::Module *llvmModule;
+        llvm::ExecutionEngine *llvmEE;
       };
       typedef std::map<UUID, ModuleData> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;

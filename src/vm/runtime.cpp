@@ -266,9 +266,14 @@ namespace Ant {
         }
 
         context.instrIndex++;
-        if(context.blockIndex + 1 < context.blocks.size() &&
-           context.blockIndexes[context.blockIndex + 1] == context.instrIndex)
+        size_t nextBlockIndex = context.blockIndex + 1;
+        if(nextBlockIndex < context.blocks.size() &&
+           context.blockIndexes[nextBlockIndex] == context.instrIndex) {
+          BasicBlock *block = context.blocks[context.blockIndex];
+          if(!block->getTerminator())
+            BranchInst::Create(context.blocks[nextBlockIndex], block);
           context.blockIndex++;
+        }
       }
 
       if(!context.blocks.back()->getTerminator())
@@ -295,10 +300,10 @@ namespace Ant {
         LLVMContext context = { proc, func, 0, 0 };
         prepareLLVMContext(context);
         emitLLVMCode(context);
-        func->dump();
 
-        if(!verifyFunction(*func))
-          throw BugException();
+#ifdef DEBUG
+        func->dump();
+#endif
       }
     }
 
@@ -310,6 +315,11 @@ namespace Ant {
           string str = id.str();
           llvmModule = new Module(str, getGlobalContext());
           createLLVMFuncs();
+
+#ifdef DEBUG
+          if(verifyModule(*llvmModule, PrintMessageAction))
+            throw BugException();
+#endif
         }
         catch(...) { pack(); throw; }
     }
