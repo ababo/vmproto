@@ -58,8 +58,15 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::assertNotDropped() const {
-      if(dropped)
+      if(isDropped())
         throw NotFoundException();
+    }
+
+    void Runtime::ModuleData::assertUnpacked() const {
+      assertNotDropped();
+
+      if(isPacked())
+        throw OperationException();
     }
 
     unsigned int Runtime::ModuleData::varTypeCount() const {
@@ -373,7 +380,16 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::callProc(ProcId proc, Variable &io) {
+      assertUnpacked();
 
+      ostringstream out;
+      out << proc;
+      Function *func = llvmModule->getFunction(out.str());
+      if(!func)
+        throw NotFoundException();
+
+      void *fPtr = llvmEE->getPointerToFunction(func);
+      reinterpret_cast<void (*)(Variable&)>(fPtr)(io);
     }
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {
