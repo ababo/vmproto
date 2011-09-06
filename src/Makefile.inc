@@ -16,7 +16,7 @@ LFLAGS = $(LFLLVM)
 # Platform specific macros: SHORT_WCHAR
 
 ifeq ($(PLATFORM),PLATFORM_LINUX)
-  LFLAGS += -rdynamic -luuid
+  LFLAGS += -luuid
 else
   $(error unsupported platform)
 endif

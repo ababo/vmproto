@@ -7,6 +7,7 @@
 #include "llvm/Analysis/Passes.h"
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/Constants.h"
+#include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/DerivedTypes.h"
 #include "llvm/Instructions.h"
@@ -127,7 +128,7 @@ namespace Ant {
         llvmEE = NULL;
         delete llvmFPM;
         llvmFPM = NULL;
-        delete llvmModule;
+        // llvmEE already deleted llvmModule
         llvmModule = NULL;
       }
     }
@@ -335,15 +336,13 @@ namespace Ant {
 
       if(isPacked())
         try {
-          string str = id.str();
-          llvmModule = new Module(str, getGlobalContext());
-
+          string err, idStr = id.str();
+          llvmModule = new Module(idStr, getGlobalContext());
           llvmFPM = new FunctionPassManager(llvmModule);
-
-          llvmEE = EngineBuilder(llvmModule).setErrorStr(&str).create();
+          llvmEE = EngineBuilder(llvmModule).setErrorStr(&err).create();
           if(!llvmEE) {
 #ifdef CONFIG_DEBUG
-            cerr << endl << "Cannot load JIT (" << str << ")" << endl << endl;
+            cerr << endl << "Cannot load JIT (" << err << ")" << endl << endl;
 #endif
             throw EnvironmentException();
           }
