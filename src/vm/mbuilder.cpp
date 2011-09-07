@@ -2,6 +2,7 @@
 #include "../sarithm.h"
 #include "instr.h"
 #include "mbuilder.h"
+#include "mdata.h"
 #include "module.h"
 #include "utils.h"
 
@@ -10,10 +11,9 @@ namespace {
   using namespace std;
   using namespace Ant;
 
-  template <class T>
-  inline void setFixedArray(const vector<T> &it,
-                            FixedArray<T> &target,
-                            vector<T> &container) {
+  template<class T> inline void setFixedArray(const vector<T> &it,
+                                              FixedArray<T> &target,
+                                              vector<T> &container) {
     copy(it.begin(), it.end(), back_inserter(container));
     target.set(&container[container.size() - it.size()], it.size());
   }

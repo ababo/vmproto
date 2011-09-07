@@ -3,8 +3,7 @@
 
 namespace Ant {
 
-  template <class T>
-  class Retained {
+  template<class T> class Retained {
   public:
     Retained() : count(1) {}
 

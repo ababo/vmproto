@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <stdint.h>
 
-#include "runtime.h"
+#include "vmdefs.h"
 
 namespace Ant {
   namespace VM {
@@ -57,8 +57,28 @@ namespace Ant {
       uint8_t dat[MAX_INSTR_SIZE - 1];
     };
 
-    template <uint8_t OP>
-    class BOInstr : public Instr {
+    template<uint8_t OP> class UOInstr : public Instr {
+      friend class Instr;
+    public:
+      UOInstr(RegId operand) { op = OP; setParam(operand); }
+
+      size_t size() const { return Instr::size(1); }
+      RegId operand() const { return RegId(getParam(0)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, 8, operand());
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    typedef UOInstr<OPCODE_INC> INCInstr;
+    typedef UOInstr<OPCODE_DEC> DECInstr;
+
+    template<uint8_t OP> class BOInstr : public Instr {
       friend class Instr;
     public:
       BOInstr(RegId operand1, RegId operand2, RegId result) {
@@ -160,24 +180,6 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, proc, 8, from());
         Instr::assertRegHasBytes(mbuilder, proc, 8, to());
-        Instr::applyDefault(mbuilder, proc);
-      }
-    };
-
-    class DECInstr : public Instr {
-      friend class Instr;
-    public:
-      DECInstr(RegId it) { op = OPCODE_DEC; setParam(it); }
-
-      size_t size() const { return Instr::size(1); }
-      RegId it() const { return RegId(getParam(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
         Instr::applyDefault(mbuilder, proc);
       }
     };

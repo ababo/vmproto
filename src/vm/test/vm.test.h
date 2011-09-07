@@ -11,7 +11,7 @@ namespace Ant {
 
       bool testUtils();
       bool testModuleBuilder();
-      bool testRuntime();
+      bool testModuleData();
 
       bool testVM();
     }

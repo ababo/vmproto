@@ -12,7 +12,7 @@ namespace {
   using namespace Ant::Test;
   using namespace Ant::VM::Test;
 
-  const String subj = "Ant::VM::Runtime";
+  const String subj = "Ant::VM::Runtime::ModuleData";
 
   bool testFactorial() {
     bool passed = true;
@@ -64,7 +64,7 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
-      bool testRuntime() {
+      bool testModuleData() {
         bool passed;
 
         passed = testFactorial();

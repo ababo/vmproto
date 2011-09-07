@@ -25,12 +25,15 @@ namespace Ant {
 
 #define VIRTUAL_CALL(left, mod, call, def) \
     switch(op) { \
+      VIRTUAL_CASE(INC, left, mod, call); \
+      VIRTUAL_CASE(DEC, left, mod, call); \
+      VIRTUAL_CASE(ADD, left, mod, call); \
+      VIRTUAL_CASE(SUB, left, mod, call); \
+      VIRTUAL_CASE(MUL, left, mod, call); \
       VIRTUAL_CASE(AST, left, mod, call); \
       VIRTUAL_CASE(FST, left, mod, call); \
       VIRTUAL_CASE(MOVM8, left, mod, call); \
       VIRTUAL_CASE(MOVN8, left, mod, call); \
-      VIRTUAL_CASE(MUL, left, mod, call); \
-      VIRTUAL_CASE(DEC, left, mod, call); \
       VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \

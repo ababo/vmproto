@@ -3,8 +3,7 @@
 
 namespace Ant {
 
-  template <class T>
-  class Singleton {
+  template<class T> class Singleton {
   public:
     static T &instance() {
       static T inst;

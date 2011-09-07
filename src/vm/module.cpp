@@ -1,4 +1,5 @@
 #include "../exception.h"
+#include "mdata.h"
 #include "module.h"
 
 namespace Ant {
@@ -27,7 +28,7 @@ namespace Ant {
           throw NotFoundException();
       }        
 
-      return iter->second;
+      return *iter->second;
     }
 
     unsigned int Module::varTypeCount() const {
