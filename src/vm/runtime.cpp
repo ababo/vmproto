@@ -224,15 +224,16 @@ namespace Ant {
 #define BIN_OP(op, val1, val2) \
     BinaryOperator::Create(Instruction::op, val1, val2, "", CURRENT_BLOCK)
 
-    void Runtime::ModuleData::emitLLVMCodeUMUL(LLVMContext &context,
-                                               const UMULInstr &instr) {
-      Value *factor1 = BITCAST_PI64(context.vptr(instr.factor1()));
-      Value *factor2 = BITCAST_PI64(context.vptr(instr.factor2()));
-      Value *product = BITCAST_PI64(context.vptr(instr.product()));
-      Value *val1 = new LoadInst(factor1, "", CURRENT_BLOCK);
-      Value *val2 = new LoadInst(factor2, "", CURRENT_BLOCK);
-      Value *val3 = BIN_OP(Mul, val1, val2);
-      new StoreInst(val3, product, CURRENT_BLOCK);
+    template<uint8_t OP, Instruction::BinaryOps IOP>
+    void Runtime::ModuleData::emitLLVMCodeBO(LLVMContext &context,
+                                             const BOInstr<OP> &instr) {
+      Value *operand1 = BITCAST_PI64(context.vptr(instr.operand1()));
+      Value *operand2 = BITCAST_PI64(context.vptr(instr.operand2()));
+      Value *result = BITCAST_PI64(context.vptr(instr.result()));
+      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
+      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
+      Value *val3 = BinaryOperator::Create(IOP, val1, val2, "", CURRENT_BLOCK);
+      new StoreInst(val3, result, CURRENT_BLOCK);
     }
 
     void Runtime::ModuleData::emitLLVMCodeDEC(LLVMContext &context,
@@ -260,6 +261,11 @@ namespace Ant {
       ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
     }
 
+#define BOINSTR_CASE(op, iop) \
+    case OPCODE_##op: \
+      emitLLVMCodeBO<OPCODE_##op, Instruction::iop>( \
+        context, static_cast<BOInstr<OPCODE_##op>&>(instr)); break;
+
 #define INSTR_CASE(op) \
     case OPCODE_##op: \
       emitLLVMCode##op(context, static_cast<op##Instr&>(instr)); break;
@@ -271,11 +277,13 @@ namespace Ant {
         instr.set(&procs[context.proc].code[i]);
 
         switch(instr.opcode()) {
+          BOINSTR_CASE(ADD, Add);
+          BOINSTR_CASE(SUB, Sub);
+          BOINSTR_CASE(MUL, Mul);
           INSTR_CASE(AST);
           INSTR_CASE(FST);
           INSTR_CASE(MOVM8);
           INSTR_CASE(MOVN8);
-          INSTR_CASE(UMUL);
           INSTR_CASE(DEC);
           INSTR_CASE(JNZ);
           INSTR_CASE(RET);

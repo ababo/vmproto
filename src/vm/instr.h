@@ -9,18 +9,6 @@
 namespace Ant {
   namespace VM {
 
-    enum OpCode {
-      OPCODE_ILL = 0,
-      OPCODE_AST,
-      OPCODE_FST,
-      OPCODE_MOVM8,
-      OPCODE_MOVN8,
-      OPCODE_UMUL,
-      OPCODE_DEC,
-      OPCODE_JNZ,
-      OPCODE_RET
-    };
-
 #define MAX_INSTR_SIZE 11
 
     class ModuleBuilder;
@@ -68,6 +56,35 @@ namespace Ant {
       uint8_t op;
       uint8_t dat[MAX_INSTR_SIZE - 1];
     };
+
+    template <uint8_t OP>
+    class BOInstr : public Instr {
+      friend class Instr;
+    public:
+      BOInstr(RegId operand1, RegId operand2, RegId result) {
+        op = OP; set3Params(operand1, operand2, result);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId operand1() const { return RegId(getParam(0)); }
+      RegId operand2() const { return RegId(getParam(1)); }
+      RegId result() const { return RegId(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, 8, operand1());
+        Instr::assertRegHasBytes(mbuilder, proc, 8, operand2());
+        Instr::assertRegHasBytes(mbuilder, proc, 8, result());
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    typedef BOInstr<OPCODE_ADD> ADDInstr;
+    typedef BOInstr<OPCODE_SUB> SUBInstr;
+    typedef BOInstr<OPCODE_MUL> MULInstr;
 
     class ASTInstr : public Instr {
       friend class Instr;
@@ -143,30 +160,6 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, proc, 8, from());
         Instr::assertRegHasBytes(mbuilder, proc, 8, to());
-        Instr::applyDefault(mbuilder, proc);
-      }
-    };
-
-    class UMULInstr : public Instr {
-      friend class Instr;
-    public:
-      UMULInstr(RegId factor1, RegId factor2, RegId product) {
-        op = OPCODE_UMUL; set3Params(factor1, factor2, product);
-      }
-
-      size_t size() const { return Instr::size(3); }
-      RegId factor1() const { return RegId(getParam(0)); }
-      RegId factor2() const { return RegId(getParam(1)); }
-      RegId product() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, factor1());
-        Instr::assertRegHasBytes(mbuilder, proc, 8, factor2());
-        Instr::assertRegHasBytes(mbuilder, proc, 8, product());
         Instr::applyDefault(mbuilder, proc);
       }
     };

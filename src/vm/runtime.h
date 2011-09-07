@@ -54,11 +54,29 @@ namespace Ant {
       PFLAG_FIRST_RESERVED = 0x4
     };
 
+    enum OpCode {
+      OPCODE_ILL = 0,
+      OPCODE_ADD,
+      OPCODE_SUB,
+      OPCODE_MUL,
+      OPCODE_AST,
+      OPCODE_FST,
+      OPCODE_MOVM8,
+      OPCODE_MOVN8,
+      OPCODE_DEC,
+      OPCODE_JNZ,
+      OPCODE_RET
+    };
+
+    template<uint8_t> class BOInstr;
+    typedef BOInstr<OPCODE_ADD> ADDInstr;
+    typedef BOInstr<OPCODE_SUB> SUBInstr;
+    typedef BOInstr<OPCODE_MUL> MULInstr;
+
     class ASTInstr;
     class FSTInstr;
     class MOVM8Instr;
     class MOVN8Instr;
-    class UMULInstr;
     class DECInstr;
     class JNZInstr;
     class RETInstr;
@@ -131,11 +149,12 @@ namespace Ant {
         void createLLVMFuncs();
         void prepareLLVMContext(LLVMContext &context);
         void emitLLVMCode(LLVMContext &context);
+        template<uint8_t OP, llvm::Instruction::BinaryOps>
+        void emitLLVMCodeBO(LLVMContext &context, const BOInstr<OP> &instr);
         void emitLLVMCodeAST(LLVMContext &context, const ASTInstr &instr);
         void emitLLVMCodeFST(LLVMContext &context, const FSTInstr &instr);
         void emitLLVMCodeMOVM8(LLVMContext &context, const MOVM8Instr &instr);
         void emitLLVMCodeMOVN8(LLVMContext &context, const MOVN8Instr &instr);
-        void emitLLVMCodeUMUL(LLVMContext &context, const UMULInstr &instr);
         void emitLLVMCodeDEC(LLVMContext &context, const DECInstr &instr);
         void emitLLVMCodeJNZ(LLVMContext &context, const JNZInstr &instr);
         void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);

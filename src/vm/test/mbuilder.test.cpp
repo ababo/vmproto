@@ -14,18 +14,22 @@ namespace Ant {
         VarTypeId wordType = builder.addVarType(1, 8);
 
         RegId io = builder.addReg(wordType);
+        RegId c1 = builder.addReg(wordType);
         RegId pr = builder.addReg(wordType);
 
         ProcId proc = builder.addProc(PFLAG_EXTERNAL | PFLAG_FUNCTION, io);
         builder.addProcInstr(proc, JNZInstr(io, 3));
         builder.addProcInstr(proc, MOVM8Instr(1, io));
         builder.addProcInstr(proc, RETInstr());
+        builder.addProcInstr(proc, ASTInstr(c1));
+        builder.addProcInstr(proc, MOVM8Instr(1, c1));
         builder.addProcInstr(proc, ASTInstr(pr));
         builder.addProcInstr(proc, MOVM8Instr(1, pr));
-        builder.addProcInstr(proc, UMULInstr(io, pr, pr));
-        builder.addProcInstr(proc, DECInstr(io));
+        builder.addProcInstr(proc, MULInstr(io, pr, pr));
+        builder.addProcInstr(proc, SUBInstr(io, c1, io));
         builder.addProcInstr(proc, JNZInstr(io, -2));
         builder.addProcInstr(proc, MOVN8Instr(pr, io));
+        builder.addProcInstr(proc, FSTInstr());
         builder.addProcInstr(proc, FSTInstr());
         builder.addProcInstr(proc, RETInstr());
 
@@ -60,8 +64,8 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(r, r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, UMULInstr(r, r, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, UMULInstr(n, n, n));},NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, MULInstr(n, n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
 
@@ -147,11 +151,12 @@ namespace {
   bool testFactorialRegs(const Module &module) {
     bool passed;
 
-    passed = module.regCount() == 2;
+    passed = module.regCount() == 3;
     passed = passed && module.regTypeById(0) == 0;
     passed = passed && module.regTypeById(1) == 0;
+    passed = passed && module.regTypeById(2) == 0;
 
-    ASSERT_THROW({module.regTypeById(2);}, NotFoundException);
+    ASSERT_THROW({module.regTypeById(3);}, NotFoundException);
 
     return passed;
   }
@@ -173,7 +178,7 @@ namespace {
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = 0, pr = 1;
+    RegId io = 0, c1 = 1, pr = 2;
     Instr instr;
     int i = 0;
 
@@ -185,22 +190,30 @@ namespace {
     passed = passed && iMOVM8.to() == io;
     NEXT_OPCODE(RET);
     NEXT_INSTR_D(AST);
+    passed = passed && iAST.reg() == c1;
+    NEXT_INSTR(MOVM8);
+    passed = passed && iMOVM8.val() == 1; 
+    passed = passed && iMOVM8.to() == c1;
+    NEXT_INSTR(AST);
     passed = passed && iAST.reg() == pr;
     NEXT_INSTR(MOVM8);
-    passed = passed && iMOVM8.val() == pr; 
+    passed = passed && iMOVM8.val() == 1; 
     passed = passed && iMOVM8.to() == pr;
-    NEXT_INSTR_D(UMUL);
-    passed = passed && iUMUL.factor1() == io;
-    passed = passed && iUMUL.factor2() == pr;
-    passed = passed && iUMUL.product() == pr;
-    NEXT_INSTR_D(DEC);
-    passed = passed && iDEC.it() == io;
+    NEXT_INSTR_D(MUL);
+    passed = passed && iMUL.operand1() == io;
+    passed = passed && iMUL.operand2() == pr;
+    passed = passed && iMUL.result() == pr;
+    NEXT_INSTR_D(SUB);
+    passed = passed && iSUB.operand1() == io;
+    passed = passed && iSUB.operand2() == c1;
+    passed = passed && iSUB.result() == io;
     NEXT_INSTR(JNZ);
     passed = passed && iJNZ.it() == io;
     passed = passed && iJNZ.offset() == -2;
     NEXT_INSTR_D(MOVN8);
     passed = passed && iMOVN8.from() == pr;
     passed = passed && iMOVN8.to() == io;
+    NEXT_OPCODE(FST);
     NEXT_OPCODE(FST);
     NEXT_OPCODE(RET);
 

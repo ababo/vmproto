@@ -29,7 +29,7 @@ namespace Ant {
       VIRTUAL_CASE(FST, left, mod, call); \
       VIRTUAL_CASE(MOVM8, left, mod, call); \
       VIRTUAL_CASE(MOVN8, left, mod, call); \
-      VIRTUAL_CASE(UMUL, left, mod, call); \
+      VIRTUAL_CASE(MUL, left, mod, call); \
       VIRTUAL_CASE(DEC, left, mod, call); \
       VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
