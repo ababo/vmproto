@@ -157,7 +157,7 @@ namespace Ant {
       
       if(sign > 0) {
         uint64_t pint;
-        if((in >> pint).fail())
+        if(str.c_str()[0] != '-' && (in >> pint).fail())
           throw RangeException();
 
         loc.column += str.size();

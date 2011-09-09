@@ -18,11 +18,18 @@ namespace Ant {
     struct Variable {};
 
     template<size_t Count, size_t Bytes, size_t VRefs, size_t PRefs>
-      struct StaticVariable : public Variable {
+      struct FixedVariable : public Variable {
       struct {
         unsigned char bytes[Bytes];
         Variable *vrefs[VRefs];
         NativeCode prefs[PRefs];
+      } elts[Count];
+    };
+
+    template<size_t Count, size_t Bytes>
+      struct FixedVariable<Count, Bytes, 0, 0> : public Variable {
+      struct {
+        unsigned char bytes[Bytes];
       } elts[Count];
     };
 

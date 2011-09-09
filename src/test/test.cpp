@@ -8,16 +8,15 @@
 namespace Ant {
   namespace Test {
 
-    bool printTestResult(const String subj,
-                         const String test,
-                         bool testPassed) {
-      using namespace std;
+    using namespace std;
 
+    bool printTestResult(const String subj, const String test,
+			 bool testPassed) {
       static const int LINE_WIDTH = 80;      
-      int c = LINE_WIDTH - subj.length() - test.length() - 4;
-      wcout << subj << L" (" << test << L")" << setfill(L'.');
-      wcout << setw(c) << (testPassed ? L"passed" : L"FAILED") << endl;
-      
+      int c = LINE_WIDTH - subj.size() - test.size() - 4;
+      cout << subj << " (" << test << ")" << setfill('.');
+      cout << setw(c) << (testPassed ? "passed" : "FAILED") << endl;
+
       return testPassed;
     }
 

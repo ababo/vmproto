@@ -19,7 +19,7 @@ namespace {
     Module module;
 
     try {
-      StaticVariable<1, 8, 0, 0> io;
+      FixedVariable<1, 8, 0, 0> io;
       uint64_t &val = *reinterpret_cast<uint64_t*>(io.elts[0].bytes);
       ProcId proc = 0;
 

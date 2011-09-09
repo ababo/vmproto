@@ -367,7 +367,7 @@ namespace Ant {
       if(isPacked())
         try {
           string err, idStr = id.str();
-          llvmModule = new Module(idStr, getGlobalContext());
+          llvmModule = new llvm::Module(idStr, getGlobalContext());
           llvmFPM = new FunctionPassManager(llvmModule);
           llvmEE = EngineBuilder(llvmModule).setErrorStr(&err).create();
           if(!llvmEE) {
@@ -411,8 +411,9 @@ namespace Ant {
       if(!func)
         throw NotFoundException();
 
-      void *fPtr = llvmEE->getPointerToFunction(func);
-      reinterpret_cast<void (*)(Variable&)>(fPtr)(io);
+      void *vPtr = llvmEE->getPointerToFunction(func);
+      uintptr_t uPtr = reinterpret_cast<uintptr_t>(vPtr);
+      reinterpret_cast<void (*)(Variable&)>(uPtr)(io);
     }
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {

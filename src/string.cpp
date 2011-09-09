@@ -39,21 +39,4 @@ namespace Ant {
     return out << str.c_str();
   }
 
-  std::wostream &operator<<(std::wostream &out, const String &str) {
-    std::wstring wstr;
-    wstr.reserve(str.length());
-
-#ifndef SHORT_WCHAR
-    utf8::unchecked::utf8to32(str.str.begin(),
-                              str.str.end(),
-                              back_inserter(wstr));
-#else
-    utf8::unchecked::utf8to16(str.str.begin(),
-                              str.str.end(),
-                              back_inserter(wstr));
-#endif
-
-    return out << wstr;
-  }
-
 }

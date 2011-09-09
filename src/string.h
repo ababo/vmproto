@@ -10,7 +10,6 @@ namespace Ant {
 
   class String {
     friend std::ostream &operator<<(std::ostream &out, const String &str);
-    friend std::wostream &operator<<(std::wostream &out, const String &str);
     public:
       class Iterator : public std::iterator<std::bidirectional_iterator_tag,
                                             Char> {
