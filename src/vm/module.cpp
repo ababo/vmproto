@@ -47,8 +47,8 @@ namespace Ant {
       moduleData().varTypeById(id, vtype);
     }
 
-    VarTypeId Module::regTypeById(RegId id) const {
-      moduleData().regTypeById(id);
+    void Module::regById(RegId id, Reg &reg) const {
+      moduleData().regById(id, reg);
     }
 
     void Module::procById(ProcId id, Proc &proc) const {

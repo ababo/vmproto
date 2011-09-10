@@ -52,32 +52,36 @@ namespace Ant {
       return id;
     }
 
-    VarTypeId ModuleBuilder::addVarType(size_t count, size_t bytes) {
+    VarTypeId ModuleBuilder::addVarType(size_t bytes) {
       if(vtypes.size() >= MB_UINT_MAX(2))
-        throw RangeException();
-      if(count > MB_UINT_MAX(4))
         throw RangeException();
       if(bytes > MB_UINT_MAX(2))
         throw RangeException();
-      if(count ?
-         !safeToMultiply(count, bytes) :
-         !safeToAdd(bytes, sizeof(size_t)))
-        throw RangeException();
 
       VarType vtype;
-      vtype.count = count;
       vtype.bytes = bytes;
 
       vtypes.push_back(vtype);
       return VarTypeId(vtypes.size() - 1);
     }
 
-    RegId ModuleBuilder::addReg(VarTypeId vtype) {
-      regs.push_back(assertVarTypeExists(vtype));
+    RegId ModuleBuilder::addReg(VarTypeId vtype, size_t count) {
+      if(count > MB_UINT_MAX(4))
+        throw RangeException();
+      if(count ?
+         !safeToMultiply(count, vtypes[vtype].bytes + sizeof(size_t)) :
+         !safeToAdd(vtypes[vtype].bytes, 2 * sizeof(size_t)))
+        throw RangeException();
+
+      Reg reg;
+      reg.vtype = assertVarTypeExists(vtype);
+      reg.count = count;
+
+      regs.push_back(reg);
       return RegId(regs.size() - 1);
     }
 
-    ProcId ModuleBuilder::addProc(unsigned int flags, RegId io) {
+    ProcId ModuleBuilder::addProc(uint32_t flags, RegId io) {
       if(procs.size() >= MB_UINT_MAX(2))
         throw RangeException();
       if(flags >= PFLAG_FIRST_RESERVED)
@@ -206,7 +210,6 @@ namespace Ant {
         Runtime::VarTypeData vtypeData;
         const VarType &vtype = vtypes[i];
 
-        vtypeData.count = vtype.count;
         vtypeData.bytes = vtype.bytes;
         setFixedArray(vtype.vrefs, vtypeData.vrefs, moduleData.refs);
         setFixedArray(vtype.prefs, vtypeData.prefs, moduleData.refs);

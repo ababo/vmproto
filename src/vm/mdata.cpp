@@ -101,19 +101,18 @@ namespace Ant {
         throw NotFoundException();
 
       const VarTypeData vtypeData = vtypes[id];
-      vtype.count = vtypeData.count;
       vtype.bytes = vtypeData.bytes;
       vtype.vrefs.assign(vtypeData.vrefs.begin(), vtypeData.vrefs.end());
       vtype.prefs.assign(vtypeData.prefs.begin(), vtypeData.prefs.end());
     }
 
-    VarTypeId Runtime::ModuleData::regTypeById(RegId id) const {
+    void Runtime::ModuleData::regById(RegId id, Reg &reg) const {
       assertNotDropped();
 
       if(id >= regs.size())
         throw NotFoundException();
 
-      return regs[id];
+      reg = regs[id];
     }
 
     void Runtime::ModuleData::procById(ProcId id, Proc &proc) const {
@@ -194,7 +193,7 @@ namespace Ant {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
-      const Type *type = getLLVMTypeById(regs[reg]);
+      const Type *type = getLLVMTypeById(regs[reg].vtype);
       Constant *zeros = ConstantAggregateZero::get(type);
       Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK);
       Value *vptr = new AllocaInst(type, "", CURRENT_BLOCK);

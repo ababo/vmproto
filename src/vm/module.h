@@ -24,7 +24,7 @@ namespace Ant {
       unsigned int procCount() const;
 
       void varTypeById(VarTypeId id, VarType &vtype) const;
-      VarTypeId regTypeById(RegId id) const;
+      void regById(RegId id, Reg &reg) const;
       void procById(ProcId id, Proc &proc) const;
 
       bool isExistent() const;

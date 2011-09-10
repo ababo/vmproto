@@ -8,7 +8,7 @@ namespace Ant {
       void createFactorialModule(Module &module) {
         ModuleBuilder builder;
 
-        VarTypeId wordType = builder.addVarType(1, 8);
+        VarTypeId wordType = builder.addVarType(8);
 
         RegId io = builder.addReg(wordType);
         RegId pr = builder.addReg(wordType);

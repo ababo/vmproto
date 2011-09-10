@@ -2,46 +2,53 @@
 #define __VM_VMDEFS_INCLUDED__
 
 #include <cstddef>
+#include <stdint.h>
 #include <vector>
 
 namespace Ant {
   namespace VM {
 
-    typedef unsigned int VarTypeId;
-    typedef unsigned int ProcId;
-    typedef unsigned int RegId;
+    typedef uint32_t VarTypeId;
+    typedef uint32_t ProcId;
+    typedef uint32_t RegId;
 
-    typedef unsigned char VMCodeByte;
+    typedef uint8_t VMCodeByte;
     typedef const VMCodeByte *VMCode;
-    typedef const void *NativeCode;
 
     struct Variable {};
 
-    template<size_t Count, size_t Bytes, size_t VRefs, size_t PRefs>
-      struct FixedVariable : public Variable {
+    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,
+             bool InHeap = false>
+      struct SpecifiedVariable : public Variable {
+      size_t refCount;
+      size_t elmCount;
       struct {
         unsigned char bytes[Bytes];
         Variable *vrefs[VRefs];
-        NativeCode prefs[PRefs];
+        void *prefs[PRefs];
       } elts[Count];
     };
 
-    template<size_t Count, size_t Bytes>
-      struct FixedVariable<Count, Bytes, 0, 0> : public Variable {
+    template<uint32_t Bytes, size_t Count>
+      struct SpecifiedVariable<Bytes, 0, 0, Count, false> : public Variable {
       struct {
         unsigned char bytes[Bytes];
       } elts[Count];
     };
 
     struct VarType {
-      size_t count;
       size_t bytes;
       std::vector<VarTypeId> vrefs;
       std::vector<VarTypeId> prefs;
     };
 
+    struct Reg {
+      VarTypeId vtype;
+      size_t count;
+    };
+
     struct Proc {
-      unsigned int flags;
+      uint32_t flags;
       RegId io;
       std::vector<VMCodeByte> code;
     };

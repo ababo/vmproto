@@ -19,7 +19,7 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId t = b.addVarType(1, 7);
+      VarTypeId t = b.addVarType(7);
       RegId r = b.addReg(t), n = r + 1;
       ProcId p = b.addProc(0, r);
 
@@ -34,7 +34,7 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
 
-      t = b.addVarType(1, 8);
+      t = b.addVarType(8);
       n = b.addReg(t);
 
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
@@ -58,7 +58,7 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId t = b.addVarType(1, 8);
+      VarTypeId t = b.addVarType(8);
       RegId r = b.addReg(t);
       ProcId p = b.addProc(0, r);
 
@@ -104,8 +104,7 @@ namespace {
 
     if(passed) {
       module.varTypeById(0, vtype);
-      passed = vtype.count == 1 && vtype.bytes == 8;
-      passed = passed && !vtype.vrefs.size() && !vtype.prefs.size();
+      passed = vtype.bytes == 8 && !vtype.vrefs.size() && !vtype.prefs.size();
     }
 
     ASSERT_THROW({module.varTypeById(1, vtype);}, NotFoundException);
@@ -115,12 +114,15 @@ namespace {
 
   bool testFactorialRegs(const Module &module) {
     bool passed;
+    Reg reg;
 
     passed = module.regCount() == 2;
-    passed = passed && module.regTypeById(0) == 0;
-    passed = passed && module.regTypeById(1) == 0;
+    module.regById(0, reg);
+    passed = passed && reg.vtype == 0 && reg.count == 1;
+    module.regById(1, reg);
+    passed = passed && reg.vtype == 0 && reg.count == 1;
 
-    ASSERT_THROW({module.regTypeById(2);}, NotFoundException);
+    ASSERT_THROW({module.regById(2, reg);}, NotFoundException);
 
     return passed;
   }

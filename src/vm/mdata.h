@@ -20,7 +20,7 @@ namespace Ant {
       unsigned int procCount() const;
 
       void varTypeById(VarTypeId id, VarType &vtype) const;
-      VarTypeId regTypeById(RegId id) const;
+      void regById(RegId id, Reg &reg) const;
       void procById(ProcId id, Proc &proc) const;
 
       bool isPacked() const;
@@ -58,7 +58,7 @@ namespace Ant {
 
       std::vector<VarTypeData> vtypes;
       std::vector<VarTypeId> refs;
-      std::vector<VarTypeId> regs;
+      std::vector<Reg> regs;
       std::vector<ProcData> procs;
       std::vector<VMCodeByte> code;
 

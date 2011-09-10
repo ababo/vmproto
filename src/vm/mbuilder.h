@@ -22,21 +22,18 @@ namespace Ant {
       void varTypeById(VarTypeId id, VarType &vtype) const {
         vtype = vtypes[assertVarTypeExists(id)];
       }
-      VarTypeId regTypeById(RegId id) const {
-        return regs[assertRegExists(id)];
+      void regById(RegId id, Reg &reg) const {
+        reg = regs[assertRegExists(id)];
       }
       void procById(ProcId id, Proc &proc) const {
         proc = procs[assertProcExists(id)];
       }
 
-      VarTypeId addVarType(size_t count, size_t bytes);
+      VarTypeId addVarType(size_t bytes);
       void addVarTypeVRef(VarTypeId id, VarTypeId vref);
       void addVarTypePRef(VarTypeId id, VarTypeId pref);
-
-      RegId addReg(VarTypeId vtype);
-      RegId addReg(VarTypeId vtype, const Variable &constVar);
-
-      ProcId addProc(unsigned int flags, RegId io);
+      RegId addReg(VarTypeId vtype, size_t count = 1);
+      ProcId addProc(uint32_t flags, RegId io);
       size_t addProcInstr(ProcId id, const Instr &instr);
 
       void resetModule();
@@ -67,7 +64,7 @@ namespace Ant {
       void assertConsistency() const;
 
       std::vector<VarType> vtypes;
-      std::vector<VarTypeId> regs;
+      std::vector<Reg> regs;
       std::vector<Proc> procs;
       std::vector<ProcCon> procCons;
     };
