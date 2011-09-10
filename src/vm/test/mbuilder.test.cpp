@@ -25,8 +25,8 @@ namespace {
 
       ASSERT_THROW({b.addProc(0, n);}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, MOVM8Instr(0, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, IMM8Instr(0, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, IMM8Instr(0, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(r, r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, MOVN8Instr(n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
@@ -151,15 +151,15 @@ namespace {
     NEXT_INSTR_D(JNZ);
     passed = passed && iJNZ.it() == io;
     passed = passed && iJNZ.offset() == 3;
-    NEXT_INSTR_D(MOVM8);
-    passed = passed && iMOVM8.val() == 1; 
-    passed = passed && iMOVM8.to() == io;
+    NEXT_INSTR_D(IMM8);
+    passed = passed && iIMM8.val() == 1; 
+    passed = passed && iIMM8.to() == io;
     NEXT_OPCODE(RET);
     NEXT_INSTR_D(AST);
     passed = passed && iAST.reg() == pr;
-    NEXT_INSTR(MOVM8);
-    passed = passed && iMOVM8.val() == 1; 
-    passed = passed && iMOVM8.to() == pr;
+    NEXT_INSTR(IMM8);
+    passed = passed && iIMM8.val() == 1; 
+    passed = passed && iIMM8.to() == pr;
     NEXT_INSTR_D(MUL);
     passed = passed && iMUL.operand1() == io;
     passed = passed && iMUL.operand2() == pr;

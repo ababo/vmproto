@@ -187,6 +187,41 @@ namespace Ant {
     }
 
 #define CURRENT_BLOCK context.blocks[context.blockIndex]
+#define CONST_INT(bits, val, signed) \
+    ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
+#define TYPE_PTR(type) PointerType::get(type, 0)
+#define BITCAST_PINT(bits, ptr) \
+    new BitCastInst(ptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
+
+    template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
+      void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
+                                               const UOInstr<OP> &instr) {
+      Value *operand = BITCAST_PINT(64, context.vptr(instr.operand()));
+      Value *val = new LoadInst(operand, "", CURRENT_BLOCK);
+      Value *co = CONST_INT(64, CO, false);
+      val = BinaryOperator::Create(IOP, val, co, "", CURRENT_BLOCK);
+      new StoreInst(val, operand, CURRENT_BLOCK);
+    }
+
+    template<uint8_t OP, Instruction::BinaryOps IOP>
+      void Runtime::ModuleData::emitLLVMCodeBO(LLVMContext &context,
+                                               const BOInstr<OP> &instr) {
+      Value *operand1 = BITCAST_PINT(64, context.vptr(instr.operand1()));
+      Value *operand2 = BITCAST_PINT(64, context.vptr(instr.operand2()));
+      Value *result = BITCAST_PINT(64, context.vptr(instr.result()));
+      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
+      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
+      Value *val3 = BinaryOperator::Create(IOP, val1, val2, "", CURRENT_BLOCK);
+      new StoreInst(val3, result, CURRENT_BLOCK);
+    }
+
+    template<uint8_t OP, class VAL>
+      void Runtime::ModuleData::emitLLVMCodeIMM(LLVMContext &context,
+                                              const IMMInstr<OP, VAL> &instr) {
+      Value *to = BITCAST_PINT(sizeof(VAL), context.vptr(instr.to()));
+      new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()), false), to,
+                    CURRENT_BLOCK);
+    }
 
     void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
                                               const ASTInstr &instr) {
@@ -210,54 +245,20 @@ namespace Ant {
       context.popAlloc();
     }
 
-#define CONST_I64(val, signed) \
-    ConstantInt::get(llvmModule->getContext(), APInt(64, val, signed))
-#define TYPE_PTR(type) PointerType::get(type, 0)
-#define BITCAST_PI64(ptr) \
-    new BitCastInst(ptr, TYPE_PTR(TYPE_INT(64)), "", CURRENT_BLOCK)
-
-    void Runtime::ModuleData::emitLLVMCodeMOVM8(LLVMContext &context,
-                                                const MOVM8Instr &instr) {
-      Value *to = BITCAST_PI64(context.vptr(instr.to()));
-      new StoreInst(CONST_I64(instr.val(), false), to, CURRENT_BLOCK);
-    }
-
     void Runtime::ModuleData::emitLLVMCodeMOVN8(LLVMContext &context,
                                                 const MOVN8Instr &instr) {
-      Value *from = BITCAST_PI64(context.vptr(instr.from()));
-      Value *to = BITCAST_PI64(context.vptr(instr.to()));
+      Value *from = BITCAST_PINT(64, context.vptr(instr.from()));
+      Value *to = BITCAST_PINT(64, context.vptr(instr.to()));
       Value *val = new LoadInst(from, "", CURRENT_BLOCK);
       new StoreInst(val, to, CURRENT_BLOCK);
     }
 
-    template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
-      void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
-                                               const UOInstr<OP> &instr) {
-      Value *operand = BITCAST_PI64(context.vptr(instr.operand()));
-      Value *val = new LoadInst(operand, "", CURRENT_BLOCK);
-      Value *co = CONST_I64(CO, false);
-      val = BinaryOperator::Create(IOP, val, co, "", CURRENT_BLOCK);
-      new StoreInst(val, operand, CURRENT_BLOCK);
-    }
-
-    template<uint8_t OP, Instruction::BinaryOps IOP>
-      void Runtime::ModuleData::emitLLVMCodeBO(LLVMContext &context,
-                                               const BOInstr<OP> &instr) {
-      Value *operand1 = BITCAST_PI64(context.vptr(instr.operand1()));
-      Value *operand2 = BITCAST_PI64(context.vptr(instr.operand2()));
-      Value *result = BITCAST_PI64(context.vptr(instr.result()));
-      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
-      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
-      Value *val3 = BinaryOperator::Create(IOP, val1, val2, "", CURRENT_BLOCK);
-      new StoreInst(val3, result, CURRENT_BLOCK);
-    }
-
     void Runtime::ModuleData::emitLLVMCodeJNZ(LLVMContext &context,
                                               const JNZInstr &instr) {
-      Value *it = BITCAST_PI64(context.vptr(instr.it()));
+      Value *it = BITCAST_PINT(64, context.vptr(instr.it()));
       Value *val = new LoadInst(it, "", CURRENT_BLOCK);
       ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE,
-                                   val, CONST_I64(0, false));
+                                   val, CONST_INT(64, 0, false));
       size_t jindex = instr.jumpIndex(context.instrIndex);
       BasicBlock *jblock = context.jumpBlock(jindex);
       BasicBlock *nblock = context.blocks[context.blockIndex + 1];
@@ -279,6 +280,11 @@ namespace Ant {
       emitLLVMCodeBO<OPCODE_##op, Instruction::iop>( \
         context, static_cast<BOInstr<OPCODE_##op>&>(instr)); break;
 
+#define IMMINSTR_CASE(op, val) \
+    case OPCODE_##op: \
+    emitLLVMCodeIMM<OPCODE_##op, val>( \
+      context, static_cast<IMMInstr<OPCODE_##op, val>&>(instr)); break;
+
 #define INSTR_CASE(op) \
     case OPCODE_##op: \
       emitLLVMCode##op(context, static_cast<op##Instr&>(instr)); break;
@@ -295,9 +301,12 @@ namespace Ant {
           BOINSTR_CASE(ADD, Add);
           BOINSTR_CASE(SUB, Sub);
           BOINSTR_CASE(MUL, Mul);
+          IMMINSTR_CASE(IMM1, uint8_t);
+          IMMINSTR_CASE(IMM2, uint16_t);
+          IMMINSTR_CASE(IMM4, uint32_t);
+          IMMINSTR_CASE(IMM8, uint64_t);
           INSTR_CASE(AST);
           INSTR_CASE(FST);
-          INSTR_CASE(MOVM8);
           INSTR_CASE(MOVN8);
           INSTR_CASE(JNZ);
           INSTR_CASE(RET);

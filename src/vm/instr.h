@@ -106,6 +106,32 @@ namespace Ant {
     typedef BOInstr<OPCODE_SUB> SUBInstr;
     typedef BOInstr<OPCODE_MUL> MULInstr;
 
+    template<uint8_t OP, class VAL> class IMMInstr : public Instr {
+      friend class Instr;
+    public:
+      IMMInstr(VAL val, RegId to) {
+        op = OP; set2Params(val, to);
+      }
+
+      size_t size() const { return Instr::size(2); }
+      VAL val() const { return VAL(getParam(0)); }
+      RegId to() const { return RegId(getParam(1)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, sizeof(VAL), to());
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    typedef IMMInstr<OPCODE_IMM1, uint8_t> IMM1Instr;
+    typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
+    typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
+    typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
+
     class ASTInstr : public Instr {
       friend class Instr;
     public:
@@ -138,27 +164,6 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::applyStackFree(mbuilder, proc);
-      }
-    };
-
-    class MOVM8Instr : public Instr {
-      friend class Instr;
-    public:
-      MOVM8Instr(uint64_t val, RegId to) {
-        op = OPCODE_MOVM8; set2Params(val, to);
-      }
-
-      size_t size() const { return Instr::size(2); }
-      uint64_t val() const { return getParam(0); }
-      RegId to() const { return RegId(getParam(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, to());
-        Instr::applyDefault(mbuilder, proc);
       }
     };
 

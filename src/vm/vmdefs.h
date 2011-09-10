@@ -66,6 +66,10 @@ namespace Ant {
       OPCODE_ADD,
       OPCODE_SUB,
       OPCODE_MUL,
+      OPCODE_IMM1,
+      OPCODE_IMM2,
+      OPCODE_IMM4,
+      OPCODE_IMM8,
       OPCODE_AST,
       OPCODE_FST,
       OPCODE_MOVM8,
@@ -83,9 +87,14 @@ namespace Ant {
     typedef BOInstr<OPCODE_SUB> SUBInstr;
     typedef BOInstr<OPCODE_MUL> MULInstr;
 
+    template<uint8_t, class> class IMMInstr;
+    typedef IMMInstr<OPCODE_IMM1, uint8_t> IMM1Instr;
+    typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
+    typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
+    typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
+
     class ASTInstr;
     class FSTInstr;
-    class MOVM8Instr;
     class MOVN8Instr;
     class JNZInstr;
     class RETInstr;

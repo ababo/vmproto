@@ -15,10 +15,10 @@ namespace Ant {
 
         ProcId proc = builder.addProc(PFLAG_EXTERNAL | PFLAG_FUNCTION, io);
         builder.addProcInstr(proc, JNZInstr(io, 3));
-        builder.addProcInstr(proc, MOVM8Instr(1, io));
+        builder.addProcInstr(proc, IMM8Instr(1, io));
         builder.addProcInstr(proc, RETInstr());
         builder.addProcInstr(proc, ASTInstr(pr));
-        builder.addProcInstr(proc, MOVM8Instr(1, pr));
+        builder.addProcInstr(proc, IMM8Instr(1, pr));
         builder.addProcInstr(proc, MULInstr(io, pr, pr));
         builder.addProcInstr(proc, DECInstr(io));
         builder.addProcInstr(proc, JNZInstr(io, -2));
