@@ -60,17 +60,17 @@ namespace Ant {
     template<uint8_t OP> class UOInstr : public Instr {
       friend class Instr;
     public:
-      UOInstr(RegId operand) { op = OP; setParam(operand); }
+      UOInstr(RegId it) { op = OP; setParam(it); }
 
       size_t size() const { return Instr::size(1); }
-      RegId operand() const { return RegId(getParam(0)); }
+      RegId it() const { return RegId(getParam(0)); }
       bool breaks() const { return false; }
       bool jumps() const { return false; }
       size_t jumpIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, operand());
+        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
         Instr::applyDefault(mbuilder, proc);
       }
     };
@@ -132,6 +132,29 @@ namespace Ant {
     typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
     typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
 
+    template<uint8_t OP> class UJInstr : public Instr {
+      friend class Instr;
+    public:
+      UJInstr(RegId it, int offset) {
+        op = OP; set2Params2(it, offset); }
+
+      size_t size() const { return Instr::size(2); }
+      RegId it() const { return RegId(getParam(0)); }
+      int offset() const { return int(getParam2(1)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return true; }
+      size_t jumpIndex(size_t index) const {
+        return size_t(ptrdiff_t(index) + offset()); }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
+        Instr::applyInstrOffset(mbuilder, proc, offset());
+      }
+    };
+
+    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+
     class ASTInstr : public Instr {
       friend class Instr;
     public:
@@ -167,11 +190,11 @@ namespace Ant {
       }
     };
 
-    class MOVN8Instr : public Instr {
+    class CPBInstr : public Instr {
       friend class Instr;
     public:
-      MOVN8Instr(RegId from, RegId to) {
-        op = OPCODE_MOVN8; set2Params(from, to);
+      CPBInstr(RegId from, RegId to) {
+        op = OPCODE_CPB; set2Params(from, to);
       }
 
       size_t size() const { return Instr::size(2); }
@@ -183,30 +206,9 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, from());
-        Instr::assertRegHasBytes(mbuilder, proc, 8, to());
+        Instr::assertRegExists(mbuilder, from());
+        Instr::assertRegExists(mbuilder, to());
         Instr::applyDefault(mbuilder, proc);
-      }
-    };
-
-    class JNZInstr : public Instr {
-      friend class Instr;
-    public:
-      JNZInstr(RegId it, int offset) {
-        op = OPCODE_JNZ; set2Params2(it, offset); }
-
-      size_t size() const { return Instr::size(2); }
-      RegId it() const { return RegId(getParam(0)); }
-      int offset() const { return int(getParam2(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
-        return size_t(ptrdiff_t(index) + offset()); }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
-        Instr::applyInstrOffset(mbuilder, proc, offset());
       }
     };
 

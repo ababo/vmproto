@@ -34,10 +34,10 @@ namespace Ant {
       VIRTUAL_CASE(IMM2, left, mod, call); \
       VIRTUAL_CASE(IMM4, left, mod, call); \
       VIRTUAL_CASE(IMM8, left, mod, call); \
+      VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(AST, left, mod, call); \
       VIRTUAL_CASE(FST, left, mod, call); \
-      VIRTUAL_CASE(MOVN8, left, mod, call); \
-      VIRTUAL_CASE(JNZ, left, mod, call); \
+      VIRTUAL_CASE(CPB, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }

@@ -19,7 +19,7 @@ namespace Ant {
 
     template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,
              bool InHeap = false>
-      struct SpecifiedVariable : public Variable {
+     struct SpecifiedVariable : public Variable {
       size_t refCount;
       size_t elmCount;
       struct {
@@ -30,7 +30,7 @@ namespace Ant {
     };
 
     template<uint32_t Bytes, size_t Count>
-      struct SpecifiedVariable<Bytes, 0, 0, Count, false> : public Variable {
+     struct SpecifiedVariable<Bytes, 0, 0, Count, false> : public Variable {
       struct {
         unsigned char bytes[Bytes];
       } elts[Count];
@@ -70,11 +70,10 @@ namespace Ant {
       OPCODE_IMM2,
       OPCODE_IMM4,
       OPCODE_IMM8,
+      OPCODE_JNZ,
       OPCODE_AST,
       OPCODE_FST,
-      OPCODE_MOVM8,
-      OPCODE_MOVN8,
-      OPCODE_JNZ,
+      OPCODE_CPB,
       OPCODE_RET
     };
 
@@ -93,10 +92,12 @@ namespace Ant {
     typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
     typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
 
+    template<uint8_t> class UJInstr;
+    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+
     class ASTInstr;
     class FSTInstr;
-    class MOVN8Instr;
-    class JNZInstr;
+    class CPBInstr;
     class RETInstr;
 
   }

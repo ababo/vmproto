@@ -22,7 +22,7 @@ namespace Ant {
         builder.addProcInstr(proc, MULInstr(io, pr, pr));
         builder.addProcInstr(proc, DECInstr(io));
         builder.addProcInstr(proc, JNZInstr(io, -2));
-        builder.addProcInstr(proc, MOVN8Instr(pr, io));
+        builder.addProcInstr(proc, CPBInstr(pr, io));
         builder.addProcInstr(proc, FSTInstr());
         builder.addProcInstr(proc, RETInstr());
 

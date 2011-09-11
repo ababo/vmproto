@@ -3,6 +3,7 @@
 
 #include "../retained.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/Instructions.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "runtime.h"
@@ -48,10 +49,11 @@ namespace Ant {
       template<uint8_t OP, class VAL>
         void emitLLVMCodeIMM(LLVMContext &context,
                              const IMMInstr<OP, VAL> &instr);
+      template<uint8_t OP, llvm::ICmpInst::Predicate, uint64_t>
+        void emitLLVMCodeUJ(LLVMContext &context, const UJInstr<OP> &instr);
       void emitLLVMCodeAST(LLVMContext &context, const ASTInstr &instr);
       void emitLLVMCodeFST(LLVMContext &context, const FSTInstr &instr);
-      void emitLLVMCodeMOVN8(LLVMContext &context, const MOVN8Instr &instr);
-      void emitLLVMCodeJNZ(LLVMContext &context, const JNZInstr &instr);
+      void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
       const llvm::Type *getLLVMTypeById(VarTypeId id) const;
 
