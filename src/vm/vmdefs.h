@@ -18,7 +18,7 @@ namespace Ant {
     struct Variable {};
 
     template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,
-             bool InHeap = false>
+             bool Fixed = true, bool InStack = true>
      struct SpecifiedVariable : public Variable {
       size_t refCount;
       size_t elmCount;
@@ -30,7 +30,8 @@ namespace Ant {
     };
 
     template<uint32_t Bytes, size_t Count>
-     struct SpecifiedVariable<Bytes, 0, 0, Count, false> : public Variable {
+     struct SpecifiedVariable<Bytes, 0, 0, Count, true, true>
+      : public Variable {
       struct {
         unsigned char bytes[Bytes];
       } elts[Count];
