@@ -9,6 +9,7 @@ namespace Ant {
   namespace VM {
 
     typedef uint32_t VarTypeId;
+    typedef uint32_t ProcTypeId;
     typedef uint32_t ProcId;
     typedef uint32_t RegId;
 
@@ -37,27 +38,37 @@ namespace Ant {
       } elts[Count];
     };
 
-    struct VarType {
-      size_t bytes;
-      std::vector<VarTypeId> vrefs;
-      std::vector<VarTypeId> prefs;
-    };
-
-    struct Reg {
+    struct VarSpec {
       VarTypeId vtype;
       size_t count;
     };
 
-    struct Proc {
+    struct VarType {
+      size_t bytes;
+      std::vector<VarSpec> vrefs;
+      std::vector<ProcTypeId> prefs;
+    };
+
+    enum ProcTypeFlag {
+      PTFLAG_READER = 0x1,
+      PTFLAG_WRITER = 0x2,
+      PTFLAG_FIRST_RESERVED = 0x4
+    };
+
+    struct ProcType {
       uint32_t flags;
       RegId io;
-      std::vector<VMCodeByte> code;
     };
 
     enum ProcFlag {
       PFLAG_EXTERNAL = 0x1,
-      PFLAG_FUNCTION = 0x2,
-      PFLAG_FIRST_RESERVED = 0x4
+      PFLAG_FIRST_RESERVED = 0x2
+    };
+
+    struct Proc {
+      uint32_t flags;
+      ProcTypeId ptype;
+      std::vector<VMCodeByte> code;
     };
 
     enum OpCode {

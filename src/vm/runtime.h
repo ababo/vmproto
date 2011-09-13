@@ -19,12 +19,12 @@ namespace Ant {
       struct VarTypeData {
         size_t count;
         size_t bytes;
-        FixedArray<VarTypeId> vrefs;
-        FixedArray<VarTypeId> prefs;
+        FixedArray<VarSpec> vrefs;
+        FixedArray<ProcTypeId> prefs;
       };
       struct ProcData {
         unsigned int flags;
-        RegId io;
+        ProcTypeId ptype;
         FixedArray<VMCodeByte> code;
       };
       struct ModuleData;

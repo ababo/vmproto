@@ -19,9 +19,10 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId t = b.addVarType(7);
-      RegId r = b.addReg(t), n = r + 1;
-      ProcId p = b.addProc(0, r);
+      VarTypeId vt = b.addVarType(7);
+      RegId r = b.addReg(vt), n = r + 1;
+      ProcTypeId pt = b.addProcType(0, r);
+      ProcId p = b.addProc(0, pt);
 
       ASSERT_THROW({b.addProc(0, n);}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
@@ -33,8 +34,8 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
 
-      t = b.addVarType(8);
-      n = b.addReg(t);
+      vt = b.addVarType(8);
+      n = b.addReg(vt);
 
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
       b.addProcInstr(p, ASTInstr(n));
@@ -57,9 +58,10 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId t = b.addVarType(8);
-      RegId r = b.addReg(t);
-      ProcId p = b.addProc(0, r);
+      VarTypeId vt = b.addVarType(8);
+      RegId r = b.addReg(vt);
+      ProcTypeId pt = b.addProcType(0, r);
+      ProcId p = b.addProc(0, pt);
 
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 2));
@@ -111,9 +113,25 @@ namespace {
     return passed;
   }
 
+  bool testFactorialPTypes(const Module &module) {
+    ProcType ptype;
+    bool passed;
+    
+    passed = module.procTypeCount() == 1;
+
+    if(passed) {
+      module.procTypeById(0, ptype);
+      passed = !ptype.flags && ptype.io == 0;
+    }
+
+    ASSERT_THROW({module.procTypeById(1, ptype);}, NotFoundException);
+
+    return passed;
+  }
+
   bool testFactorialRegs(const Module &module) {
     bool passed;
-    Reg reg;
+    VarSpec reg;
 
     passed = module.regCount() == 2;
     module.regById(0, reg);
@@ -187,8 +205,8 @@ namespace {
 
     if(passed) {
       module.procById(0, proc);
-      passed = proc.flags == PFLAG_EXTERNAL | PFLAG_FUNCTION;
-      passed = passed && proc.io == 0;
+      passed = proc.flags == PFLAG_EXTERNAL;
+      passed = passed && proc.ptype == 0;
       passed = passed && testFactorialInstrs(proc);
     }
 
@@ -205,6 +223,7 @@ namespace {
       createFactorialModule(module);
 
       passed = testFactorialVTypes(module);
+      passed = testFactorialPTypes(module);
       passed = passed && testFactorialRegs(module);
       passed = passed && testFactorialProcs(module);
 

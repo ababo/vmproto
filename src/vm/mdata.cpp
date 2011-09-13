@@ -78,17 +78,22 @@ namespace Ant {
         throw OperationException();
     }
 
-    unsigned int Runtime::ModuleData::varTypeCount() const {
+    uint32_t Runtime::ModuleData::varTypeCount() const {
       assertNotDropped();
       return vtypes.size();
     }
 
-    unsigned int Runtime::ModuleData::regCount() const {
+    uint32_t Runtime::ModuleData::procTypeCount() const {
+      assertNotDropped();
+      return ptypes.size();
+    }
+
+    uint32_t Runtime::ModuleData::regCount() const {
       assertNotDropped();
       return regs.size();
     }
     
-    unsigned int Runtime::ModuleData::procCount() const {
+    uint32_t Runtime::ModuleData::procCount() const {
       assertNotDropped();
       return procs.size();
     }
@@ -105,7 +110,17 @@ namespace Ant {
       vtype.prefs.assign(vtypeData.prefs.begin(), vtypeData.prefs.end());
     }
 
-    void Runtime::ModuleData::regById(RegId id, Reg &reg) const {
+    void Runtime::ModuleData::procTypeById(ProcTypeId id,
+					   ProcType &ptype) const {
+      assertNotDropped();
+
+      if(id >= ptypes.size())
+        throw NotFoundException();
+
+      ptype = ptypes[id];
+    }
+
+    void Runtime::ModuleData::regById(RegId id, VarSpec &reg) const {
       assertNotDropped();
 
       if(id >= regs.size())
@@ -122,7 +137,7 @@ namespace Ant {
 
       const ProcData procData = procs[id];
       proc.flags = procData.flags;
-      proc.io = procData.io;
+      proc.ptype = procData.ptype;
       proc.code.assign(procData.code.begin(), procData.code.end());
     }
 
@@ -182,7 +197,7 @@ namespace Ant {
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
 
-      context.pushAlloc(procs[context.proc].io, NULL,
+      context.pushAlloc(ptypes[procs[context.proc].ptype].io, NULL,
                         context.func->arg_begin());
     }
 
@@ -343,7 +358,8 @@ namespace Ant {
     void Runtime::ModuleData::createLLVMFuncs() {
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
-        argTypes.push_back(TYPE_PTR(getLLVMTypeById(procs[proc].io)));
+	RegId io = ptypes[procs[proc].ptype].io;
+        argTypes.push_back(TYPE_PTR(getLLVMTypeById(io)));
         const Type *voidType = Type::getVoidTy(llvmModule->getContext());
         FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
 
@@ -415,7 +431,8 @@ namespace Ant {
       pack();
 
       vtypes.clear();
-      refs.clear();
+      vrefs.clear();
+      prefs.clear();
       regs.clear();
       procs.clear();
       code.clear();
@@ -439,7 +456,8 @@ namespace Ant {
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {
       vtypes.swap(moduleData.vtypes);
-      refs.swap(moduleData.refs);
+      vrefs.swap(moduleData.vrefs);
+      prefs.swap(moduleData.prefs);
       regs.swap(moduleData.regs);
       procs.swap(moduleData.procs);
       code.swap(moduleData.code);

@@ -31,8 +31,20 @@ namespace Ant {
       return id;
     }
 
+    ProcTypeId ModuleBuilder::assertProcTypeExists(ProcTypeId id) const {
+      if(id >= ptypes.size())
+        throw NotFoundException();
+      return id;
+    }
+
     RegId ModuleBuilder::assertRegExists(RegId id) const {
       if(id >= regs.size())
+        throw NotFoundException();
+      return id;
+    }
+
+    ProcId ModuleBuilder::assertProcExists(ProcId id) const {
+      if(id >= procs.size())
         throw NotFoundException();
       return id;
     }
@@ -46,10 +58,18 @@ namespace Ant {
       throw OperationException();
     }
 
-    ProcId ModuleBuilder::assertProcExists(ProcId id) const {
-      if(id >= procs.size())
-        throw NotFoundException();
-      return id;
+    size_t ModuleBuilder::assertCountInRange(VarTypeId vtype, size_t count) {
+      assertVarTypeExists(vtype);
+
+      if(count > MB_UINT_MAX(4))
+        throw RangeException();
+
+      if(count ?
+         !safeToMultiply(count, vtypes[vtype].bytes + sizeof(size_t)) :
+         !safeToAdd(vtypes[vtype].bytes, 2 * sizeof(size_t)))
+        throw RangeException();
+
+      return count;
     }
 
     VarTypeId ModuleBuilder::addVarType(size_t bytes) {
@@ -65,23 +85,30 @@ namespace Ant {
       return VarTypeId(vtypes.size() - 1);
     }
 
-    RegId ModuleBuilder::addReg(VarTypeId vtype, size_t count) {
-      if(count > MB_UINT_MAX(4))
+    ProcTypeId ModuleBuilder::addProcType(uint32_t flags, RegId io) {
+      if(ptypes.size() >= MB_UINT_MAX(2))
         throw RangeException();
-      if(count ?
-         !safeToMultiply(count, vtypes[vtype].bytes + sizeof(size_t)) :
-         !safeToAdd(vtypes[vtype].bytes, 2 * sizeof(size_t)))
-        throw RangeException();
+      if(flags >= PTFLAG_FIRST_RESERVED)
+        throw FlagsException();
 
-      Reg reg;
-      reg.vtype = assertVarTypeExists(vtype);
-      reg.count = count;
+      ProcType ptype;
+      ptype.flags = flags;
+      ptype.io = assertRegExists(io);
+
+      ptypes.push_back(ptype);
+      return ProcTypeId(ptypes.size() - 1);
+    }
+
+    RegId ModuleBuilder::addReg(VarTypeId vtype, size_t count) {
+      VarSpec reg;
+      reg.vtype = vtype;
+      reg.count = assertCountInRange(vtype, count);
 
       regs.push_back(reg);
       return RegId(regs.size() - 1);
     }
 
-    ProcId ModuleBuilder::addProc(uint32_t flags, RegId io) {
+    ProcId ModuleBuilder::addProc(uint32_t flags, ProcTypeId ptype) {
       if(procs.size() >= MB_UINT_MAX(2))
         throw RangeException();
       if(flags >= PFLAG_FIRST_RESERVED)
@@ -89,14 +116,14 @@ namespace Ant {
 
       Proc proc;
       proc.flags = flags;
-      proc.io = assertRegExists(io);
+      proc.ptype = assertProcTypeExists(ptype);
       procs.push_back(proc);
 
       ProcCon con;
       con.instrCount = 0;
       con.frames.resize(1);
       con.frames.back().push_back(0);
-      con.allocs.push_back(io);
+      con.allocs.push_back(ptypes[ptype].io);
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
@@ -201,18 +228,21 @@ namespace Ant {
     }
 
     void ModuleBuilder::fillVarTypes(Runtime::ModuleData &moduleData) const {
-      size_t size = 0;
-      for(int i = 0; i < vtypes.size(); i++)
-        size += vtypes[i].vrefs.size() + vtypes[i].prefs.size();
-      moduleData.refs.reserve(size);
+      size_t vsize = 0, psize = 0;
+      for(int i = 0; i < vtypes.size(); i++) {
+        vsize += vtypes[i].vrefs.size();
+	psize += vtypes[i].prefs.size();
+      }
+      moduleData.vrefs.reserve(vsize);
+      moduleData.prefs.reserve(psize);
 
       for(int i = 0; i < vtypes.size(); i++) {
         Runtime::VarTypeData vtypeData;
         const VarType &vtype = vtypes[i];
 
         vtypeData.bytes = vtype.bytes;
-        setFixedArray(vtype.vrefs, vtypeData.vrefs, moduleData.refs);
-        setFixedArray(vtype.prefs, vtypeData.prefs, moduleData.refs);
+        setFixedArray(vtype.vrefs, vtypeData.vrefs, moduleData.vrefs);
+        setFixedArray(vtype.prefs, vtypeData.prefs, moduleData.prefs);
 
         moduleData.vtypes.push_back(vtypeData);
       }
@@ -229,7 +259,7 @@ namespace Ant {
         const Proc &proc = procs[i];
 
         procData.flags = proc.flags;
-        procData.io = proc.io;
+        procData.ptype = proc.ptype;
         setFixedArray(proc.code, procData.code, moduleData.code);
 
         moduleData.procs.push_back(procData);
@@ -249,6 +279,7 @@ namespace Ant {
       UUID id = id.generate();
       Runtime::ModuleData moduleData(id);
       fillVarTypes(moduleData);
+      moduleData.ptypes = ptypes;
       moduleData.regs = regs;
       fillProcs(moduleData);
 

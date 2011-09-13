@@ -15,14 +15,18 @@ namespace Ant {
     class ModuleBuilder {
       friend class Instr;
     public:
-      unsigned int varTypeCount() const { return vtypes.size(); }
-      unsigned int regCount() const { return regs.size(); }
-      unsigned int procCount() const { return procs.size(); }
+      uint32_t varTypeCount() const { return vtypes.size(); }
+      uint32_t procTypeCount() const { return ptypes.size(); }
+      uint32_t regCount() const { return regs.size(); }
+      uint32_t procCount() const { return procs.size(); }
 
       void varTypeById(VarTypeId id, VarType &vtype) const {
         vtype = vtypes[assertVarTypeExists(id)];
       }
-      void regById(RegId id, Reg &reg) const {
+      void procTypeById(ProcTypeId id, ProcType &ptype) const {
+        ptype = ptypes[assertProcTypeExists(id)];
+      }
+      void regById(RegId id, VarSpec &reg) const {
         reg = regs[assertRegExists(id)];
       }
       void procById(ProcId id, Proc &proc) const {
@@ -30,10 +34,11 @@ namespace Ant {
       }
 
       VarTypeId addVarType(size_t bytes);
-      void addVarTypeVRef(VarTypeId id, VarTypeId vref);
-      void addVarTypePRef(VarTypeId id, VarTypeId pref);
+      void addVarTypeVRef(VarTypeId id, VarTypeId vtype, size_t count = 1);
+      void addVarTypePRef(VarTypeId id, ProcTypeId ptype);
+      ProcTypeId addProcType(uint32_t flags, RegId io);
       RegId addReg(VarTypeId vtype, size_t count = 1);
-      ProcId addProc(uint32_t flags, RegId io);
+      ProcId addProc(uint32_t flags, ProcTypeId ptype);
       size_t addProcInstr(ProcId id, const Instr &instr);
 
       void resetModule();
@@ -48,9 +53,11 @@ namespace Ant {
       };
 
       VarTypeId assertVarTypeExists(VarTypeId id) const;
+      VarTypeId assertProcTypeExists(VarTypeId id) const;
       RegId assertRegExists(RegId id) const;
-      RegId assertRegAllocated(ProcId proc, RegId reg) const;
       ProcId assertProcExists(ProcId id) const;
+      RegId assertRegAllocated(ProcId proc, RegId reg) const;
+      size_t assertCountInRange(VarTypeId vtype, size_t count);
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
@@ -64,7 +71,8 @@ namespace Ant {
       void assertConsistency() const;
 
       std::vector<VarType> vtypes;
-      std::vector<Reg> regs;
+      std::vector<ProcType> ptypes;
+      std::vector<VarSpec> regs;
       std::vector<Proc> procs;
       std::vector<ProcCon> procCons;
     };

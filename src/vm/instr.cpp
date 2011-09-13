@@ -127,10 +127,10 @@ namespace Ant {
                                    size_t minBytes, RegId reg) {
       assertRegAllocated(mbuilder, proc, reg);
 
-      Reg r;
-      mbuilder.regById(reg, r);
+      VarSpec vspec;
+      mbuilder.regById(reg, vspec);
       VarType vtype;
-      mbuilder.varTypeById(r.vtype, vtype);
+      mbuilder.varTypeById(vspec.vtype, vtype);
 
       if(vtype.bytes < minBytes)
         throw TypeException();

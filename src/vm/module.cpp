@@ -31,15 +31,19 @@ namespace Ant {
       return *iter->second;
     }
 
-    unsigned int Module::varTypeCount() const {
+    uint32_t Module::varTypeCount() const {
       return moduleData().varTypeCount();
     }
 
-    unsigned int Module::regCount() const {
+    uint32_t Module::procTypeCount() const {
+      return moduleData().procTypeCount();
+    }
+
+    uint32_t Module::regCount() const {
       return moduleData().regCount();
     }
 
-    unsigned int Module::procCount() const {
+    uint32_t Module::procCount() const {
       return moduleData().procCount();
     }
 
@@ -47,7 +51,11 @@ namespace Ant {
       moduleData().varTypeById(id, vtype);
     }
 
-    void Module::regById(RegId id, Reg &reg) const {
+    void Module::procTypeById(ProcTypeId id, ProcType &ptype) const {
+      moduleData().procTypeById(id, ptype);
+    }
+
+    void Module::regById(RegId id, VarSpec &reg) const {
       moduleData().regById(id, reg);
     }
 

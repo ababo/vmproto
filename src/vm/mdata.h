@@ -16,12 +16,14 @@ namespace Ant {
 
       ModuleData(const UUID &id);
 
-      unsigned int varTypeCount() const;
-      unsigned int regCount() const;
-      unsigned int procCount() const;
+      uint32_t varTypeCount() const;
+      uint32_t procTypeCount() const;
+      uint32_t regCount() const;
+      uint32_t procCount() const;
 
       void varTypeById(VarTypeId id, VarType &vtype) const;
-      void regById(RegId id, Reg &reg) const;
+      void procTypeById(ProcTypeId id, ProcType &ptype) const;
+      void regById(RegId id, VarSpec &reg) const;
       void procById(ProcId id, Proc &proc) const;
 
       bool isPacked() const;
@@ -61,8 +63,10 @@ namespace Ant {
       bool dropped;
 
       std::vector<VarTypeData> vtypes;
-      std::vector<VarTypeId> refs;
-      std::vector<Reg> regs;
+      std::vector<ProcType> ptypes;
+      std::vector<VarSpec> vrefs;
+      std::vector<ProcTypeId> prefs;
+      std::vector<VarSpec> regs;
       std::vector<ProcData> procs;
       std::vector<VMCodeByte> code;
 

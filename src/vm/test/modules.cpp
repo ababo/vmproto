@@ -8,12 +8,14 @@ namespace Ant {
       void createFactorialModule(Module &module) {
         ModuleBuilder builder;
 
-        VarTypeId wordType = builder.addVarType(8);
+        VarTypeId vtype = builder.addVarType(8);
 
-        RegId io = builder.addReg(wordType);
-        RegId pr = builder.addReg(wordType);
+        RegId io = builder.addReg(vtype);
+        RegId pr = builder.addReg(vtype);
 
-        ProcId proc = builder.addProc(PFLAG_EXTERNAL | PFLAG_FUNCTION, io);
+        ProcTypeId ptype = builder.addProcType(0, io);
+
+        ProcId proc = builder.addProc(PFLAG_EXTERNAL, ptype);
         builder.addProcInstr(proc, JNZInstr(io, 3));
         builder.addProcInstr(proc, IMM8Instr(1, io));
         builder.addProcInstr(proc, RETInstr());
