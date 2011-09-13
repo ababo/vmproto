@@ -456,6 +456,7 @@ namespace Ant {
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {
       vtypes.swap(moduleData.vtypes);
+      ptypes.swap(moduleData.ptypes);
       vrefs.swap(moduleData.vrefs);
       prefs.swap(moduleData.prefs);
       regs.swap(moduleData.regs);
