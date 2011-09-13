@@ -32,6 +32,24 @@ namespace Ant {
       }
 
       void createQSortModule(Module &module) {
+        ModuleBuilder builder;
+
+        VarTypeId wordType = builder.addVarType(8);
+        VarTypeId ioType = builder.addVarType(16);
+        builder.addVarTypeVRef(ioType, wordType, 0);
+
+        RegId io = builder.addReg(ioType), a = io;
+        RegId b = builder.addReg(wordType);
+        RegId m = builder.addReg(wordType, 0);
+
+        ProcTypeId ptype = builder.addProcType(0, io);
+
+        ProcId part = builder.addProc(0, ptype);
+        builder.addProcInstr(part, ASTInstr(b));
+        builder.addProcInstr(part, CPBOInstr(io, 8, b));
+        builder.addProcInstr(part, ASTRInstr(m));
+        builder.addProcInstr(part, DREFInstr(io, 0, m));
+
 
       }
 

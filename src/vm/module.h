@@ -2,6 +2,7 @@
 #define __VM_MODULE_INCLUDED__
 
 #include <cstddef>
+#include <stdint.h>
 #include <vector>
 
 #include "../uuid.h"

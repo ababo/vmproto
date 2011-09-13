@@ -39,16 +39,18 @@ namespace Ant {
       uint64_t getParam(int index) const;
       int64_t getParam2(int index) const;
 
-      static RegId assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
-      static RegId assertRegAllocated(const ModuleBuilder &mbuilder,
-                                      ProcId proc, RegId reg);
-      static RegId assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                     ProcId proc, size_t minBytes, RegId reg);
+      static void assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
+      static void assertRegAllocated(const ModuleBuilder &mbuilder,
+                                     ProcId proc, RegId reg);
+      static void assertRegHasBytes(const ModuleBuilder &mbuilder,
+                                    ProcId proc, RegId reg, uint32_t bytes);
+      static void assertValidDeref(const ModuleBuilder &mbuilder, ProcId proc,
+                                   RegId from, uint32_t vref, RegId to);
       static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
-                                  RegId reg);
+                                  RegId reg, bool asRef);
       static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc);
       static void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
-                                   int offset);
+                                   ptrdiff_t offset);
       static void applyDefault(ModuleBuilder &mbuilder, ProcId proc);
 
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const;
@@ -70,7 +72,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
+        Instr::assertRegHasBytes(mbuilder, proc, it(), 8);
         Instr::applyDefault(mbuilder, proc);
       }
     };
@@ -95,9 +97,9 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, operand1());
-        Instr::assertRegHasBytes(mbuilder, proc, 8, operand2());
-        Instr::assertRegHasBytes(mbuilder, proc, 8, result());
+        Instr::assertRegHasBytes(mbuilder, proc, operand1(), 8);
+        Instr::assertRegHasBytes(mbuilder, proc, operand2(), 8);
+        Instr::assertRegHasBytes(mbuilder, proc, result(), 8);
         Instr::applyDefault(mbuilder, proc);
       }
     };
@@ -122,7 +124,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, sizeof(VAL), to());
+        Instr::assertRegHasBytes(mbuilder, proc, to(), sizeof(VAL));
         Instr::applyDefault(mbuilder, proc);
       }
     };
@@ -135,12 +137,12 @@ namespace Ant {
     template<uint8_t OP> class UJInstr : public Instr {
       friend class Instr;
     public:
-      UJInstr(RegId it, int offset) {
+      UJInstr(RegId it, ptrdiff_t offset) {
         op = OP; set2Params2(it, offset); }
 
       size_t size() const { return Instr::size(2); }
       RegId it() const { return RegId(getParam(0)); }
-      int offset() const { return int(getParam2(1)); }
+      ptrdiff_t offset() const { return ptrdiff_t(getParam2(1)); }
       bool breaks() const { return false; }
       bool jumps() const { return true; }
       size_t jumpIndex(size_t index) const {
@@ -148,17 +150,17 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, 8, it());
+        Instr::assertRegHasBytes(mbuilder, proc, it(), 8);
         Instr::applyInstrOffset(mbuilder, proc, offset());
       }
     };
 
     typedef UJInstr<OPCODE_JNZ> JNZInstr;
 
-    class ASTInstr : public Instr {
+    template<uint8_t OP, bool REF> class ASTTInstr : public Instr {
       friend class Instr;
     public:
-      ASTInstr(RegId reg) { op = OPCODE_AST; setParam(reg); }
+      ASTTInstr(RegId reg) { op = OP; setParam(reg); }
 
       size_t size() const { return Instr::size(1); }
       RegId reg() const { return RegId(getParam(0)); }
@@ -170,9 +172,12 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         RegId r = reg();
         Instr::assertRegExists(mbuilder, r);
-        Instr::applyStackAlloc(mbuilder, proc, r);
+        Instr::applyStackAlloc(mbuilder, proc, r, REF);
       }
     };
+
+    typedef ASTTInstr<OPCODE_AST, false> ASTInstr;
+    typedef ASTTInstr<OPCODE_ASTR, true> ASTRInstr;
 
     class FSTInstr : public Instr {
       friend class Instr;
@@ -208,6 +213,51 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegExists(mbuilder, from());
         Instr::assertRegExists(mbuilder, to());
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class CPBOInstr : public Instr {
+      friend class Instr;
+    public:
+      CPBOInstr(RegId from, uint32_t offset, RegId to) {
+        op = OPCODE_CPBO; set3Params(from, offset, to);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      uint32_t offset() const { return uint32_t(getParam(1)); }
+      RegId to() const { return RegId(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, from(), offset() + 1);
+        Instr::assertRegHasBytes(mbuilder, proc, to(), 1);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class DREFInstr : public Instr {
+      friend class Instr;
+    public:
+      DREFInstr(RegId from, uint32_t vref, RegId to) {
+        op = OPCODE_DREF; set3Params(from, vref, to);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      uint32_t vref() const { return uint32_t(getParam(1)); }
+      RegId to() const { return RegId(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertValidDeref(mbuilder, proc, from(), vref(), to());
         Instr::applyDefault(mbuilder, proc);
       }
     };

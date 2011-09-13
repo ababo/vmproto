@@ -72,7 +72,7 @@ namespace Ant {
       return count;
     }
 
-    VarTypeId ModuleBuilder::addVarType(size_t bytes) {
+    VarTypeId ModuleBuilder::addVarType(uint32_t bytes) {
       if(vtypes.size() >= MB_UINT_MAX(2))
         throw RangeException();
       if(bytes > MB_UINT_MAX(2))
@@ -83,6 +83,19 @@ namespace Ant {
 
       vtypes.push_back(vtype);
       return VarTypeId(vtypes.size() - 1);
+    }
+
+    void ModuleBuilder::addVarTypeVRef(VarTypeId id, VarTypeId vtype,
+                                       size_t count) {
+      VarType &vt = vtypes[assertVarTypeExists(id)];
+      if(vt.vrefs.size() >= MB_UINT_MAX(2))
+        throw RangeException();
+
+      VarSpec vspec;
+      vspec.vtype = vtype;
+      vspec.count = assertCountInRange(vtype, count);
+
+      vt.vrefs.push_back(vspec);
     }
 
     ProcTypeId ModuleBuilder::addProcType(uint32_t flags, RegId io) {
@@ -129,7 +142,7 @@ namespace Ant {
       return ProcId(procs.size() - 1);
     }
 
-    void ModuleBuilder::applyStackAlloc(ProcId proc, RegId reg) {
+    void ModuleBuilder::applyStackAlloc(ProcId proc, RegId reg, bool asRef) {
       ProcCon &con = procCons[proc];
 
       for(int i = 0; i < con.frames.size(); i++)
@@ -157,7 +170,7 @@ namespace Ant {
       con.allocs.pop_back();
     }
 
-    void ModuleBuilder::applyInstrOffset(ProcId proc, int offset) {
+    void ModuleBuilder::applyInstrOffset(ProcId proc, ptrdiff_t offset) {
       if(offset < MB_INT_MIN(1) || offset > MB_INT_MAX(1))
         throw RangeException();
 

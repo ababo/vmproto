@@ -36,8 +36,11 @@ namespace Ant {
       VIRTUAL_CASE(IMM8, left, mod, call); \
       VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(AST, left, mod, call); \
+      VIRTUAL_CASE(ASTR, left, mod, call); \
       VIRTUAL_CASE(FST, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
+      VIRTUAL_CASE(CPBO, left, mod, call); \
+      VIRTUAL_CASE(DREF, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }
@@ -113,18 +116,18 @@ namespace Ant {
       return val;
     }
 
-    RegId Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg) {
-      return mbuilder.assertRegExists(reg);
-    }
-
-    RegId Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
-                                    RegId reg) {
+    void Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg) {
       mbuilder.assertRegExists(reg);
-      return mbuilder.assertRegAllocated(proc, reg);
     }
 
-    RegId Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
-                                   size_t minBytes, RegId reg) {
+    void Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
+                                   RegId reg) {
+      mbuilder.assertRegExists(reg);
+      mbuilder.assertRegAllocated(proc, reg);
+    }
+
+    void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
+                                  RegId reg, uint32_t bytes) {
       assertRegAllocated(mbuilder, proc, reg);
 
       VarSpec vspec;
@@ -132,15 +135,18 @@ namespace Ant {
       VarType vtype;
       mbuilder.varTypeById(vspec.vtype, vtype);
 
-      if(vtype.bytes < minBytes)
+      if(vtype.bytes < bytes)
         throw TypeException();
+    }
 
-      return reg;
+    void Instr::assertValidDeref(const ModuleBuilder &mbuilder, ProcId proc,
+                                 RegId from, uint32_t vref, RegId to) {
+
     }
 
     void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
-                                RegId reg) {
-      mbuilder.applyStackAlloc(proc, reg);
+                                RegId reg, bool asRef) {
+      mbuilder.applyStackAlloc(proc, reg, asRef);
     }
 
     void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {
@@ -148,7 +154,7 @@ namespace Ant {
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
-                                 int offset) {
+                                 ptrdiff_t offset) {
       mbuilder.applyInstrOffset(proc, offset);
     }
 

@@ -251,8 +251,9 @@ namespace Ant {
       BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
     }
 
-    void Runtime::ModuleData::emitLLVMCodeAST(LLVMContext &context,
-                                              const ASTInstr &instr) {
+    template<uint8_t OP, bool REF>
+      void Runtime::ModuleData::emitLLVMCodeASTT(LLVMContext &context,
+                                             const ASTTInstr<OP, REF> &instr) {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
@@ -288,6 +289,16 @@ namespace Ant {
       new StoreInst(val, to, CURRENT_BLOCK);
     }
 
+    void Runtime::ModuleData::emitLLVMCodeCPBO(LLVMContext &context,
+                                               const CPBOInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeDREF(LLVMContext &context,
+                                               const DREFInstr &instr) {
+
+    }
+
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
       ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
@@ -317,6 +328,11 @@ namespace Ant {
       emitLLVMCodeUJ<OPCODE_##op, ICmpInst::pr, co>( \
         context, static_cast<UJInstr<OPCODE_##op>&>(instr)); break;
 
+#define ASTTINSTR_CASE(op, ref) \
+    case OPCODE_##op: \
+      emitLLVMCodeASTT<OPCODE_##op, ref>( \
+        context, static_cast<ASTTInstr<OPCODE_##op, ref>&>(instr)); break;
+
     void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
       Instr instr;
       for(size_t i = 0; i < procs[context.proc].code.size();
@@ -334,9 +350,12 @@ namespace Ant {
           IMMINSTR_CASE(IMM4, uint32_t);
           IMMINSTR_CASE(IMM8, uint64_t);
           UJINSTR_CASE(JNZ, ICMP_NE, 0);
-          INSTR_CASE(AST);
+          ASTTINSTR_CASE(AST, false);
+          ASTTINSTR_CASE(ASTR, true);
           INSTR_CASE(FST);
           INSTR_CASE(CPB);
+          INSTR_CASE(CPBO);
+          INSTR_CASE(DREF);
           INSTR_CASE(RET);
         }
 

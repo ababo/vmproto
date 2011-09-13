@@ -84,8 +84,11 @@ namespace Ant {
       OPCODE_IMM8,
       OPCODE_JNZ,
       OPCODE_AST,
+      OPCODE_ASTR,
       OPCODE_FST,
       OPCODE_CPB,
+      OPCODE_CPBO,
+      OPCODE_DREF,
       OPCODE_RET
     };
 
@@ -107,9 +110,14 @@ namespace Ant {
     template<uint8_t> class UJInstr;
     typedef UJInstr<OPCODE_JNZ> JNZInstr;
 
-    class ASTInstr;
+    template<uint8_t, bool> class ASTTInstr;
+    typedef ASTTInstr<OPCODE_AST, false> ASTInstr;
+    typedef ASTTInstr<OPCODE_ASTR, true> ASTRInstr;
+
     class FSTInstr;
     class CPBInstr;
+    class CPBOInstr;
+    class DREFInstr;
     class RETInstr;
 
   }

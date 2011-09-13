@@ -2,6 +2,7 @@
 #define __VM_MBUILDER_INCLUDED__
 
 #include <cstddef>
+#include <stdint.h>
 #include <vector>
 
 #include "runtime.h"
@@ -33,7 +34,7 @@ namespace Ant {
         proc = procs[assertProcExists(id)];
       }
 
-      VarTypeId addVarType(size_t bytes);
+      VarTypeId addVarType(uint32_t bytes);
       void addVarTypeVRef(VarTypeId id, VarTypeId vtype, size_t count = 1);
       void addVarTypePRef(VarTypeId id, ProcTypeId ptype);
       ProcTypeId addProcType(uint32_t flags, RegId io);
@@ -62,9 +63,9 @@ namespace Ant {
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
 
-      void applyStackAlloc(ProcId proc, RegId reg);
+      void applyStackAlloc(ProcId proc, RegId reg, bool asRef);
       void applyStackFree(ProcId proc);
-      void applyInstrOffset(ProcId proc, int offset);
+      void applyInstrOffset(ProcId proc, ptrdiff_t offset);
       void applyInstrIndex(ProcId proc, size_t index);
       void applyDefault(ProcId proc);
 

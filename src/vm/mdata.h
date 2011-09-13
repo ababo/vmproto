@@ -1,6 +1,8 @@
 #ifndef __VM_MDATA_INCLUDED__
 #define __VM_MDATA_INCLUDED__
 
+#include <stdint.h>
+
 #include "../retained.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/Instructions.h"
@@ -53,9 +55,14 @@ namespace Ant {
                              const IMMInstr<OP, VAL> &instr);
       template<uint8_t OP, llvm::ICmpInst::Predicate, uint64_t>
         void emitLLVMCodeUJ(LLVMContext &context, const UJInstr<OP> &instr);
-      void emitLLVMCodeAST(LLVMContext &context, const ASTInstr &instr);
+      template<uint8_t OP, bool REF>
+        void emitLLVMCodeASTT(LLVMContext &context,
+                              const ASTTInstr<OP, REF> &instr);
+      void emitLLVMCodeASTR(LLVMContext &context, const ASTRInstr &instr);
       void emitLLVMCodeFST(LLVMContext &context, const FSTInstr &instr);
       void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
+      void emitLLVMCodeCPBO(LLVMContext &context, const CPBOInstr &instr);
+      void emitLLVMCodeDREF(LLVMContext &context, const DREFInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
       const llvm::Type *getLLVMTypeById(VarTypeId id) const;
 
