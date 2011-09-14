@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include <vector>
 
+namespace {
+
+
+}
+
 namespace Ant {
   namespace VM {
 
@@ -18,24 +23,27 @@ namespace Ant {
 
     struct Variable {};
 
-    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,
-             bool Fixed = true, bool InStack = true>
-     struct SpecifiedVariable : public Variable {
-      size_t refCount;
-      size_t elmCount;
-      struct {
-        unsigned char bytes[Bytes];
-        Variable *vrefs[VRefs];
-        void *prefs[PRefs];
-      } elts[Count];
-    };
+    template<bool Fixed> struct SVPartFixed { size_t refCount; };
+    template<bool InStack> struct SVPartStack { size_t elmCount; };
+    template<uint32_t Bytes> struct SVPartBytes { uint8_t bytes[Bytes]; };
+    template<uint32_t VRefs> struct SVPartVRefs { Variable *vrefs[VRefs]; };
+    template<uint32_t PRefs> struct SVPartPRefs { void *prefs[PRefs]; };
 
-    template<uint32_t Bytes, size_t Count>
-     struct SpecifiedVariable<Bytes, 0, 0, Count, true, true>
-      : public Variable {
-      struct {
-        unsigned char bytes[Bytes];
-      } elts[Count];
+    template<> struct SVPartFixed<true> {};
+    template<> struct SVPartStack<true> {};
+    template<> struct SVPartBytes<0> {};
+    template<> struct SVPartVRefs<0> {};
+    template<> struct SVPartPRefs<0> {};
+
+    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs>
+      struct SVPartElt : SVPartBytes<Bytes>, SVPartVRefs<VRefs>,
+                         SVPartPRefs<PRefs> {};
+
+    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs,
+             size_t Count = 1, bool Fixed = true, bool InStack = true>
+      struct SpecifiedVariable : Variable, SVPartFixed<Fixed>,
+                                 SVPartStack<InStack> {
+       SVPartElt<Bytes, VRefs, PRefs> elts[Count];
     };
 
     struct VarSpec {
