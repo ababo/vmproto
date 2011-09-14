@@ -19,14 +19,18 @@ namespace Ant {
     struct Variable {};
 
     template<bool Fixed> struct SVPartFixed { size_t refCount; };
-    template<bool InStack> struct SVPartStack { size_t elmCount; };
-    template<uint32_t Bytes> struct SVPartBytes { uint8_t bytes[Bytes]; };
-    template<uint32_t VRefs> struct SVPartVRefs { Variable *vrefs[VRefs]; };
-    template<uint32_t PRefs> struct SVPartPRefs { void *prefs[PRefs]; };
     template<> struct SVPartFixed<true> {};
+
+    template<bool InStack> struct SVPartStack { size_t elmCount; };
     template<> struct SVPartStack<true> {};
+
+    template<uint32_t Bytes> struct SVPartBytes { uint8_t bytes[Bytes]; };
     template<> struct SVPartBytes<0> {};
+
+    template<uint32_t VRefs> struct SVPartVRefs { Variable *vrefs[VRefs]; };
     template<> struct SVPartVRefs<0> {};
+
+    template<uint32_t PRefs> struct SVPartPRefs { void *prefs[PRefs]; };
     template<> struct SVPartPRefs<0> {};
 
     template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs>
@@ -82,48 +86,48 @@ namespace Ant {
       OPCODE_MUL,
       OPCODE_JNZ,
       OPCODE_JUG,
-      OPCODE_IMM1,
-      OPCODE_IMM2,
-      OPCODE_IMM4,
-      OPCODE_IMM8,
-      OPCODE_AST,
-      OPCODE_ASTR,
-      OPCODE_FST,
+      OPCODE_CPI1,
+      OPCODE_CPI2,
+      OPCODE_CPI4,
+      OPCODE_CPI8,
+      OPCODE_ALS,
+      OPCODE_ALSR,
+      OPCODE_FRS,
       OPCODE_CPB,
-      OPCODE_CPBO,
-      OPCODE_DREF,
+      OPCODE_LDB,
+      OPCODE_LDR,
       OPCODE_RET
     };
 
-    template<uint8_t> class UOInstr;
-    typedef UOInstr<OPCODE_INC> INCInstr;
-    typedef UOInstr<OPCODE_DEC> DECInstr;
+    template<uint8_t> class UOInstrT;
+    typedef UOInstrT<OPCODE_INC> INCInstr;
+    typedef UOInstrT<OPCODE_DEC> DECInstr;
 
-    template<uint8_t> class BOInstr;
-    typedef BOInstr<OPCODE_ADD> ADDInstr;
-    typedef BOInstr<OPCODE_SUB> SUBInstr;
-    typedef BOInstr<OPCODE_MUL> MULInstr;
+    template<uint8_t> class BOInstrT;
+    typedef BOInstrT<OPCODE_ADD> ADDInstr;
+    typedef BOInstrT<OPCODE_SUB> SUBInstr;
+    typedef BOInstrT<OPCODE_MUL> MULInstr;
 
-    template<uint8_t> class UJInstr;
-    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+    template<uint8_t> class UJInstrT;
+    typedef UJInstrT<OPCODE_JNZ> JNZInstr;
 
-    template<uint8_t> class BJInstr;
-    typedef BJInstr<OPCODE_JUG> JUGInstr;
+    template<uint8_t> class BJInstrT;
+    typedef BJInstrT<OPCODE_JUG> JUGInstr;
 
-    template<uint8_t, class> class IMMInstr;
-    typedef IMMInstr<OPCODE_IMM1, uint8_t> IMM1Instr;
-    typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
-    typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
-    typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
+    template<uint8_t, class> class CPIInstrT;
+    typedef CPIInstrT<OPCODE_CPI1, uint8_t> CPI1Instr;
+    typedef CPIInstrT<OPCODE_CPI2, uint16_t> CPI2Instr;
+    typedef CPIInstrT<OPCODE_CPI4, uint32_t> CPI4Instr;
+    typedef CPIInstrT<OPCODE_CPI8, uint64_t> CPI8Instr;
 
-    template<uint8_t, bool> class ASTTInstr;
-    typedef ASTTInstr<OPCODE_AST, false> ASTInstr;
-    typedef ASTTInstr<OPCODE_ASTR, true> ASTRInstr;
+    template<uint8_t, bool> class ALSInstrT;
+    typedef ALSInstrT<OPCODE_ALS, false> ALSInstr;
+    typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
 
-    class FSTInstr;
+    class FRSInstr;
     class CPBInstr;
-    class CPBOInstr;
-    class DREFInstr;
+    class LDBInstr;
+    class LDRInstr;
     class RETInstr;
 
   }

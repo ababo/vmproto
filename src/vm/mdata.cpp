@@ -210,7 +210,7 @@ namespace Ant {
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
-                                               const UOInstr<OP> &instr) {
+                                               const UOInstrT<OP> &instr) {
       Value *it = BITCAST_PINT(64, context.vptr(instr.it()));
       Value *val = new LoadInst(it, "", CURRENT_BLOCK);
       Value *co = CONST_INT(64, CO, false);
@@ -220,7 +220,7 @@ namespace Ant {
 
     template<uint8_t OP, Instruction::BinaryOps IOP>
       void Runtime::ModuleData::emitLLVMCodeBO(LLVMContext &context,
-                                               const BOInstr<OP> &instr) {
+                                               const BOInstrT<OP> &instr) {
       Value *operand1 = BITCAST_PINT(64, context.vptr(instr.operand1()));
       Value *operand2 = BITCAST_PINT(64, context.vptr(instr.operand2()));
       Value *result = BITCAST_PINT(64, context.vptr(instr.result()));
@@ -232,7 +232,7 @@ namespace Ant {
 
     template<uint8_t OP, llvm::ICmpInst::Predicate PR, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUJ(LLVMContext &context,
-                                               const UJInstr<OP> &instr) {
+                                               const UJInstrT<OP> &instr) {
       Value *it = BITCAST_PINT(64, context.vptr(instr.it()));
       Value *val = new LoadInst(it, "", CURRENT_BLOCK);
       ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val,
@@ -245,21 +245,21 @@ namespace Ant {
 
     template<uint8_t OP, llvm::ICmpInst::Predicate>
       void Runtime::ModuleData::emitLLVMCodeBJ(LLVMContext &context,
-                                               const BJInstr<OP> &instr) {
+                                               const BJInstrT<OP> &instr) {
 
     }
 
     template<uint8_t OP, class VAL>
-      void Runtime::ModuleData::emitLLVMCodeIMM(LLVMContext &context,
-                                              const IMMInstr<OP, VAL> &instr) {
+      void Runtime::ModuleData::emitLLVMCodeCPI(LLVMContext &context,
+                                             const CPIInstrT<OP, VAL> &instr) {
       Value *to = BITCAST_PINT(sizeof(VAL), context.vptr(instr.to()));
       new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()), false), to,
                     CURRENT_BLOCK);
     }
 
     template<uint8_t OP, bool REF>
-      void Runtime::ModuleData::emitLLVMCodeASTT(LLVMContext &context,
-                                             const ASTTInstr<OP, REF> &instr) {
+      void Runtime::ModuleData::emitLLVMCodeALS(LLVMContext &context,
+                                             const ALSInstrT<OP, REF> &instr) {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
@@ -271,8 +271,8 @@ namespace Ant {
       context.pushAlloc(reg, sptr, vptr);
     }
 
-    void Runtime::ModuleData::emitLLVMCodeFST(LLVMContext &context,
-                                              const FSTInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodeFRS(LLVMContext &context,
+                                              const FRSInstr &instr) {
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.sptr());
@@ -295,13 +295,13 @@ namespace Ant {
       new StoreInst(val, to, CURRENT_BLOCK);
     }
 
-    void Runtime::ModuleData::emitLLVMCodeCPBO(LLVMContext &context,
-                                               const CPBOInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodeLDB(LLVMContext &context,
+                                              const LDBInstr &instr) {
 
     }
 
-    void Runtime::ModuleData::emitLLVMCodeDREF(LLVMContext &context,
-                                               const DREFInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodeLDR(LLVMContext &context,
+                                              const LDRInstr &instr) {
 
     }
 
@@ -313,36 +313,36 @@ namespace Ant {
 #define UOINSTR_CASE(op, iop, co) \
     case OPCODE_##op: \
       emitLLVMCodeUO<OPCODE_##op, Instruction::iop, co>( \
-        context, static_cast<UOInstr<OPCODE_##op>&>(instr)); break;
+        context, static_cast<UOInstrT<OPCODE_##op>&>(instr)); break;
 
 #define BOINSTR_CASE(op, iop) \
     case OPCODE_##op: \
       emitLLVMCodeBO<OPCODE_##op, Instruction::iop>( \
-        context, static_cast<BOInstr<OPCODE_##op>&>(instr)); break;
+        context, static_cast<BOInstrT<OPCODE_##op>&>(instr)); break;
 
-#define IMMINSTR_CASE(op, val) \
+#define CPIINSTR_CASE(op, val) \
     case OPCODE_##op: \
-      emitLLVMCodeIMM<OPCODE_##op, val>( \
-        context, static_cast<IMMInstr<OPCODE_##op, val>&>(instr)); break;
-
-#define INSTR_CASE(op) \
-    case OPCODE_##op: \
-      emitLLVMCode##op(context, static_cast<op##Instr&>(instr)); break;
+      emitLLVMCodeCPI<OPCODE_##op, val>( \
+        context, static_cast<CPIInstrT<OPCODE_##op, val>&>(instr)); break;
 
 #define UJINSTR_CASE(op, pr, co) \
     case OPCODE_##op: \
       emitLLVMCodeUJ<OPCODE_##op, ICmpInst::pr, co>( \
-        context, static_cast<UJInstr<OPCODE_##op>&>(instr)); break;
+        context, static_cast<UJInstrT<OPCODE_##op>&>(instr)); break;
 
 #define BJINSTR_CASE(op, pr) \
     case OPCODE_##op: \
       emitLLVMCodeBJ<OPCODE_##op, ICmpInst::pr>( \
-        context, static_cast<BJInstr<OPCODE_##op>&>(instr)); break;
+        context, static_cast<BJInstrT<OPCODE_##op>&>(instr)); break;
 
 #define ASTTINSTR_CASE(op, ref) \
     case OPCODE_##op: \
-      emitLLVMCodeASTT<OPCODE_##op, ref>( \
-        context, static_cast<ASTTInstr<OPCODE_##op, ref>&>(instr)); break;
+      emitLLVMCodeALS<OPCODE_##op, ref>( \
+        context, static_cast<ALSInstrT<OPCODE_##op, ref>&>(instr)); break;
+
+#define INSTR_CASE(op) \
+    case OPCODE_##op: \
+      emitLLVMCode##op(context, static_cast<op##Instr&>(instr)); break;
 
     void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
       Instr instr;
@@ -358,16 +358,16 @@ namespace Ant {
           BOINSTR_CASE(MUL, Mul);
           UJINSTR_CASE(JNZ, ICMP_NE, 0);
           BJINSTR_CASE(JUG, ICMP_UGT);
-          IMMINSTR_CASE(IMM1, uint8_t);
-          IMMINSTR_CASE(IMM2, uint16_t);
-          IMMINSTR_CASE(IMM4, uint32_t);
-          IMMINSTR_CASE(IMM8, uint64_t);
-          ASTTINSTR_CASE(AST, false);
-          ASTTINSTR_CASE(ASTR, true);
-          INSTR_CASE(FST);
+          CPIINSTR_CASE(CPI1, uint8_t);
+          CPIINSTR_CASE(CPI2, uint16_t);
+          CPIINSTR_CASE(CPI4, uint32_t);
+          CPIINSTR_CASE(CPI8, uint64_t);
+          ASTTINSTR_CASE(ALS, false);
+          ASTTINSTR_CASE(ALSR, true);
+          INSTR_CASE(FRS);
           INSTR_CASE(CPB);
-          INSTR_CASE(CPBO);
-          INSTR_CASE(DREF);
+          INSTR_CASE(LDB);
+          INSTR_CASE(LDR);
           INSTR_CASE(RET);
         }
 

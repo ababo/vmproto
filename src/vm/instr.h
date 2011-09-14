@@ -45,8 +45,8 @@ namespace Ant {
                                      ProcId proc, RegId reg);
       static void assertRegHasBytes(const ModuleBuilder &mbuilder,
                                     ProcId proc, RegId reg, uint32_t bytes);
-      static void assertValidDeref(const ModuleBuilder &mbuilder, ProcId proc,
-                                   RegId from, uint32_t vref, RegId to);
+      static void assertValidLDR(const ModuleBuilder &mbuilder, ProcId proc,
+                                 RegId from, uint32_t vref, RegId to);
       static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, bool asRef);
       static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc);
@@ -60,10 +60,10 @@ namespace Ant {
       uint8_t dat[MAX_INSTR_SIZE - 1];
     };
 
-    template<uint8_t OP> class UOInstr : public Instr {
+    template<uint8_t OP> class UOInstrT : public Instr {
       friend class Instr;
     public:
-      UOInstr(RegId it) { op = OP; setParam(it); }
+      UOInstrT(RegId it) { op = OP; setParam(it); }
 
       size_t size() const { return Instr::size(1); }
       RegId it() const { return RegId(getParam(0)); }
@@ -78,13 +78,13 @@ namespace Ant {
       }
     };
 
-    typedef UOInstr<OPCODE_INC> INCInstr;
-    typedef UOInstr<OPCODE_DEC> DECInstr;
+    typedef UOInstrT<OPCODE_INC> INCInstr;
+    typedef UOInstrT<OPCODE_DEC> DECInstr;
 
-    template<uint8_t OP> class BOInstr : public Instr {
+    template<uint8_t OP> class BOInstrT : public Instr {
       friend class Instr;
     public:
-      BOInstr(RegId operand1, RegId operand2, RegId result) {
+      BOInstrT(RegId operand1, RegId operand2, RegId result) {
         op = OP; set3Params(operand1, operand2, result);
       }
 
@@ -105,14 +105,14 @@ namespace Ant {
       }
     };
 
-    typedef BOInstr<OPCODE_ADD> ADDInstr;
-    typedef BOInstr<OPCODE_SUB> SUBInstr;
-    typedef BOInstr<OPCODE_MUL> MULInstr;
+    typedef BOInstrT<OPCODE_ADD> ADDInstr;
+    typedef BOInstrT<OPCODE_SUB> SUBInstr;
+    typedef BOInstrT<OPCODE_MUL> MULInstr;
 
-    template<uint8_t OP> class UJInstr : public Instr {
+    template<uint8_t OP> class UJInstrT : public Instr {
       friend class Instr;
     public:
-      UJInstr(RegId it, ptrdiff_t offset) {
+      UJInstrT(RegId it, ptrdiff_t offset) {
         op = OP; set2Params2(it, offset); }
 
       size_t size() const { return Instr::size(2); }
@@ -130,12 +130,12 @@ namespace Ant {
       }
     };
 
-    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+    typedef UJInstrT<OPCODE_JNZ> JNZInstr;
 
-    template<uint8_t OP> class BJInstr : public Instr {
+    template<uint8_t OP> class BJInstrT : public Instr {
       friend class Instr;
     public:
-      BJInstr(RegId operand1, RegId operand2, ptrdiff_t offset) {
+      BJInstrT(RegId operand1, RegId operand2, ptrdiff_t offset) {
         op = OP; set3Params2(operand1, operand2, offset); }
 
       size_t size() const { return Instr::size(3); }
@@ -155,12 +155,12 @@ namespace Ant {
       }
     };
 
-    typedef BJInstr<OPCODE_JUG> JUGInstr;
+    typedef BJInstrT<OPCODE_JUG> JUGInstr;
 
-    template<uint8_t OP, class VAL> class IMMInstr : public Instr {
+    template<uint8_t OP, class VAL> class CPIInstrT : public Instr {
       friend class Instr;
     public:
-      IMMInstr(VAL val, RegId to) {
+      CPIInstrT(VAL val, RegId to) {
         op = OP; set2Params(val, to);
       }
 
@@ -178,15 +178,15 @@ namespace Ant {
       }
     };
 
-    typedef IMMInstr<OPCODE_IMM1, uint8_t> IMM1Instr;
-    typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
-    typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
-    typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
+    typedef CPIInstrT<OPCODE_CPI1, uint8_t> CPI1Instr;
+    typedef CPIInstrT<OPCODE_CPI2, uint16_t> CPI2Instr;
+    typedef CPIInstrT<OPCODE_CPI4, uint32_t> CPI4Instr;
+    typedef CPIInstrT<OPCODE_CPI8, uint64_t> CPI8Instr;
 
-    template<uint8_t OP, bool REF> class ASTTInstr : public Instr {
+    template<uint8_t OP, bool REF> class ALSInstrT : public Instr {
       friend class Instr;
     public:
-      ASTTInstr(RegId reg) { op = OP; setParam(reg); }
+      ALSInstrT(RegId reg) { op = OP; setParam(reg); }
 
       size_t size() const { return Instr::size(1); }
       RegId reg() const { return RegId(getParam(0)); }
@@ -196,19 +196,17 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        RegId r = reg();
-        Instr::assertRegExists(mbuilder, r);
-        Instr::applyStackAlloc(mbuilder, proc, r, REF);
+        Instr::applyStackAlloc(mbuilder, proc, reg(), REF);
       }
     };
 
-    typedef ASTTInstr<OPCODE_AST, false> ASTInstr;
-    typedef ASTTInstr<OPCODE_ASTR, true> ASTRInstr;
+    typedef ALSInstrT<OPCODE_ALS, false> ALSInstr;
+    typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
 
-    class FSTInstr : public Instr {
+    class FRSInstr : public Instr {
       friend class Instr;
     public:
-      FSTInstr() { op = OPCODE_FST; }
+      FRSInstr() { op = OPCODE_FRS; }
 
       size_t size() const { return 1; }
       bool breaks() const { return false; }
@@ -237,17 +235,17 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegExists(mbuilder, from());
-        Instr::assertRegExists(mbuilder, to());
+        Instr::assertRegHasBytes(mbuilder, proc, from(), 1);
+        Instr::assertRegHasBytes(mbuilder, proc, to(), 1);
         Instr::applyDefault(mbuilder, proc);
       }
     };
 
-    class CPBOInstr : public Instr {
+    class LDBInstr : public Instr {
       friend class Instr;
     public:
-      CPBOInstr(RegId from, uint32_t offset, RegId to) {
-        op = OPCODE_CPBO; set3Params(from, offset, to);
+      LDBInstr(RegId from, uint32_t offset, RegId to) {
+        op = OPCODE_LDB; set3Params(from, offset, to);
       }
 
       size_t size() const { return Instr::size(3); }
@@ -266,11 +264,11 @@ namespace Ant {
       }
     };
 
-    class DREFInstr : public Instr {
+    class LDRInstr : public Instr {
       friend class Instr;
     public:
-      DREFInstr(RegId from, uint32_t vref, RegId to) {
-        op = OPCODE_DREF; set3Params(from, vref, to);
+      LDRInstr(RegId from, uint32_t vref, RegId to) {
+        op = OPCODE_LDR; set3Params(from, vref, to);
       }
 
       size_t size() const { return Instr::size(3); }
@@ -283,7 +281,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertValidDeref(mbuilder, proc, from(), vref(), to());
+        Instr::assertValidLDR(mbuilder, proc, from(), vref(), to());
         Instr::applyDefault(mbuilder, proc);
       }
     };

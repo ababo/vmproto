@@ -32,16 +32,16 @@ namespace Ant {
       VIRTUAL_CASE(MUL, left, mod, call); \
       VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(JUG, left, mod, call); \
-      VIRTUAL_CASE(IMM1, left, mod, call); \
-      VIRTUAL_CASE(IMM2, left, mod, call); \
-      VIRTUAL_CASE(IMM4, left, mod, call); \
-      VIRTUAL_CASE(IMM8, left, mod, call); \
-      VIRTUAL_CASE(AST, left, mod, call); \
-      VIRTUAL_CASE(ASTR, left, mod, call); \
-      VIRTUAL_CASE(FST, left, mod, call); \
+      VIRTUAL_CASE(CPI1, left, mod, call); \
+      VIRTUAL_CASE(CPI2, left, mod, call); \
+      VIRTUAL_CASE(CPI4, left, mod, call); \
+      VIRTUAL_CASE(CPI8, left, mod, call); \
+      VIRTUAL_CASE(ALS, left, mod, call); \
+      VIRTUAL_CASE(ALSR, left, mod, call); \
+      VIRTUAL_CASE(FRS, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
-      VIRTUAL_CASE(CPBO, left, mod, call); \
-      VIRTUAL_CASE(DREF, left, mod, call); \
+      VIRTUAL_CASE(LDB, left, mod, call); \
+      VIRTUAL_CASE(LDR, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }
@@ -149,13 +149,14 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertValidDeref(const ModuleBuilder &mbuilder, ProcId proc,
-                                 RegId from, uint32_t vref, RegId to) {
+    void Instr::assertValidLDR(const ModuleBuilder &mbuilder, ProcId proc,
+                               RegId from, uint32_t vref, RegId to) {
 
     }
 
     void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
                                 RegId reg, bool asRef) {
+      mbuilder.assertRegExists(reg);
       mbuilder.applyStackAlloc(proc, reg, asRef);
     }
 

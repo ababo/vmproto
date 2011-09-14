@@ -47,24 +47,23 @@ namespace Ant {
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
-        void emitLLVMCodeUO(LLVMContext &context, const UOInstr<OP> &instr);
+        void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>
-        void emitLLVMCodeBO(LLVMContext &context, const BOInstr<OP> &instr);
+        void emitLLVMCodeBO(LLVMContext &context, const BOInstrT<OP> &instr);
       template<uint8_t OP, llvm::ICmpInst::Predicate, uint64_t>
-        void emitLLVMCodeUJ(LLVMContext &context, const UJInstr<OP> &instr);
+        void emitLLVMCodeUJ(LLVMContext &context, const UJInstrT<OP> &instr);
       template<uint8_t OP, llvm::ICmpInst::Predicate>
-        void emitLLVMCodeBJ(LLVMContext &context, const BJInstr<OP> &instr);
+        void emitLLVMCodeBJ(LLVMContext &context, const BJInstrT<OP> &instr);
       template<uint8_t OP, class VAL>
-        void emitLLVMCodeIMM(LLVMContext &context,
-                             const IMMInstr<OP, VAL> &instr);
+        void emitLLVMCodeCPI(LLVMContext &context,
+                             const CPIInstrT<OP, VAL> &instr);
       template<uint8_t OP, bool REF>
-        void emitLLVMCodeASTT(LLVMContext &context,
-                              const ASTTInstr<OP, REF> &instr);
-      void emitLLVMCodeASTR(LLVMContext &context, const ASTRInstr &instr);
-      void emitLLVMCodeFST(LLVMContext &context, const FSTInstr &instr);
+        void emitLLVMCodeALS(LLVMContext &context,
+                             const ALSInstrT<OP, REF> &instr);
+      void emitLLVMCodeFRS(LLVMContext &context, const FRSInstr &instr);
       void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
-      void emitLLVMCodeCPBO(LLVMContext &context, const CPBOInstr &instr);
-      void emitLLVMCodeDREF(LLVMContext &context, const DREFInstr &instr);
+      void emitLLVMCodeLDB(LLVMContext &context, const LDBInstr &instr);
+      void emitLLVMCodeLDR(LLVMContext &context, const LDRInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
       const llvm::Type *getLLVMTypeById(VarTypeId id) const;
 

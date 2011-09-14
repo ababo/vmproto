@@ -25,9 +25,9 @@ namespace {
       ProcId p = b.addProc(0, pt);
 
       ASSERT_THROW({b.addProc(0, n);}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, ASTInstr(n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, IMM8Instr(0, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, IMM8Instr(0, n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, ALSInstr(n));}, NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, CPBInstr(n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, MULInstr(n, n, n));},NotFoundException);
@@ -38,13 +38,13 @@ namespace {
       n = b.addReg(vt);
 
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
-      b.addProcInstr(p, ASTInstr(n));
+      b.addProcInstr(p, ALSInstr(n));
       b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, ALSInstr(r));
       b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, FRSInstr());
       b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, FRSInstr());
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
     }
     catch(...) { passed = false; }
@@ -65,29 +65,29 @@ namespace {
 
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 2));
-      ASSERT_THROW({b.addProcInstr(p, ASTInstr(r));}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, ALSInstr(r));}, OperationException);
       b.addProcInstr(p, DECInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, ALSInstr(r));
       b.addProcInstr(p, JNZInstr(r, 3));
-      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, ALSInstr(r));
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
-      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, FRSInstr());
       b.addProcInstr(p, JNZInstr(r, 4));
-      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, ALSInstr(r));
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, 2));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 1));
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, FRSInstr());
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, FSTInstr());
-      b.addProcInstr(p, ASTInstr(r));
+      b.addProcInstr(p, FRSInstr());
+      b.addProcInstr(p, ALSInstr(r));
       b.addProcInstr(p, JNZInstr(r, 2));
-      ASSERT_THROW({b.addProcInstr(p, FSTInstr());}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
       b.addProcInstr(p, JNZInstr(r, 0));
-      b.addProcInstr(p, FSTInstr());
+      b.addProcInstr(p, FRSInstr());
       b.createModule(m);
     }
     catch(...) { passed = false; }
@@ -168,15 +168,15 @@ namespace {
     NEXT_INSTR_D(JNZ);
     passed = passed && iJNZ.it() == io;
     passed = passed && iJNZ.offset() == 3;
-    NEXT_INSTR_D(IMM8);
-    passed = passed && iIMM8.val() == 1; 
-    passed = passed && iIMM8.to() == io;
+    NEXT_INSTR_D(CPI8);
+    passed = passed && iCPI8.val() == 1; 
+    passed = passed && iCPI8.to() == io;
     NEXT_OPCODE(RET);
-    NEXT_INSTR_D(AST);
-    passed = passed && iAST.reg() == pr;
-    NEXT_INSTR(IMM8);
-    passed = passed && iIMM8.val() == 1; 
-    passed = passed && iIMM8.to() == pr;
+    NEXT_INSTR_D(ALS);
+    passed = passed && iALS.reg() == pr;
+    NEXT_INSTR(CPI8);
+    passed = passed && iCPI8.val() == 1; 
+    passed = passed && iCPI8.to() == pr;
     NEXT_INSTR_D(MUL);
     passed = passed && iMUL.operand1() == io;
     passed = passed && iMUL.operand2() == pr;
@@ -189,7 +189,7 @@ namespace {
     NEXT_INSTR_D(CPB);
     passed = passed && iCPB.from() == pr;
     passed = passed && iCPB.to() == io;
-    NEXT_OPCODE(FST);
+    NEXT_OPCODE(FRS);
     NEXT_OPCODE(RET);
 
     passed = passed && i == proc.code.size();
