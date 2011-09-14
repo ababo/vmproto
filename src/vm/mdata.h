@@ -50,11 +50,13 @@ namespace Ant {
         void emitLLVMCodeUO(LLVMContext &context, const UOInstr<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>
         void emitLLVMCodeBO(LLVMContext &context, const BOInstr<OP> &instr);
+      template<uint8_t OP, llvm::ICmpInst::Predicate, uint64_t>
+        void emitLLVMCodeUJ(LLVMContext &context, const UJInstr<OP> &instr);
+      template<uint8_t OP, llvm::ICmpInst::Predicate>
+        void emitLLVMCodeBJ(LLVMContext &context, const BJInstr<OP> &instr);
       template<uint8_t OP, class VAL>
         void emitLLVMCodeIMM(LLVMContext &context,
                              const IMMInstr<OP, VAL> &instr);
-      template<uint8_t OP, llvm::ICmpInst::Predicate, uint64_t>
-        void emitLLVMCodeUJ(LLVMContext &context, const UJInstr<OP> &instr);
       template<uint8_t OP, bool REF>
         void emitLLVMCodeASTT(LLVMContext &context,
                               const ASTTInstr<OP, REF> &instr);

@@ -230,14 +230,6 @@ namespace Ant {
       new StoreInst(val3, result, CURRENT_BLOCK);
     }
 
-    template<uint8_t OP, class VAL>
-      void Runtime::ModuleData::emitLLVMCodeIMM(LLVMContext &context,
-                                              const IMMInstr<OP, VAL> &instr) {
-      Value *to = BITCAST_PINT(sizeof(VAL), context.vptr(instr.to()));
-      new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()), false), to,
-                    CURRENT_BLOCK);
-    }
-
     template<uint8_t OP, llvm::ICmpInst::Predicate PR, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUJ(LLVMContext &context,
                                                const UJInstr<OP> &instr) {
@@ -249,6 +241,20 @@ namespace Ant {
       BasicBlock *jblock = context.jumpBlock(jindex);
       BasicBlock *nblock = context.blocks[context.blockIndex + 1];
       BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
+    }
+
+    template<uint8_t OP, llvm::ICmpInst::Predicate>
+      void Runtime::ModuleData::emitLLVMCodeBJ(LLVMContext &context,
+                                               const BJInstr<OP> &instr) {
+
+    }
+
+    template<uint8_t OP, class VAL>
+      void Runtime::ModuleData::emitLLVMCodeIMM(LLVMContext &context,
+                                              const IMMInstr<OP, VAL> &instr) {
+      Value *to = BITCAST_PINT(sizeof(VAL), context.vptr(instr.to()));
+      new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()), false), to,
+                    CURRENT_BLOCK);
     }
 
     template<uint8_t OP, bool REF>
@@ -328,6 +334,11 @@ namespace Ant {
       emitLLVMCodeUJ<OPCODE_##op, ICmpInst::pr, co>( \
         context, static_cast<UJInstr<OPCODE_##op>&>(instr)); break;
 
+#define BJINSTR_CASE(op, pr) \
+    case OPCODE_##op: \
+      emitLLVMCodeBJ<OPCODE_##op, ICmpInst::pr>( \
+        context, static_cast<BJInstr<OPCODE_##op>&>(instr)); break;
+
 #define ASTTINSTR_CASE(op, ref) \
     case OPCODE_##op: \
       emitLLVMCodeASTT<OPCODE_##op, ref>( \
@@ -345,11 +356,12 @@ namespace Ant {
           BOINSTR_CASE(ADD, Add);
           BOINSTR_CASE(SUB, Sub);
           BOINSTR_CASE(MUL, Mul);
+          UJINSTR_CASE(JNZ, ICMP_NE, 0);
+          BJINSTR_CASE(JUG, ICMP_UGT);
           IMMINSTR_CASE(IMM1, uint8_t);
           IMMINSTR_CASE(IMM2, uint16_t);
           IMMINSTR_CASE(IMM4, uint32_t);
           IMMINSTR_CASE(IMM8, uint64_t);
-          UJINSTR_CASE(JNZ, ICMP_NE, 0);
           ASTTINSTR_CASE(AST, false);
           ASTTINSTR_CASE(ASTR, true);
           INSTR_CASE(FST);

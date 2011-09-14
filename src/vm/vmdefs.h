@@ -5,11 +5,6 @@
 #include <stdint.h>
 #include <vector>
 
-namespace {
-
-
-}
-
 namespace Ant {
   namespace VM {
 
@@ -28,7 +23,6 @@ namespace Ant {
     template<uint32_t Bytes> struct SVPartBytes { uint8_t bytes[Bytes]; };
     template<uint32_t VRefs> struct SVPartVRefs { Variable *vrefs[VRefs]; };
     template<uint32_t PRefs> struct SVPartPRefs { void *prefs[PRefs]; };
-
     template<> struct SVPartFixed<true> {};
     template<> struct SVPartStack<true> {};
     template<> struct SVPartBytes<0> {};
@@ -86,11 +80,12 @@ namespace Ant {
       OPCODE_ADD,
       OPCODE_SUB,
       OPCODE_MUL,
+      OPCODE_JNZ,
+      OPCODE_JUG,
       OPCODE_IMM1,
       OPCODE_IMM2,
       OPCODE_IMM4,
       OPCODE_IMM8,
-      OPCODE_JNZ,
       OPCODE_AST,
       OPCODE_ASTR,
       OPCODE_FST,
@@ -109,14 +104,17 @@ namespace Ant {
     typedef BOInstr<OPCODE_SUB> SUBInstr;
     typedef BOInstr<OPCODE_MUL> MULInstr;
 
+    template<uint8_t> class UJInstr;
+    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+
+    template<uint8_t> class BJInstr;
+    typedef BJInstr<OPCODE_JUG> JUGInstr;
+
     template<uint8_t, class> class IMMInstr;
     typedef IMMInstr<OPCODE_IMM1, uint8_t> IMM1Instr;
     typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
     typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
     typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
-
-    template<uint8_t> class UJInstr;
-    typedef UJInstr<OPCODE_JNZ> JNZInstr;
 
     template<uint8_t, bool> class ASTTInstr;
     typedef ASTTInstr<OPCODE_AST, false> ASTInstr;

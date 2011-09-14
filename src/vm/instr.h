@@ -34,6 +34,7 @@ namespace Ant {
       void set2Params(uint64_t p1, uint64_t p2);
       void set2Params2(uint64_t p1, int64_t p2);
       void set3Params(uint64_t p1, uint64_t p2, uint64_t p3);
+      void set3Params2(uint64_t p1, uint64_t p2, int64_t p3);
 
       size_t size(int paramCount) const;
       uint64_t getParam(int index) const;
@@ -108,6 +109,54 @@ namespace Ant {
     typedef BOInstr<OPCODE_SUB> SUBInstr;
     typedef BOInstr<OPCODE_MUL> MULInstr;
 
+    template<uint8_t OP> class UJInstr : public Instr {
+      friend class Instr;
+    public:
+      UJInstr(RegId it, ptrdiff_t offset) {
+        op = OP; set2Params2(it, offset); }
+
+      size_t size() const { return Instr::size(2); }
+      RegId it() const { return RegId(getParam(0)); }
+      ptrdiff_t offset() const { return ptrdiff_t(getParam2(1)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return true; }
+      size_t jumpIndex(size_t index) const {
+        return size_t(ptrdiff_t(index) + offset()); }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, it(), 8);
+        Instr::applyInstrOffset(mbuilder, proc, offset());
+      }
+    };
+
+    typedef UJInstr<OPCODE_JNZ> JNZInstr;
+
+    template<uint8_t OP> class BJInstr : public Instr {
+      friend class Instr;
+    public:
+      BJInstr(RegId operand1, RegId operand2, ptrdiff_t offset) {
+        op = OP; set3Params2(operand1, operand2, offset); }
+
+      size_t size() const { return Instr::size(3); }
+      RegId operand1() const { return RegId(getParam(0)); }
+      RegId operand2() const { return RegId(getParam(1)); }
+      ptrdiff_t offset() const { return ptrdiff_t(getParam2(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return true; }
+      size_t jumpIndex(size_t index) const {
+        return size_t(ptrdiff_t(index) + offset()); }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertRegHasBytes(mbuilder, proc, operand1(), 8);
+        Instr::assertRegHasBytes(mbuilder, proc, operand2(), 8);
+        Instr::applyInstrOffset(mbuilder, proc, offset());
+      }
+    };
+
+    typedef BJInstr<OPCODE_JUG> JUGInstr;
+
     template<uint8_t OP, class VAL> class IMMInstr : public Instr {
       friend class Instr;
     public:
@@ -133,29 +182,6 @@ namespace Ant {
     typedef IMMInstr<OPCODE_IMM2, uint16_t> IMM2Instr;
     typedef IMMInstr<OPCODE_IMM4, uint32_t> IMM4Instr;
     typedef IMMInstr<OPCODE_IMM8, uint64_t> IMM8Instr;
-
-    template<uint8_t OP> class UJInstr : public Instr {
-      friend class Instr;
-    public:
-      UJInstr(RegId it, ptrdiff_t offset) {
-        op = OP; set2Params2(it, offset); }
-
-      size_t size() const { return Instr::size(2); }
-      RegId it() const { return RegId(getParam(0)); }
-      ptrdiff_t offset() const { return ptrdiff_t(getParam2(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
-        return size_t(ptrdiff_t(index) + offset()); }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertRegHasBytes(mbuilder, proc, it(), 8);
-        Instr::applyInstrOffset(mbuilder, proc, offset());
-      }
-    };
-
-    typedef UJInstr<OPCODE_JNZ> JNZInstr;
 
     template<uint8_t OP, bool REF> class ASTTInstr : public Instr {
       friend class Instr;

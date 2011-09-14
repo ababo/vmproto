@@ -30,11 +30,12 @@ namespace Ant {
       VIRTUAL_CASE(ADD, left, mod, call); \
       VIRTUAL_CASE(SUB, left, mod, call); \
       VIRTUAL_CASE(MUL, left, mod, call); \
+      VIRTUAL_CASE(JNZ, left, mod, call); \
+      VIRTUAL_CASE(JUG, left, mod, call); \
       VIRTUAL_CASE(IMM1, left, mod, call); \
       VIRTUAL_CASE(IMM2, left, mod, call); \
       VIRTUAL_CASE(IMM4, left, mod, call); \
       VIRTUAL_CASE(IMM8, left, mod, call); \
-      VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(AST, left, mod, call); \
       VIRTUAL_CASE(ASTR, left, mod, call); \
       VIRTUAL_CASE(FST, left, mod, call); \
@@ -77,6 +78,15 @@ namespace Ant {
       writeMBUInt(p1, out);
       writeMBUInt(p2, out);
       writeMBUInt(p3, out);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
+    }
+
+    void Instr::set3Params2(uint64_t p1, uint64_t p2, int64_t p3) {
+      ostringstream out;
+      writeMBUInt(p1, out);
+      writeMBUInt(p2, out);
+      writeMBInt(p3, out);
       string str = out.str();
       copy(str.begin(), str.end(), dat);
     }
