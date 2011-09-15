@@ -27,15 +27,15 @@ namespace Ant {
         RegId io = builder.addReg(vtype);
         ProcTypeId ptype = builder.addProcType(0, io);
         ProcId proc = builder.addProc(PFLAG_EXTERNAL, ptype);
-        builder.addProcInstr(proc, JNZInstr(io, 3)); //--|
-        builder.addProcInstr(proc, CPI8Instr(1, io)); // |
-        builder.addProcInstr(proc, RETInstr()); //       |
-        RegId pr = builder.addReg(vtype); //             |
-        builder.addProcInstr(proc, ALSInstr(pr)); //<----|
+        builder.addProcInstr(proc, JNZInstr(io, 3));
+        builder.addProcInstr(proc, CPI8Instr(1, io));
+        builder.addProcInstr(proc, RETInstr());
+        RegId pr = builder.addReg(vtype);
+        builder.addProcInstr(proc, ALSInstr(pr));
         builder.addProcInstr(proc, CPI8Instr(1, pr));
-        builder.addProcInstr(proc, MULInstr(io, pr, pr)); //<-|
-        builder.addProcInstr(proc, DECInstr(io)); //          |
-        builder.addProcInstr(proc, JNZInstr(io, -2)); //------|
+        builder.addProcInstr(proc, MULInstr(io, pr, pr));
+        builder.addProcInstr(proc, DECInstr(io));
+        builder.addProcInstr(proc, JNZInstr(io, -2));
         builder.addProcInstr(proc, CPBInstr(pr, io));
         builder.addProcInstr(proc, FRSInstr());
         builder.addProcInstr(proc, RETInstr());
@@ -80,16 +80,16 @@ namespace Ant {
         RegId ah = builder.addReg(wordType);
         builder.addProcInstr(part, ALSInstr(ah));
         builder.addProcInstr(part, LDEInstr(a, h, ah));
-        builder.addProcInstr(part, LDEInstr(a, l, al)); // <--|
-        builder.addProcInstr(part, JGInstr(al, ah, 7)); // -| |
-        builder.addProcInstr(part, ALSInstr(h)); //         | |
-        builder.addProcInstr(part, LDEInstr(a, io, h)); //  | |
-        builder.addProcInstr(part, STEInstr(al, a, io)); // | |
-        builder.addProcInstr(part, STEInstr(h, a, l)); //   | |
-        builder.addProcInstr(part, INCInstr(io)); //        | |
-        builder.addProcInstr(part, FRSInstr()); //          | |
-        builder.addProcInstr(part, INCInstr(l)); // <-------| |
-        builder.addProcInstr(part, JNGInstr(l, h, -9)); // ---|
+        builder.addProcInstr(part, LDEInstr(a, l, al));
+        builder.addProcInstr(part, JGInstr(al, ah, 7));
+        builder.addProcInstr(part, ALSInstr(h));
+        builder.addProcInstr(part, LDEInstr(a, io, h));
+        builder.addProcInstr(part, STEInstr(al, a, io));
+        builder.addProcInstr(part, STEInstr(h, a, l));
+        builder.addProcInstr(part, INCInstr(io));
+        builder.addProcInstr(part, FRSInstr());
+        builder.addProcInstr(part, INCInstr(l));
+        builder.addProcInstr(part, JNGInstr(l, h, -9));
         builder.addProcInstr(part, DECInstr(io));
         builder.addProcInstr(part, FRSNInstr(5));
         builder.addProcInstr(part, RETInstr());
@@ -111,9 +111,9 @@ namespace Ant {
         builder.addProcInstr(qsort, CPBInstr(io, l));
         builder.addProcInstr(qsort, ALSInstr(h));
         builder.addProcInstr(qsort, LDBInstr(io, 8, h));
-        builder.addProcInstr(qsort, JGInstr(h, l, 2)); // -|
-        builder.addProcInstr(qsort, RETInstr()); //        |
-        builder.addProcInstr(qsort, CALLInstr(part)); // <-|
+        builder.addProcInstr(qsort, JGInstr(h, l, 2));
+        builder.addProcInstr(qsort, RETInstr());
+        builder.addProcInstr(qsort, CALLInstr(part));
         builder.addProcInstr(qsort, CPBInstr(io, h));
         builder.addProcInstr(qsort, INCInstr(io));
         builder.addProcInstr(qsort, CALLInstr(qsort));
@@ -121,7 +121,7 @@ namespace Ant {
         builder.addProcInstr(qsort, DECInstr(h));
         builder.addProcInstr(qsort, STBInstr(h, io, 8));
         builder.addProcInstr(qsort, CALLInstr(qsort));
-        builder.addProcInstr(part, FRSNInstr(2));
+        builder.addProcInstr(qsort, FRSNInstr(2));
         builder.addProcInstr(qsort, RETInstr());
       }
 
