@@ -325,6 +325,11 @@ namespace Ant {
 
     }
 
+    void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
+					      const CALLInstr &instr) {
+
+    }
+
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
       ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
@@ -377,7 +382,8 @@ namespace Ant {
           BOINSTR_CASE(SUB, Sub);
           BOINSTR_CASE(MUL, Mul);
           UJINSTR_CASE(JNZ, ICMP_NE, 0);
-          BJINSTR_CASE(JUG, ICMP_UGT);
+          BJINSTR_CASE(JG, ICMP_SGT);
+          BJINSTR_CASE(JNG, ICMP_SLE);
           CPIINSTR_CASE(CPI1, uint8_t);
           CPIINSTR_CASE(CPI2, uint16_t);
           CPIINSTR_CASE(CPI4, uint32_t);
@@ -392,6 +398,7 @@ namespace Ant {
           INSTR_CASE(LDR);
           INSTR_CASE(STE);
           INSTR_CASE(STB);
+          INSTR_CASE(CALL);
           INSTR_CASE(RET);
         }
 

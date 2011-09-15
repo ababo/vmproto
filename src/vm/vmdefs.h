@@ -77,27 +77,6 @@ namespace Ant {
       std::vector<VMCodeByte> code;
     };
 
-    enum OpCode {
-      OPCODE_ILL = 0,
-      OPCODE_INC,
-      OPCODE_DEC,
-      OPCODE_ADD,
-      OPCODE_SUB,
-      OPCODE_MUL,
-      OPCODE_JNZ,
-      OPCODE_JUG,
-      OPCODE_CPI1,
-      OPCODE_CPI2,
-      OPCODE_CPI4,
-      OPCODE_CPI8,
-      OPCODE_ALS,
-      OPCODE_ALSR,
-      OPCODE_FRS,
-      OPCODE_CPB,
-      OPCODE_LDB,
-      OPCODE_LDR,
-      OPCODE_RET
-    };
 enum OpCode {
       OPCODE_ILL = 0,
       OPCODE_INC,
@@ -106,7 +85,8 @@ enum OpCode {
       OPCODE_SUB,
       OPCODE_MUL,
       OPCODE_JNZ,
-      OPCODE_JUG,
+      OPCODE_JG,
+      OPCODE_JNG,
       OPCODE_CPI1,
       OPCODE_CPI2,
       OPCODE_CPI4,
@@ -121,6 +101,7 @@ enum OpCode {
       OPCODE_LDR,
       OPCODE_STE,
       OPCODE_STB,
+      OPCODE_CALL,
       OPCODE_RET
     };
 
@@ -137,7 +118,8 @@ enum OpCode {
     typedef UJInstrT<OPCODE_JNZ> JNZInstr;
 
     template<uint8_t> class BJInstrT;
-    typedef BJInstrT<OPCODE_JUG> JUGInstr;
+    typedef BJInstrT<OPCODE_JG> JGInstr;
+    typedef BJInstrT<OPCODE_JNG> JNGInstr;
 
     template<uint8_t, class> class CPIInstrT;
     typedef CPIInstrT<OPCODE_CPI1, uint8_t> CPI1Instr;
@@ -157,6 +139,8 @@ enum OpCode {
     class LDRInstr;
     class STEInstr;
     class STBInstr;
+    class CALLInstr;
+    class RETInstr;
 
   }
 }

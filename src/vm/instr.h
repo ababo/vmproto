@@ -40,20 +40,18 @@ namespace Ant {
       uint64_t getParam(int index) const;
       int64_t getParam2(int index) const;
 
-      static void regSpec(const ModuleBuilder &mbuilder, RegId reg,
-			  VarSpec &vspec);
-      static void vrefSpec(const ModuleBuilder &mbuilder, RegId reg,
-			   uit32_t vref, VarSpec &vspec);
-
       static void assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
       static void assertRegAllocated(const ModuleBuilder &mbuilder,
 				     ProcId proc, RegId reg);
       static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
 				    RegId reg, uint32_t bytes);
-      static void assertSameVarType(const ModuleBuilder &mbuilder, ProcId proc,
-				    VarTypeId vtype1, VarTypeId vtype2);
+      static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
       static void assertCompatibleEltCounts(size_t from, size_t to);
-
+      static void assertProcExists(ModuleBuilder &mbuilder, ProcId proc);
+      static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
+                          RegId reg, VarSpec &vspec);
+      static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,
+                           RegId reg, uint32_t vref, VarSpec &vspec);
       static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, bool asRef);
       static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
@@ -163,7 +161,8 @@ namespace Ant {
       }
     };
 
-    typedef BJInstrT<OPCODE_JUG> JUGInstr;
+    typedef BJInstrT<OPCODE_JG> JGInstr;
+    typedef BJInstrT<OPCODE_JNG> JNGInstr;
 
     template<uint8_t OP, class VAL> class CPIInstrT : public Instr {
       friend class Instr;
@@ -240,7 +239,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyStackFree(mbuilder, proc, regs);
+        Instr::applyStackFree(mbuilder, proc, regs());
       }
     };
 
@@ -284,9 +283,9 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::regSpec(mbuilder, from(), fvspec);
-	Instr::regSpec(mbuilder, to(), tvspec);
-	Instr::assertSameVarType(mbuilder, proc, fvspec.vtype, tvspec.vtype);
+	Instr::regSpec(mbuilder, proc, from(), fvspec);
+	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
       }
@@ -333,9 +332,9 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::vrefSpec(mbuilder, from(), vref(), fvspec);
-	Instr::regSpec(mbuilder, to(), tvspec);
-	Instr::assertSameVarType(mbuilder, proc, fvspec.vtype, tvspec.vtype);
+	Instr::vrefSpec(mbuilder, proc, from(), vref(), fvspec);
+	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertCompatibleEltCounts(fvspec.count, tvspec.count);
         Instr::applyDefault(mbuilder, proc);
       }
@@ -344,7 +343,7 @@ namespace Ant {
     class STEInstr : public Instr {
       friend class Instr;
     public:
-      LDEInstr(RegId from, RegId to, RegId elt) {
+      STEInstr(RegId from, RegId to, RegId elt) {
         op = OPCODE_STE; set3Params(from, to, elt);
       }
 
@@ -358,9 +357,10 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-	Instr::assertSameVarType(mbuilder, proc,
-				 Instr::regVarType(mbuilder, from()),
-				 Instr::regVarType(mbuilder, to()));
+	VarSpec fvspec, tvspec;
+	Instr::regSpec(mbuilder, proc, from(), fvspec);
+	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
       }
@@ -385,6 +385,24 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	Instr::assertRegHasBytes(mbuilder, proc, from(), 1);
         Instr::assertRegHasBytes(mbuilder, proc, to(), offset() + 1);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class CALLInstr : public Instr {
+      friend class Instr;
+    public:
+      CALLInstr(ProcId proc) { op = OPCODE_CALL; }
+
+      size_t size() const { return Instr::size(1); }
+      ProcId proc() const { return ProcId(getParam(0)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::assertProcExists(mbuilder, proc);
         Instr::applyDefault(mbuilder, proc);
       }
     };

@@ -31,7 +31,8 @@ namespace Ant {
       VIRTUAL_CASE(SUB, left, mod, call); \
       VIRTUAL_CASE(MUL, left, mod, call); \
       VIRTUAL_CASE(JNZ, left, mod, call); \
-      VIRTUAL_CASE(JUG, left, mod, call); \
+      VIRTUAL_CASE(JG, left, mod, call); \
+      VIRTUAL_CASE(JNG, left, mod, call); \
       VIRTUAL_CASE(CPI1, left, mod, call); \
       VIRTUAL_CASE(CPI2, left, mod, call); \
       VIRTUAL_CASE(CPI4, left, mod, call); \
@@ -46,6 +47,7 @@ namespace Ant {
       VIRTUAL_CASE(LDR, left, mod, call); \
       VIRTUAL_CASE(STE, left, mod, call); \
       VIRTUAL_CASE(STB, left, mod, call); \
+      VIRTUAL_CASE(CALL, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }
@@ -130,29 +132,6 @@ namespace Ant {
       return val;
     }
 
-    void Instr::regSpec(const ModuleBuilder &mbuilder, RegId reg,
-			VarSpec &vspec) {
-      mbuilder.regById(reg, vspec);
-    }
-
-    void Instr::vrefSpec(const ModuleBuilder &mbuilder, RegId reg,
-			 uit32_t vref, VarSpec &vspec) {
-      mbuilder.regById(reg, vspec);
-      
-      VarType vtype;
-      mbuilder.VarTypeById(vspec.vtype, vtype);
-
-      if(vref >= vtype.vrefs.count())
-	throw TypeException();
-
-      return vspec = vtype.vrefs[vref];
-    }
-
-    size_t Instr::regEltCount(const ModuleBuilder &mbuilder, RegId reg,
-			      uint32_t vref) {
-
-    }
-
     void Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg) {
       mbuilder.assertRegExists(reg);
     }
@@ -176,13 +155,38 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertSameVarType(const ModuleBuilder &mbuilder, ProcId proc,
-				  VarTypeId vtype1, VarTypeId vtype2) {
-
+    void Instr::assertSameVarType(VarTypeId vtype1, VarTypeId vtype2) {
+      if(vtype1 != vtype2)
+        throw TypeException();
     }
 
     void Instr::assertCompatibleEltCounts(size_t from, size_t to) {
+      if((!from && to) || (from && !to) || from < to)
+        throw TypeException();
+    }
 
+    void Instr::assertProcExists(ModuleBuilder &mbuilder, ProcId proc) {
+      mbuilder.assertProcExists(proc);
+    }
+
+    void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
+			VarSpec &vspec) {
+      assertRegAllocated(mbuilder, proc, reg);
+      mbuilder.regById(reg, vspec);
+    }
+
+    void Instr::vrefSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
+			 uint32_t vref, VarSpec &vspec) {
+      assertRegAllocated(mbuilder, proc, reg);
+      mbuilder.regById(reg, vspec);
+
+      VarType vtype;
+      mbuilder.varTypeById(vspec.vtype, vtype);
+
+      if(vref >= vtype.vrefs.size())
+	throw TypeException();
+
+      vspec = vtype.vrefs[vref];
     }
 
     void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
@@ -192,7 +196,7 @@ namespace Ant {
     }
 
     void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
-			       uint32 regs) {
+			       uint32_t regs) {
       mbuilder.applyStackFree(proc, regs);
     }
 
