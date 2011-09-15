@@ -155,7 +155,7 @@ namespace Ant {
       con.allocs.push_back(reg);
     }
 
-    void ModuleBuilder::applyStackFree(ProcId proc) {
+    void ModuleBuilder::applyStackFree(ProcId proc, uint32_t regs) {
       ProcCon &con = procCons[proc];
 
       if(con.frames.size() == 1)

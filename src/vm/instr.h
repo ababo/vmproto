@@ -40,16 +40,24 @@ namespace Ant {
       uint64_t getParam(int index) const;
       int64_t getParam2(int index) const;
 
+      static void regSpec(const ModuleBuilder &mbuilder, RegId reg,
+			  VarSpec &vspec);
+      static void vrefSpec(const ModuleBuilder &mbuilder, RegId reg,
+			   uit32_t vref, VarSpec &vspec);
+
       static void assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
       static void assertRegAllocated(const ModuleBuilder &mbuilder,
-                                     ProcId proc, RegId reg);
-      static void assertRegHasBytes(const ModuleBuilder &mbuilder,
-                                    ProcId proc, RegId reg, uint32_t bytes);
-      static void assertValidLDR(const ModuleBuilder &mbuilder, ProcId proc,
-                                 RegId from, uint32_t vref, RegId to);
+				     ProcId proc, RegId reg);
+      static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
+				    RegId reg, uint32_t bytes);
+      static void assertSameVarType(const ModuleBuilder &mbuilder, ProcId proc,
+				    VarTypeId vtype1, VarTypeId vtype2);
+      static void assertCompatibleEltCounts(size_t from, size_t to);
+
       static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, bool asRef);
-      static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc);
+      static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
+				 uint32_t regs);
       static void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
                                    ptrdiff_t offset);
       static void applyDefault(ModuleBuilder &mbuilder, ProcId proc);
@@ -215,7 +223,24 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyStackFree(mbuilder, proc);
+        Instr::applyStackFree(mbuilder, proc, 1);
+      }
+    };
+
+    class FRSNInstr : public Instr {
+      friend class Instr;
+    public:
+      FRSNInstr(uint32_t regs) { op = OPCODE_FRSN; }
+
+      size_t size() const { return Instr::size(1); }
+      uint32_t regs() const { return uint32_t(getParam(0)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::applyStackFree(mbuilder, proc, regs);
       }
     };
 
@@ -237,6 +262,32 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertRegHasBytes(mbuilder, proc, from(), 1);
         Instr::assertRegHasBytes(mbuilder, proc, to(), 1);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class LDEInstr : public Instr {
+      friend class Instr;
+    public:
+      LDEInstr(RegId from, RegId elt, RegId to) {
+        op = OPCODE_LDE; set3Params(from, elt, to);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      RegId elt() const { return RegId(getParam(1)); }
+      RegId to() const { return RegId(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+	VarSpec fvspec, tvspec;
+	Instr::regSpec(mbuilder, from(), fvspec);
+	Instr::regSpec(mbuilder, to(), tvspec);
+	Instr::assertSameVarType(mbuilder, proc, fvspec.vtype, tvspec.vtype);
+	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
       }
     };
@@ -281,7 +332,59 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertValidLDR(mbuilder, proc, from(), vref(), to());
+	VarSpec fvspec, tvspec;
+	Instr::vrefSpec(mbuilder, from(), vref(), fvspec);
+	Instr::regSpec(mbuilder, to(), tvspec);
+	Instr::assertSameVarType(mbuilder, proc, fvspec.vtype, tvspec.vtype);
+	Instr::assertCompatibleEltCounts(fvspec.count, tvspec.count);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class STEInstr : public Instr {
+      friend class Instr;
+    public:
+      LDEInstr(RegId from, RegId to, RegId elt) {
+        op = OPCODE_STE; set3Params(from, to, elt);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      RegId to() const { return RegId(getParam(1)); }
+      RegId elt() const { return RegId(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+	Instr::assertSameVarType(mbuilder, proc,
+				 Instr::regVarType(mbuilder, from()),
+				 Instr::regVarType(mbuilder, to()));
+	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class STBInstr : public Instr {
+      friend class Instr;
+    public:
+      STBInstr(RegId from, RegId to, uint32_t offset) {
+        op = OPCODE_STB; set3Params(from, to, offset);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      RegId to() const { return RegId(getParam(1)); }
+      uint32_t offset() const { return uint32_t(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+	Instr::assertRegHasBytes(mbuilder, proc, from(), 1);
+        Instr::assertRegHasBytes(mbuilder, proc, to(), offset() + 1);
         Instr::applyDefault(mbuilder, proc);
       }
     };

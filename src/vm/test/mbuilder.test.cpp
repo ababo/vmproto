@@ -30,7 +30,7 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, CPBInstr(n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, MULInstr(n, n, n));},NotFoundException);
+      ASSERT_THROW({b.addProcInstr(p, MULInstr(n, n, n));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
 

@@ -39,9 +39,13 @@ namespace Ant {
       VIRTUAL_CASE(ALS, left, mod, call); \
       VIRTUAL_CASE(ALSR, left, mod, call); \
       VIRTUAL_CASE(FRS, left, mod, call); \
+      VIRTUAL_CASE(FRSN, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
+      VIRTUAL_CASE(LDE, left, mod, call); \
       VIRTUAL_CASE(LDB, left, mod, call); \
       VIRTUAL_CASE(LDR, left, mod, call); \
+      VIRTUAL_CASE(STE, left, mod, call); \
+      VIRTUAL_CASE(STB, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }
@@ -126,6 +130,29 @@ namespace Ant {
       return val;
     }
 
+    void Instr::regSpec(const ModuleBuilder &mbuilder, RegId reg,
+			VarSpec &vspec) {
+      mbuilder.regById(reg, vspec);
+    }
+
+    void Instr::vrefSpec(const ModuleBuilder &mbuilder, RegId reg,
+			 uit32_t vref, VarSpec &vspec) {
+      mbuilder.regById(reg, vspec);
+      
+      VarType vtype;
+      mbuilder.VarTypeById(vspec.vtype, vtype);
+
+      if(vref >= vtype.vrefs.count())
+	throw TypeException();
+
+      return vspec = vtype.vrefs[vref];
+    }
+
+    size_t Instr::regEltCount(const ModuleBuilder &mbuilder, RegId reg,
+			      uint32_t vref) {
+
+    }
+
     void Instr::assertRegExists(const ModuleBuilder &mbuilder, RegId reg) {
       mbuilder.assertRegExists(reg);
     }
@@ -149,8 +176,12 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertValidLDR(const ModuleBuilder &mbuilder, ProcId proc,
-                               RegId from, uint32_t vref, RegId to) {
+    void Instr::assertSameVarType(const ModuleBuilder &mbuilder, ProcId proc,
+				  VarTypeId vtype1, VarTypeId vtype2) {
+
+    }
+
+    void Instr::assertCompatibleEltCounts(size_t from, size_t to) {
 
     }
 
@@ -160,8 +191,9 @@ namespace Ant {
       mbuilder.applyStackAlloc(proc, reg, asRef);
     }
 
-    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {
-      mbuilder.applyStackFree(proc);
+    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
+			       uint32 regs) {
+      mbuilder.applyStackFree(proc, regs);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,

@@ -64,7 +64,7 @@ namespace Ant {
       void fillProcs(Runtime::ModuleData &moduleData) const;
 
       void applyStackAlloc(ProcId proc, RegId reg, bool asRef);
-      void applyStackFree(ProcId proc);
+      void applyStackFree(ProcId proc, uint32_t regs);
       void applyInstrOffset(ProcId proc, ptrdiff_t offset);
       void applyInstrIndex(ProcId proc, size_t index);
       void applyDefault(ProcId proc);

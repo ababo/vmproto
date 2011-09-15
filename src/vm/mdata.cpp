@@ -280,6 +280,11 @@ namespace Ant {
       context.popAlloc();
     }
 
+    void Runtime::ModuleData::emitLLVMCodeFRSN(LLVMContext &context,
+					       const FRSNInstr &instr) {
+     
+    }
+
 #define BITCAST_PARR(bytes, ptr) \
     new BitCastInst(ptr, TYPE_PTR(TYPE_ARR(bytes)), "", CURRENT_BLOCK)
 
@@ -295,6 +300,11 @@ namespace Ant {
       new StoreInst(val, to, CURRENT_BLOCK);
     }
 
+    void Runtime::ModuleData::emitLLVMCodeLDE(LLVMContext &context,
+                                              const LDEInstr &instr) {
+
+    }
+
     void Runtime::ModuleData::emitLLVMCodeLDB(LLVMContext &context,
                                               const LDBInstr &instr) {
 
@@ -302,6 +312,16 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeLDR(LLVMContext &context,
                                               const LDRInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeSTE(LLVMContext &context,
+                                              const STEInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodeSTB(LLVMContext &context,
+					      const STBInstr &instr) {
 
     }
 
@@ -365,9 +385,13 @@ namespace Ant {
           ASTTINSTR_CASE(ALS, false);
           ASTTINSTR_CASE(ALSR, true);
           INSTR_CASE(FRS);
+          INSTR_CASE(FRSN);
           INSTR_CASE(CPB);
+          INSTR_CASE(LDE);
           INSTR_CASE(LDB);
           INSTR_CASE(LDR);
+          INSTR_CASE(STE);
+          INSTR_CASE(STB);
           INSTR_CASE(RET);
         }
 

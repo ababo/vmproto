@@ -98,6 +98,31 @@ namespace Ant {
       OPCODE_LDR,
       OPCODE_RET
     };
+enum OpCode {
+      OPCODE_ILL = 0,
+      OPCODE_INC,
+      OPCODE_DEC,
+      OPCODE_ADD,
+      OPCODE_SUB,
+      OPCODE_MUL,
+      OPCODE_JNZ,
+      OPCODE_JUG,
+      OPCODE_CPI1,
+      OPCODE_CPI2,
+      OPCODE_CPI4,
+      OPCODE_CPI8,
+      OPCODE_ALS,
+      OPCODE_ALSR,
+      OPCODE_FRS,
+      OPCODE_FRSN,
+      OPCODE_CPB,
+      OPCODE_LDE,
+      OPCODE_LDB,
+      OPCODE_LDR,
+      OPCODE_STE,
+      OPCODE_STB,
+      OPCODE_RET
+    };
 
     template<uint8_t> class UOInstrT;
     typedef UOInstrT<OPCODE_INC> INCInstr;
@@ -125,10 +150,13 @@ namespace Ant {
     typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
 
     class FRSInstr;
+    class FRSNInstr;
     class CPBInstr;
+    class LDEInstr;
     class LDBInstr;
     class LDRInstr;
-    class RETInstr;
+    class STEInstr;
+    class STBInstr;
 
   }
 }
