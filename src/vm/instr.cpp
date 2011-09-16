@@ -165,8 +165,13 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertProcExists(ModuleBuilder &mbuilder, ProcId proc) {
-      mbuilder.assertProcExists(proc);
+    void Instr::assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
+                                   ProcId targetProc) {
+      Proc pr;
+      mbuilder.procById(targetProc, pr);
+      ProcType pt;
+      mbuilder.procTypeById(pr.ptype, pt);
+      mbuilder.assertRegAllocated(proc, pt.io);
     }
 
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,

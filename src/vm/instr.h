@@ -47,7 +47,8 @@ namespace Ant {
 				    RegId reg, uint32_t bytes);
       static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
       static void assertCompatibleEltCounts(size_t from, size_t to);
-      static void assertProcExists(ModuleBuilder &mbuilder, ProcId proc);
+      static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
+                                     ProcId targetProc);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
                           RegId reg, VarSpec &vspec);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,
@@ -392,7 +393,7 @@ namespace Ant {
     class CALLInstr : public Instr {
       friend class Instr;
     public:
-      CALLInstr(ProcId proc) { op = OPCODE_CALL; }
+      CALLInstr(ProcId proc) { op = OPCODE_CALL; setParam(proc); }
 
       size_t size() const { return Instr::size(1); }
       ProcId proc() const { return ProcId(getParam(0)); }
@@ -402,7 +403,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::assertProcExists(mbuilder, proc);
+        Instr::assertProcCallable(mbuilder, proc, this->proc());
         Instr::applyDefault(mbuilder, proc);
       }
     };

@@ -77,7 +77,7 @@ namespace Ant {
       std::vector<VMCodeByte> code;
     };
 
-enum OpCode {
+    enum OpCode {
       OPCODE_ILL = 0,
       OPCODE_INC,
       OPCODE_DEC,

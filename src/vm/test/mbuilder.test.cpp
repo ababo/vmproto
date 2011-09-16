@@ -14,42 +14,82 @@ namespace {
 
   const String subj = "Ant::VM::ModuleBuilder";
 
-  bool testRegConsistency() {
+#define REG_ALLOC_NORMAL_SEQ(reg) \
+  if(passed) { \
+    b.addProcInstr(p, CPI8Instr(0, reg)); \
+    b.addProcInstr(p, MULInstr(reg, reg, reg)); \
+    b.addProcInstr(p, DECInstr(reg)); \
+    b.addProcInstr(p, JGInstr(reg, reg, 0)); \
+    b.addProcInstr(p, LDEInstr(reg, reg, reg)); \
+    b.addProcInstr(p, LDBInstr(reg, 0, reg)); \
+    b.addProcInstr(p, STEInstr(reg, reg, reg)); \
+    b.addProcInstr(p, STBInstr(reg, reg, 0)); \
+  }
+
+#define REG_ALLOC_ERROR_SEQ(reg, exc) \
+  ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, CPBInstr(reg, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, MULInstr(reg, reg, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, DECInstr(reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, JGInstr(reg, reg, 0));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, LDEInstr(reg, reg, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, LDBInstr(reg, 0, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, LDRInstr(reg, 0, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, STEInstr(reg, reg, reg));}, exc); \
+  ASSERT_THROW({b.addProcInstr(p, STBInstr(reg, reg, 0));}, exc);
+
+  bool testRegAllocation() {
     bool passed = true;
 
     try {
       ModuleBuilder b;
-      VarTypeId vt = b.addVarType(7);
+      VarTypeId vt = b.addVarType(8);
+      RegId r1 = b.addReg(vt), r2 = b.addReg(vt);
+      ProcTypeId pt = b.addProcType(0, r1);
+      ProcId p = b.addProc(0, pt);
+
+      REG_ALLOC_NORMAL_SEQ(r1);
+      REG_ALLOC_ERROR_SEQ(r2, OperationException);
+      b.addProcInstr(p, ALSInstr(r2));
+      REG_ALLOC_NORMAL_SEQ(r2);
+      b.addProcInstr(p, ALSInstr(r2));
+      REG_ALLOC_NORMAL_SEQ(r2);
+      b.addProcInstr(p, FRSInstr());
+      REG_ALLOC_NORMAL_SEQ(r2);
+      b.addProcInstr(p, FRSInstr());
+      REG_ALLOC_ERROR_SEQ(r2, OperationException);
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "regAllocation", passed);
+  }
+
+#define REG_EXIST_NORMAL_SEQ(reg) \
+  if(passed) { \
+    b.addProcInstr(p, ALSInstr(reg)); \
+    b.addProcInstr(p, ALSRInstr(reg)); \
+    REG_ALLOC_NORMAL_SEQ(reg); \
+  }
+
+#define REG_EXIST_ERROR_SEQ(reg, exc) \
+  REG_ALLOC_ERROR_SEQ(reg, exc);
+
+  bool testRegExistence() {
+    bool passed = true;
+
+    try {
+      ModuleBuilder b;
+      VarTypeId vt = b.addVarType(8);
       RegId r = b.addReg(vt), n = r + 1;
       ProcTypeId pt = b.addProcType(0, r);
       ProcId p = b.addProc(0, pt);
 
-      ASSERT_THROW({b.addProc(0, n);}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, ALSInstr(n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, CPBInstr(n, n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, MULInstr(n, n, n));}, NotFoundException);
-      ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, NotFoundException);
-
-      vt = b.addVarType(8);
-      n = b.addReg(vt);
-
-      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
-      b.addProcInstr(p, ALSInstr(n));
-      b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, ALSInstr(r));
-      b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, FRSInstr());
-      b.addProcInstr(p, DECInstr(n));
-      b.addProcInstr(p, FRSInstr());
-      ASSERT_THROW({b.addProcInstr(p, DECInstr(n));}, OperationException);
+      REG_EXIST_NORMAL_SEQ(r);
+      REG_EXIST_ERROR_SEQ(n, NotFoundException);
     }
     catch(...) { passed = false; }
 
-    return printTestResult(subj, "regConsistency", passed);
+    return printTestResult(subj, "regExistence", passed);
   }
 
   bool testStackConsistency() {
@@ -88,6 +128,11 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
       b.addProcInstr(p, JNZInstr(r, 0));
       b.addProcInstr(p, FRSInstr());
+      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
+      b.addProcInstr(p, ALSInstr(r));
+      b.addProcInstr(p, ALSInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, FRSNInstr(3));}, OperationException);
+      b.addProcInstr(p, FRSNInstr(2));
       b.createModule(m);
     }
     catch(...) { passed = false; }
@@ -95,6 +140,81 @@ namespace {
     IGNORE_THROW(m.drop());
 
     return printTestResult(subj, "stackConsistency", passed);
+  }
+
+  bool testEltConsistency() {
+    bool passed = true;
+
+    try {
+      ModuleBuilder b;
+      throw Exception();
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "eltConsistency", passed);
+  }
+
+  bool testByteConsistency() {
+    bool passed = true;
+
+    try {
+      ModuleBuilder b;
+      VarTypeId vt = b.addVarType(7);
+      RegId r = b.addReg(vt);
+      ProcTypeId pt = b.addProcType(0, r);
+      ProcId p = b.addProc(0, pt);
+
+      ASSERT_THROW({b.addProcInstr(p, CPI8Instr(0, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, MULInstr(r, r, r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, JGInstr(r, r, 0));}, TypeException);
+      b.addProcInstr(p, LDBInstr(r, 6, r));
+      ASSERT_THROW({b.addProcInstr(p, LDBInstr(r, 7, r));}, TypeException);
+      b.addProcInstr(p, STBInstr(r, r, 6));
+      ASSERT_THROW({b.addProcInstr(p, STBInstr(r, r, 7));}, TypeException);
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "byteConsistency", passed);
+  }
+
+  bool testRefConsistency() {
+    bool passed = true;
+
+    try {
+      ModuleBuilder b;
+      throw Exception();
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "refConsistency", passed);
+  }
+
+  bool testCallConsistency() {
+    bool passed = true;
+
+    try {
+      ModuleBuilder b;
+      VarTypeId vt = b.addVarType(1);
+      RegId r1 = b.addReg(vt);
+      RegId r2 = b.addReg(vt);
+      ProcTypeId pt1 = b.addProcType(0, r1);
+      ProcTypeId pt2 = b.addProcType(0, r2);
+      ProcId p1 = b.addProc(0, pt1);
+      ProcId p2 = b.addProc(0, pt2);
+
+      b.addProcInstr(p1, CALLInstr(p1));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, ALSInstr(r2));
+      b.addProcInstr(p1, CALLInstr(p1));
+      b.addProcInstr(p1, CALLInstr(p2));
+      b.addProcInstr(p1, FRSInstr());
+      b.addProcInstr(p1, CALLInstr(p1));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "callConsistency", passed);
   }
 
   bool testFactorialVTypes(const Module &module) {
@@ -243,8 +363,13 @@ namespace Ant {
       bool testModuleBuilder() {
         bool passed;
 
-        passed = testRegConsistency();
+        passed = testRegExistence();
+        passed = passed && testRegAllocation();
         passed = passed && testStackConsistency();
+        passed = passed && testEltConsistency();
+        passed = passed && testByteConsistency();
+        passed = passed && testRefConsistency();
+        passed = passed && testCallConsistency();
         passed = passed && testFactorial();
 
         return passed;
