@@ -158,16 +158,19 @@ namespace Ant {
     void ModuleBuilder::applyStackFree(ProcId proc, uint32_t regs) {
       ProcCon &con = procCons[proc];
 
-      if(con.frames.size() == 1)
+      if(con.frames.size() <= regs)
         throw OperationException();
 
-      ProcCon::Frame &frame = con.frames.back();
-      for(int i = 1; i < frame.size(); i++)
-        if(frame[i] > con.instrCount)
-          throw OperationException();
+      for(int i = 1; i <= regs; i++) {
+        ProcCon::Frame &frame = con.frames[con.frames.size() - i];
 
-      con.frames.pop_back();
-      con.allocs.pop_back();
+        for(int j = 1; j < frame.size(); j++)
+          if(frame[j] > con.instrCount)
+            throw OperationException();
+      }
+
+      con.frames.resize(con.frames.size() - regs);
+      con.allocs.resize(con.allocs.size() - regs);
     }
 
     void ModuleBuilder::applyInstrOffset(ProcId proc, ptrdiff_t offset) {

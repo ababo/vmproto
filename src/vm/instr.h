@@ -230,7 +230,7 @@ namespace Ant {
     class FRSNInstr : public Instr {
       friend class Instr;
     public:
-      FRSNInstr(uint32_t regs) { op = OPCODE_FRSN; }
+      FRSNInstr(uint32_t regs) { op = OPCODE_FRSN; setParam(regs); }
 
       size_t size() const { return Instr::size(1); }
       uint32_t regs() const { return uint32_t(getParam(0)); }
