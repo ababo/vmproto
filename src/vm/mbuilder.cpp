@@ -155,22 +155,36 @@ namespace Ant {
       con.allocs.push_back(reg);
     }
 
-    void ModuleBuilder::applyStackFree(ProcId proc, uint32_t regs) {
+    void ModuleBuilder::applyStackFree(ProcId proc) {
       ProcCon &con = procCons[proc];
 
-      if(con.frames.size() <= regs)
+      if(con.frames.size() == 1)
         throw OperationException();
 
-      for(int i = 1; i <= regs; i++) {
-        ProcCon::Frame &frame = con.frames[con.frames.size() - i];
+      ProcCon::Frame &frame = con.frames.back();
+      for(int i = 1; i < frame.size(); i++)
+        if(frame[i] > con.instrCount)
+          throw OperationException();
 
-        for(int j = 1; j < frame.size(); j++)
-          if(frame[j] > con.instrCount)
-            throw OperationException();
+      con.frames.pop_back();
+      con.allocs.pop_back();
+    }
+
+    void ModuleBuilder::applyStackFree(ProcId proc, uint32_t level) {
+      ProcCon &con = procCons[proc];
+
+      if(level >= con.frames.size())
+        throw OperationException();
+
+      for(int i = ++level; i < con.frames.size(); i++) {
+	ProcCon::Frame &frame = con.frames[i];
+	for(int i = 1; i < frame.size(); i++)
+	  if(frame[i] > con.instrCount)
+	    throw OperationException();
       }
-
-      con.frames.resize(con.frames.size() - regs);
-      con.allocs.resize(con.allocs.size() - regs);
+	
+      con.frames.resize(level);
+      con.allocs.resize(level);
     }
 
     void ModuleBuilder::applyInstrOffset(ProcId proc, ptrdiff_t offset) {

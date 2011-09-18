@@ -61,7 +61,7 @@ namespace Ant {
         void emitLLVMCodeALS(LLVMContext &context,
                              const ALSInstrT<OP, REF> &instr);
       void emitLLVMCodeFRS(LLVMContext &context, const FRSInstr &instr);
-      void emitLLVMCodeFRSN(LLVMContext &context, const FRSNInstr &instr);
+      void emitLLVMCodeFRSL(LLVMContext &context, const FRSLInstr &instr);
       void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
       void emitLLVMCodeLDE(LLVMContext &context, const LDEInstr &instr);
       void emitLLVMCodeLDB(LLVMContext &context, const LDBInstr &instr);

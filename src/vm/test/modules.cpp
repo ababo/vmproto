@@ -91,7 +91,7 @@ namespace Ant {
         builder.addProcInstr(part, INCInstr(l));
         builder.addProcInstr(part, JNGInstr(l, h, -9));
         builder.addProcInstr(part, DECInstr(io));
-        builder.addProcInstr(part, FRSNInstr(5));
+        builder.addProcInstr(part, FRSLInstr(0));
         builder.addProcInstr(part, RETInstr());
 
         // void qsort(struct ioType *io) {
@@ -121,7 +121,7 @@ namespace Ant {
         builder.addProcInstr(qsort, DECInstr(h));
         builder.addProcInstr(qsort, STBInstr(h, io, 8));
         builder.addProcInstr(qsort, CALLInstr(qsort));
-        builder.addProcInstr(qsort, FRSNInstr(2));
+        builder.addProcInstr(qsort, FRSLInstr(0));
         builder.addProcInstr(qsort, RETInstr());
       }
 

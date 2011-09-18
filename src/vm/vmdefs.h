@@ -94,7 +94,7 @@ namespace Ant {
       OPCODE_ALS,
       OPCODE_ALSR,
       OPCODE_FRS,
-      OPCODE_FRSN,
+      OPCODE_FRSL,
       OPCODE_CPB,
       OPCODE_LDE,
       OPCODE_LDB,
@@ -132,7 +132,7 @@ namespace Ant {
     typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
 
     class FRSInstr;
-    class FRSNInstr;
+    class FRSLInstr;
     class CPBInstr;
     class LDEInstr;
     class LDBInstr;

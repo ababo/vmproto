@@ -131,8 +131,9 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
       b.addProcInstr(p, ALSInstr(r));
       b.addProcInstr(p, ALSInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, FRSNInstr(3));}, OperationException);
-      b.addProcInstr(p, FRSNInstr(2));
+      ASSERT_THROW({b.addProcInstr(p, FRSLInstr(3));}, OperationException);
+      b.addProcInstr(p, FRSLInstr(2));
+      b.addProcInstr(p, FRSLInstr(0));
       b.createModule(m);
     }
     catch(...) { passed = false; }

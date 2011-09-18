@@ -280,8 +280,8 @@ namespace Ant {
       context.popAlloc();
     }
 
-    void Runtime::ModuleData::emitLLVMCodeFRSN(LLVMContext &context,
-					       const FRSNInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodeFRSL(LLVMContext &context,
+					       const FRSLInstr &instr) {
      
     }
 
@@ -391,7 +391,7 @@ namespace Ant {
           ASTTINSTR_CASE(ALS, false);
           ASTTINSTR_CASE(ALSR, true);
           INSTR_CASE(FRS);
-          INSTR_CASE(FRSN);
+          INSTR_CASE(FRSL);
           INSTR_CASE(CPB);
           INSTR_CASE(LDE);
           INSTR_CASE(LDB);

@@ -40,7 +40,7 @@ namespace Ant {
       VIRTUAL_CASE(ALS, left, mod, call); \
       VIRTUAL_CASE(ALSR, left, mod, call); \
       VIRTUAL_CASE(FRS, left, mod, call); \
-      VIRTUAL_CASE(FRSN, left, mod, call); \
+      VIRTUAL_CASE(FRSL, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
       VIRTUAL_CASE(LDE, left, mod, call); \
       VIRTUAL_CASE(LDB, left, mod, call); \
@@ -200,9 +200,13 @@ namespace Ant {
       mbuilder.applyStackAlloc(proc, reg, asRef);
     }
 
+    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {
+      mbuilder.applyStackFree(proc);
+    }
+
     void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
-			       uint32_t regs) {
-      mbuilder.applyStackFree(proc, regs);
+			       uint32_t level) {
+      mbuilder.applyStackFree(proc, level);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
