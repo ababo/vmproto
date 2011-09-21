@@ -48,16 +48,18 @@ namespace Ant {
     protected:
       struct ProcCon {
         typedef std::vector<size_t> Frame;
+	struct Alloc { RegId reg; bool ref; };
         std::vector<Frame> frames;
-        std::vector<RegId> allocs;
+        std::vector<Alloc> allocs;
         size_t instrCount;
       };
+      enum RegKind { RK_ANY, RK_REF, RK_NOREF };
 
       VarTypeId assertVarTypeExists(VarTypeId id) const;
       VarTypeId assertProcTypeExists(VarTypeId id) const;
       RegId assertRegExists(RegId id) const;
       ProcId assertProcExists(ProcId id) const;
-      RegId assertRegAllocated(ProcId proc, RegId reg) const;
+      RegId assertRegAllocated(ProcId proc, RegId reg, RegKind kind) const;
       size_t assertCountInRange(VarTypeId vtype, size_t count);
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;

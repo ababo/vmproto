@@ -49,11 +49,16 @@ namespace Ant {
       return id;
     }
 
-    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegId reg) const {
+    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegId reg,
+					    RegKind kind) const {
       const ProcCon &con = procCons[proc];
       for(int i = con.allocs.size() - 1; i >= 0; i--)
-        if(con.allocs[i] == reg)
-          return reg;
+        if(con.allocs[i].reg == reg)
+	  if(kind == RK_ANY ||
+	     (kind == RK_REF && con.allocs[i].ref) ||
+	     (kind == RK_NOREF && !con.allocs[i].ref))
+	    return reg;
+	  else break;
 
       throw OperationException();
     }
@@ -136,7 +141,8 @@ namespace Ant {
       con.instrCount = 0;
       con.frames.resize(1);
       con.frames.back().push_back(0);
-      con.allocs.push_back(ptypes[ptype].io);
+      ProcCon::Alloc alloc = { ptypes[ptype].io, false };
+      con.allocs.push_back(alloc);
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
@@ -152,7 +158,8 @@ namespace Ant {
 
       con.frames.resize(con.frames.size() + 1);
       con.frames.back().push_back(con.instrCount + 1);
-      con.allocs.push_back(reg);
+      ProcCon::Alloc alloc = { reg, asRef };
+      con.allocs.push_back(alloc);
     }
 
     void ModuleBuilder::applyStackFree(ProcId proc) {

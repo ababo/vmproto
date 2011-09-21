@@ -42,7 +42,7 @@ namespace Ant {
 
       static void assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
       static void assertRegAllocated(const ModuleBuilder &mbuilder,
-				     ProcId proc, RegId reg);
+				     ProcId proc, RegId reg, bool refOnly);
       static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
 				    RegId reg, uint32_t bytes);
       static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
@@ -50,7 +50,7 @@ namespace Ant {
       static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
                                      ProcId targetProc);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
-                          RegId reg, VarSpec &vspec);
+                          RegId reg, VarSpec &vspec, bool refOnly);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,
                            RegId reg, uint32_t vref, VarSpec &vspec);
       static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
@@ -285,8 +285,8 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::regSpec(mbuilder, proc, from(), fvspec);
-	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::regSpec(mbuilder, proc, from(), fvspec, false);
+	Instr::regSpec(mbuilder, proc, to(), tvspec, false);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
@@ -335,7 +335,7 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
 	Instr::vrefSpec(mbuilder, proc, from(), vref(), fvspec);
-	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::regSpec(mbuilder, proc, to(), tvspec, true);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertCompatibleEltCounts(fvspec.count, tvspec.count);
         Instr::applyDefault(mbuilder, proc);
@@ -360,8 +360,8 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::regSpec(mbuilder, proc, from(), fvspec);
-	Instr::regSpec(mbuilder, proc, to(), tvspec);
+	Instr::regSpec(mbuilder, proc, from(), fvspec, false);
+	Instr::regSpec(mbuilder, proc, to(), tvspec, false);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);

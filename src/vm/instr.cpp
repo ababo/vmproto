@@ -137,14 +137,16 @@ namespace Ant {
     }
 
     void Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
-                                   RegId reg) {
+                                   RegId reg, bool refOnly) {
       mbuilder.assertRegExists(reg);
-      mbuilder.assertRegAllocated(proc, reg);
+      ModuleBuilder::RegKind kind = refOnly ?
+	ModuleBuilder::RK_REF : ModuleBuilder::RK_ANY;
+      mbuilder.assertRegAllocated(proc, reg, kind);
     }
 
     void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, uint32_t bytes) {
-      assertRegAllocated(mbuilder, proc, reg);
+      assertRegAllocated(mbuilder, proc, reg, false);
 
       VarSpec vspec;
       mbuilder.regById(reg, vspec);
@@ -171,18 +173,18 @@ namespace Ant {
       mbuilder.procById(targetProc, pr);
       ProcType pt;
       mbuilder.procTypeById(pr.ptype, pt);
-      mbuilder.assertRegAllocated(proc, pt.io);
+      mbuilder.assertRegAllocated(proc, pt.io, ModuleBuilder::RK_NOREF);
     }
 
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
-			VarSpec &vspec) {
-      assertRegAllocated(mbuilder, proc, reg);
+			VarSpec &vspec, bool refOnly) {
+      assertRegAllocated(mbuilder, proc, reg, refOnly);
       mbuilder.regById(reg, vspec);
     }
 
     void Instr::vrefSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
 			 uint32_t vref, VarSpec &vspec) {
-      assertRegAllocated(mbuilder, proc, reg);
+      assertRegAllocated(mbuilder, proc, reg, false);
       mbuilder.regById(reg, vspec);
 
       VarType vtype;
