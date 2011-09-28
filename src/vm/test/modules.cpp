@@ -24,13 +24,13 @@ namespace Ant {
         //   }
         // }
         VarTypeId vtype = builder.addVarType(8);
-        RegId io = builder.addReg(vtype);
+        RegId io = builder.addReg(0, vtype);
         ProcTypeId ptype = builder.addProcType(0, io);
         ProcId proc = builder.addProc(PFLAG_EXTERNAL, ptype);
         builder.addProcInstr(proc, JNZInstr(io, 3));
         builder.addProcInstr(proc, CPI8Instr(1, io));
         builder.addProcInstr(proc, RETInstr());
-        RegId pr = builder.addReg(vtype);
+        RegId pr = builder.addReg(0, vtype);
         builder.addProcInstr(proc, ALSInstr(pr));
         builder.addProcInstr(proc, CPI8Instr(1, pr));
         builder.addProcInstr(proc, MULInstr(io, pr, pr));
@@ -63,21 +63,21 @@ namespace Ant {
         //     goto l1;
         //   --io->l;
         // };
-        RegId io = builder.addReg(ioType);
+        RegId io = builder.addReg(0, ioType);
         ProcTypeId ptype = builder.addProcType(0, io);
         ProcId part = builder.addProc(0, ptype);
-        RegId l = builder.addReg(wordType);
+        RegId l = builder.addReg(0, wordType);
         builder.addProcInstr(part, ALSInstr(l));
         builder.addProcInstr(part, CPBInstr(io, l));
-        RegId h = builder.addReg(wordType);
+        RegId h = builder.addReg(0, wordType);
         builder.addProcInstr(part, ALSInstr(h));
         builder.addProcInstr(part, LDBInstr(io, 8, h));
-        RegId a = builder.addReg(wordType, 0);
+        RegId a = builder.addReg(0, wordType, 0);
         builder.addProcInstr(part, ALSRInstr(a));
         builder.addProcInstr(part, LDRInstr(io, 0, a));
-        RegId al = builder.addReg(wordType);
+        RegId al = builder.addReg(0, wordType);
         builder.addProcInstr(part, ALSInstr(al));
-        RegId ah = builder.addReg(wordType);
+        RegId ah = builder.addReg(0, wordType);
         builder.addProcInstr(part, ALSInstr(ah));
         builder.addProcInstr(part, LDEInstr(a, h, ah));
         builder.addProcInstr(part, LDEInstr(a, l, al));

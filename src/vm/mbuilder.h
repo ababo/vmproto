@@ -16,6 +16,11 @@ namespace Ant {
     class ModuleBuilder {
       friend class Instr;
     public:
+      ModuleBuilder() { resetModule(); }
+
+      static const uint32_t RESERVED_VAR_TYPE_COUNT = 1;
+      static const uint32_t RESERVED_REG_COUNT = 1;
+
       uint32_t varTypeCount() const { return vtypes.size(); }
       uint32_t procTypeCount() const { return ptypes.size(); }
       uint32_t regCount() const { return regs.size(); }
@@ -38,7 +43,7 @@ namespace Ant {
       void addVarTypeVRef(VarTypeId id, VarTypeId vtype, size_t count = 1);
       void addVarTypePRef(VarTypeId id, ProcTypeId ptype);
       ProcTypeId addProcType(uint32_t flags, RegId io);
-      RegId addReg(VarTypeId vtype, size_t count = 1);
+      RegId addReg(uint32_t flags, VarTypeId vtype, size_t count = 1);
       ProcId addProc(uint32_t flags, ProcTypeId ptype);
       size_t addProcInstr(ProcId id, const Instr &instr);
 

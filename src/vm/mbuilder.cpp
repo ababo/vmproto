@@ -91,12 +91,13 @@ namespace Ant {
     }
 
     void ModuleBuilder::addVarTypeVRef(VarTypeId id, VarTypeId vtype,
-                                       size_t count) {
+				       size_t count) {
       VarType &vt = vtypes[assertVarTypeExists(id)];
       if(vt.vrefs.size() >= MB_UINT_MAX(2))
         throw RangeException();
 
       VarSpec vspec;
+      vspec.flags = 0;
       vspec.vtype = vtype;
       vspec.count = assertCountInRange(vtype, count);
 
@@ -117,8 +118,13 @@ namespace Ant {
       return ProcTypeId(ptypes.size() - 1);
     }
 
-    RegId ModuleBuilder::addReg(VarTypeId vtype, size_t count) {
+    RegId ModuleBuilder::addReg(uint32_t flags, VarTypeId vtype,
+				size_t count) {
+     if(flags >= VFLAG_FIRST_RESERVED)
+        throw FlagsException();
+
       VarSpec reg;
+      reg.flags = flags;
       reg.vtype = vtype;
       reg.count = assertCountInRange(vtype, count);
 
@@ -308,6 +314,9 @@ namespace Ant {
       regs.clear();
       procs.clear();
       procCons.clear();
+
+      addReg(VFLAG_PERSISTENT | VFLAG_PERSISTENT,
+	     addVarType(8)); // exception vector
     }
 
     void ModuleBuilder::createModule(Module &module) {

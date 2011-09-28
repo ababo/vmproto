@@ -44,7 +44,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(8);
-      RegId r1 = b.addReg(vt), r2 = b.addReg(vt);
+      RegId r1 = b.addReg(0, vt), r2 = b.addReg(0, vt);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
@@ -80,7 +80,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(8);
-      RegId r = b.addReg(vt), n = r + 1;
+      RegId r = b.addReg(0, vt), n = r + 1;
       ProcTypeId pt = b.addProcType(0, r);
       ProcId p = b.addProc(0, pt);
 
@@ -99,7 +99,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(8);
-      RegId r = b.addReg(vt);
+      RegId r = b.addReg(0, vt);
       ProcTypeId pt = b.addProcType(0, r);
       ProcId p = b.addProc(0, pt);
 
@@ -151,9 +151,9 @@ namespace {
       VarTypeId vt1 = b.addVarType(8);
       VarTypeId vt2 = b.addVarType(1);
       VarTypeId vt3 = b.addVarType(1);
-      RegId r1 = b.addReg(vt1, 2);
-      RegId r2 = b.addReg(vt2, 3);
-      RegId r3 = b.addReg(vt3, 4);
+      RegId r1 = b.addReg(0, vt1, 2);
+      RegId r2 = b.addReg(0, vt2, 3);
+      RegId r3 = b.addReg(0, vt3, 4);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
@@ -177,7 +177,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(7);
-      RegId r = b.addReg(vt);
+      RegId r = b.addReg(0, vt);
       ProcTypeId pt = b.addProcType(0, r);
       ProcId p = b.addProc(0, pt);
 
@@ -205,10 +205,10 @@ namespace {
       b.addVarTypeVRef(vt2, vt1);
       b.addVarTypeVRef(vt2, vt1, 2);
       b.addVarTypeVRef(vt2, vt1, 0);
-      RegId r1 = b.addReg(vt1);
-      RegId r2 = b.addReg(vt1, 2);
-      RegId r3 = b.addReg(vt1, 0);
-      RegId r4 = b.addReg(vt2);
+      RegId r1 = b.addReg(0, vt1);
+      RegId r2 = b.addReg(0, vt1, 2);
+      RegId r3 = b.addReg(0, vt1, 0);
+      RegId r4 = b.addReg(0, vt2);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
@@ -238,8 +238,8 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(1);
-      RegId r1 = b.addReg(vt);
-      RegId r2 = b.addReg(vt);
+      RegId r1 = b.addReg(0, vt);
+      RegId r2 = b.addReg(0, vt);
       ProcTypeId pt1 = b.addProcType(0, r1);
       ProcTypeId pt2 = b.addProcType(0, r2);
       ProcId p1 = b.addProc(0, pt1);
@@ -269,15 +269,16 @@ namespace {
   bool testFactorialVTypes(const Module &module) {
     VarType vtype;
     bool passed;
-    
-    passed = module.varTypeCount() == 1;
+
+    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+1;
 
     if(passed) {
-      module.varTypeById(0, vtype);
+      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT, vtype);
       passed = vtype.bytes == 8 && !vtype.vrefs.size() && !vtype.prefs.size();
     }
 
-    ASSERT_THROW({module.varTypeById(1, vtype);}, NotFoundException);
+    ASSERT_THROW({module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT+1,
+				     vtype);}, NotFoundException);
 
     return passed;
   }
@@ -285,12 +286,12 @@ namespace {
   bool testFactorialPTypes(const Module &module) {
     ProcType ptype;
     bool passed;
-    
+
     passed = module.procTypeCount() == 1;
 
     if(passed) {
       module.procTypeById(0, ptype);
-      passed = !ptype.flags && ptype.io == 0;
+      passed = !ptype.flags && ptype.io == ModuleBuilder::RESERVED_REG_COUNT;
     }
 
     ASSERT_THROW({module.procTypeById(1, ptype);}, NotFoundException);
@@ -302,13 +303,16 @@ namespace {
     bool passed;
     VarSpec reg;
 
-    passed = module.regCount() == 2;
-    module.regById(0, reg);
-    passed = passed && reg.vtype == 0 && reg.count == 1;
-    module.regById(1, reg);
-    passed = passed && reg.vtype == 0 && reg.count == 1;
+    passed = module.regCount() == ModuleBuilder::RESERVED_REG_COUNT + 2;
+    module.regById(ModuleBuilder::RESERVED_REG_COUNT, reg);
+    passed = passed && !reg.flags &&
+      reg.vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT && reg.count == 1;
+    module.regById(ModuleBuilder::RESERVED_REG_COUNT + 1, reg);
+    passed = passed && !reg.flags &&
+      reg.vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT && reg.count == 1;
 
-    ASSERT_THROW({module.regById(2, reg);}, NotFoundException);
+    ASSERT_THROW({module.regById(ModuleBuilder::RESERVED_REG_COUNT + 2, reg);},
+		 NotFoundException);
 
     return passed;
   }
@@ -330,7 +334,7 @@ namespace {
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = 0, pr = 1;
+    RegId io = ModuleBuilder::RESERVED_REG_COUNT, pr = io + 1;
     Instr instr;
     int i = 0;
 

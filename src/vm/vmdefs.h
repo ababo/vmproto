@@ -44,7 +44,14 @@ namespace Ant {
        SVPartElt<Bytes, VRefs, PRefs> elts[Count];
     };
 
+    enum VarFlag {
+      VFLAG_PERSISTENT = 0x1,
+      VFLAG_THREAD_LOCAL = 0x2,
+      VFLAG_FIRST_RESERVED = 0x4
+    };
+
     struct VarSpec {
+      uint32_t flags;
       VarTypeId vtype;
       size_t count;
     };
