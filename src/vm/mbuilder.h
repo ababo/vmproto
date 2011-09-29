@@ -18,9 +18,6 @@ namespace Ant {
     public:
       ModuleBuilder() { resetModule(); }
 
-      static const uint32_t RESERVED_VAR_TYPE_COUNT = 1;
-      static const uint32_t RESERVED_REG_COUNT = 1;
-
       uint32_t varTypeCount() const { return vtypes.size(); }
       uint32_t procTypeCount() const { return ptypes.size(); }
       uint32_t regCount() const { return regs.size(); }
@@ -49,6 +46,9 @@ namespace Ant {
 
       void resetModule();
       void createModule(Module &module);
+
+      static const uint32_t RESERVED_VAR_TYPE_COUNT = 1;
+      static const uint32_t RESERVED_REG_COUNT = 1;
 
     protected:
       struct ProcCon {

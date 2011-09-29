@@ -85,31 +85,33 @@ namespace Ant {
     };
 
     enum OpCode {
-      OPCODE_ILL = 0,
-      OPCODE_INC,
-      OPCODE_DEC,
-      OPCODE_ADD,
-      OPCODE_SUB,
-      OPCODE_MUL,
-      OPCODE_JNZ,
-      OPCODE_JG,
-      OPCODE_JNG,
-      OPCODE_CPI1,
-      OPCODE_CPI2,
-      OPCODE_CPI4,
-      OPCODE_CPI8,
-      OPCODE_ALS,
-      OPCODE_ALSR,
-      OPCODE_FRS,
-      OPCODE_FRSL,
-      OPCODE_CPB,
-      OPCODE_LDE,
-      OPCODE_LDB,
-      OPCODE_LDR,
-      OPCODE_STE,
-      OPCODE_STB,
-      OPCODE_CALL,
-      OPCODE_RET
+      OPCODE_ILL = 0, // ILLegal
+      OPCODE_INC, // INCrement
+      OPCODE_DEC, // DECrement
+      OPCODE_ADD, // ADD
+      OPCODE_SUB, // SUBtract
+      OPCODE_MUL, // MULtiply
+      OPCODE_JNZ, // Jump if Not Zero
+      OPCODE_JG, // Jump if Greater
+      OPCODE_JNG, // Jump if Not Greater
+      OPCODE_CPI1, // CoPy Immediate (1-byte) 
+      OPCODE_CPI2, // CoPy Immediate (2-bytes)
+      OPCODE_CPI4, // CoPy Immediate (4-bytes)
+      OPCODE_CPI8, // CoPy Immediate (8-bytes)
+      OPCODE_PUSH, // PUSH variable
+      OPCODE_PUSHR, // PUSH Reference
+      OPCODE_PUSHH, // PUSH exception Handler
+      OPCODE_POP, // POP entity
+      OPCODE_POPL, // POP entities to Level
+      OPCODE_CPB, // CoPy Bytes
+      OPCODE_LDE, // LoaD array Element
+      OPCODE_LDB, // LoaD structure Bytes
+      OPCODE_LDR, // LoaD structure Reference
+      OPCODE_STE, // STore array Element
+      OPCODE_STB, // STore structure Bytes
+      OPCODE_CALL, // CALL procedure
+      OPCODE_THROW, // THROW exception
+      OPCODE_RET // RETurn
     };
 
     template<uint8_t> class UOInstrT;
@@ -134,12 +136,13 @@ namespace Ant {
     typedef CPIInstrT<OPCODE_CPI4, uint32_t> CPI4Instr;
     typedef CPIInstrT<OPCODE_CPI8, uint64_t> CPI8Instr;
 
-    template<uint8_t, bool> class ALSInstrT;
-    typedef ALSInstrT<OPCODE_ALS, false> ALSInstr;
-    typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
+    template<uint8_t, bool> class PUSHInstrT;
+    typedef PUSHInstrT<OPCODE_PUSH, false> PUSHInstr;
+    typedef PUSHInstrT<OPCODE_PUSHR, true> PUSHRInstr;
 
-    class FRSInstr;
-    class FRSLInstr;
+    class PUSHHInstr;
+    class POPInstr;
+    class POPLInstr;
     class CPBInstr;
     class LDEInstr;
     class LDBInstr;
@@ -147,6 +150,7 @@ namespace Ant {
     class STEInstr;
     class STBInstr;
     class CALLInstr;
+    class THROWInstr;
     class RETInstr;
 
   }

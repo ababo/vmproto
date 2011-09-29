@@ -58,10 +58,11 @@ namespace Ant {
         void emitLLVMCodeCPI(LLVMContext &context,
                              const CPIInstrT<OP, VAL> &instr);
       template<uint8_t OP, bool REF>
-        void emitLLVMCodeALS(LLVMContext &context,
-                             const ALSInstrT<OP, REF> &instr);
-      void emitLLVMCodeFRS(LLVMContext &context, const FRSInstr &instr);
-      void emitLLVMCodeFRSL(LLVMContext &context, const FRSLInstr &instr);
+        void emitLLVMCodePUSH(LLVMContext &context,
+                              const PUSHInstrT<OP, REF> &instr);
+      void emitLLVMCodePUSHH(LLVMContext &context, const PUSHHInstr &instr);
+      void emitLLVMCodePOP(LLVMContext &context, const POPInstr &instr);
+      void emitLLVMCodePOPL(LLVMContext &context, const POPLInstr &instr);
       void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
       void emitLLVMCodeLDE(LLVMContext &context, const LDEInstr &instr);
       void emitLLVMCodeLDB(LLVMContext &context, const LDBInstr &instr);
@@ -69,6 +70,7 @@ namespace Ant {
       void emitLLVMCodeSTE(LLVMContext &context, const STEInstr &instr);
       void emitLLVMCodeSTB(LLVMContext &context, const STBInstr &instr);
       void emitLLVMCodeCALL(LLVMContext &context, const CALLInstr &instr);
+      void emitLLVMCodeTHROW(LLVMContext &context, const THROWInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
       const llvm::Type *getLLVMTypeById(VarTypeId id) const;
 

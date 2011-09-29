@@ -258,8 +258,8 @@ namespace Ant {
     }
 
     template<uint8_t OP, bool REF>
-      void Runtime::ModuleData::emitLLVMCodeALS(LLVMContext &context,
-                                             const ALSInstrT<OP, REF> &instr) {
+      void Runtime::ModuleData::emitLLVMCodePUSH(LLVMContext &context,
+                                            const PUSHInstrT<OP, REF> &instr) {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
@@ -271,8 +271,13 @@ namespace Ant {
       context.pushAlloc(reg, sptr, vptr);
     }
 
-    void Runtime::ModuleData::emitLLVMCodeFRS(LLVMContext &context,
-                                              const FRSInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodePUSHH(LLVMContext &context,
+                                                const PUSHHInstr &instr) {
+
+    }
+
+    void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
+                                              const POPInstr &instr) {
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.sptr());
@@ -280,8 +285,8 @@ namespace Ant {
       context.popAlloc();
     }
 
-    void Runtime::ModuleData::emitLLVMCodeFRSL(LLVMContext &context,
-					       const FRSLInstr &instr) {
+    void Runtime::ModuleData::emitLLVMCodePOPL(LLVMContext &context,
+					       const POPLInstr &instr) {
      
     }
 
@@ -330,6 +335,11 @@ namespace Ant {
 
     }
 
+    void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
+					        const THROWInstr &instr) {
+
+    }
+
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
       ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
@@ -360,10 +370,10 @@ namespace Ant {
       emitLLVMCodeBJ<OPCODE_##op, ICmpInst::pr>( \
         context, static_cast<BJInstrT<OPCODE_##op>&>(instr)); break;
 
-#define ASTTINSTR_CASE(op, ref) \
+#define PUSHINSTR_CASE(op, ref) \
     case OPCODE_##op: \
-      emitLLVMCodeALS<OPCODE_##op, ref>( \
-        context, static_cast<ALSInstrT<OPCODE_##op, ref>&>(instr)); break;
+      emitLLVMCodePUSH<OPCODE_##op, ref>( \
+        context, static_cast<PUSHInstrT<OPCODE_##op, ref>&>(instr)); break;
 
 #define INSTR_CASE(op) \
     case OPCODE_##op: \
@@ -388,10 +398,11 @@ namespace Ant {
           CPIINSTR_CASE(CPI2, uint16_t);
           CPIINSTR_CASE(CPI4, uint32_t);
           CPIINSTR_CASE(CPI8, uint64_t);
-          ASTTINSTR_CASE(ALS, false);
-          ASTTINSTR_CASE(ALSR, true);
-          INSTR_CASE(FRS);
-          INSTR_CASE(FRSL);
+          PUSHINSTR_CASE(PUSH, false);
+          PUSHINSTR_CASE(PUSHR, true);
+	  INSTR_CASE(PUSHH);
+          INSTR_CASE(POP);
+          INSTR_CASE(POPL);
           INSTR_CASE(CPB);
           INSTR_CASE(LDE);
           INSTR_CASE(LDB);
@@ -399,6 +410,7 @@ namespace Ant {
           INSTR_CASE(STE);
           INSTR_CASE(STB);
           INSTR_CASE(CALL);
+	  INSTR_CASE(THROW);
           INSTR_CASE(RET);
         }
 

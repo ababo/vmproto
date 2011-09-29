@@ -315,8 +315,8 @@ namespace Ant {
       procs.clear();
       procCons.clear();
 
-      addReg(VFLAG_PERSISTENT | VFLAG_PERSISTENT,
-	     addVarType(8)); // exception vector
+      // exception vector
+      addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, addVarType(8));
     }
 
     void ModuleBuilder::createModule(Module &module) {

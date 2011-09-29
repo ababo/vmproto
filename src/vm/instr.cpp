@@ -37,10 +37,10 @@ namespace Ant {
       VIRTUAL_CASE(CPI2, left, mod, call); \
       VIRTUAL_CASE(CPI4, left, mod, call); \
       VIRTUAL_CASE(CPI8, left, mod, call); \
-      VIRTUAL_CASE(ALS, left, mod, call); \
-      VIRTUAL_CASE(ALSR, left, mod, call); \
-      VIRTUAL_CASE(FRS, left, mod, call); \
-      VIRTUAL_CASE(FRSL, left, mod, call); \
+      VIRTUAL_CASE(PUSH, left, mod, call); \
+      VIRTUAL_CASE(PUSHR, left, mod, call); \
+      VIRTUAL_CASE(POP, left, mod, call); \
+      VIRTUAL_CASE(POPL, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
       VIRTUAL_CASE(LDE, left, mod, call); \
       VIRTUAL_CASE(LDB, left, mod, call); \
@@ -48,6 +48,7 @@ namespace Ant {
       VIRTUAL_CASE(STE, left, mod, call); \
       VIRTUAL_CASE(STB, left, mod, call); \
       VIRTUAL_CASE(CALL, left, mod, call); \
+      VIRTUAL_CASE(THROW, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \
       default: left def; \
     }
@@ -59,6 +60,13 @@ namespace Ant {
     void Instr::setParam(uint64_t p) {
       ostringstream out;
       writeMBUInt(p, out);
+      string str = out.str();
+      copy(str.begin(), str.end(), dat);
+    }
+
+    void Instr::setParam2(int64_t p) {
+      ostringstream out;
+      writeMBInt(p, out);
       string str = out.str();
       copy(str.begin(), str.end(), dat);
     }

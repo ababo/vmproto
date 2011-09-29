@@ -31,6 +31,7 @@ namespace Ant {
 
     protected:
       void setParam(uint64_t p);
+      void setParam2(int64_t p);
       void set2Params(uint64_t p1, uint64_t p2);
       void set2Params2(uint64_t p1, int64_t p2);
       void set3Params(uint64_t p1, uint64_t p2, uint64_t p3);
@@ -192,10 +193,10 @@ namespace Ant {
     typedef CPIInstrT<OPCODE_CPI4, uint32_t> CPI4Instr;
     typedef CPIInstrT<OPCODE_CPI8, uint64_t> CPI8Instr;
 
-    template<uint8_t OP, bool REF> class ALSInstrT : public Instr {
+    template<uint8_t OP, bool REF> class PUSHInstrT : public Instr {
       friend class Instr;
     public:
-      ALSInstrT(RegId reg) { op = OP; setParam(reg); }
+      PUSHInstrT(RegId reg) { op = OP; setParam(reg); }
 
       size_t size() const { return Instr::size(1); }
       RegId reg() const { return RegId(getParam(0)); }
@@ -209,13 +210,31 @@ namespace Ant {
       }
     };
 
-    typedef ALSInstrT<OPCODE_ALS, false> ALSInstr;
-    typedef ALSInstrT<OPCODE_ALSR, true> ALSRInstr;
+    typedef PUSHInstrT<OPCODE_PUSH, false> PUSHInstr;
+    typedef PUSHInstrT<OPCODE_PUSHR, true> PUSHRInstr;
 
-    class FRSInstr : public Instr {
+    class PUSHHInstr : public Instr {
       friend class Instr;
     public:
-      FRSInstr() { op = OPCODE_FRS; }
+      PUSHHInstr(ptrdiff_t offset) { op = OPCODE_PUSHH; setParam2(offset); }
+
+      size_t size() const { return Instr::size(1); }
+      ptrdiff_t offset() const { return ptrdiff_t(getParam2(0)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+
+	Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class POPInstr : public Instr {
+      friend class Instr;
+    public:
+      POPInstr() { op = OPCODE_POP; }
 
       size_t size() const { return 1; }
       bool breaks() const { return false; }
@@ -228,10 +247,10 @@ namespace Ant {
       }
     };
 
-    class FRSLInstr : public Instr {
+    class POPLInstr : public Instr {
       friend class Instr;
     public:
-      FRSLInstr(uint32_t level) { op = OPCODE_FRSL; setParam(level); }
+      POPLInstr(uint32_t level) { op = OPCODE_POPL; setParam(level); }
 
       size_t size() const { return Instr::size(1); }
       uint32_t level() const { return uint32_t(getParam(0)); }
@@ -405,6 +424,24 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::assertProcCallable(mbuilder, proc, this->proc());
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
+    class THROWInstr : public Instr {
+      friend class Instr;
+    public:
+      THROWInstr(int64_t it) { op = OPCODE_THROW; setParam2(it); }
+
+      size_t size() const { return Instr::size(1); }
+      int64_t it() const { return getParam2(0); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+
         Instr::applyDefault(mbuilder, proc);
       }
     };

@@ -50,13 +50,13 @@ namespace {
 
       REG_ALLOC_NORMAL_SEQ(r1);
       REG_ALLOC_ERROR_SEQ(r2, OperationException);
-      b.addProcInstr(p, ALSInstr(r2));
+      b.addProcInstr(p, PUSHInstr(r2));
       REG_ALLOC_NORMAL_SEQ(r2);
-      b.addProcInstr(p, ALSInstr(r2));
+      b.addProcInstr(p, PUSHInstr(r2));
       REG_ALLOC_NORMAL_SEQ(r2);
-      b.addProcInstr(p, FRSInstr());
+      b.addProcInstr(p, POPInstr());
       REG_ALLOC_NORMAL_SEQ(r2);
-      b.addProcInstr(p, FRSInstr());
+      b.addProcInstr(p, POPInstr());
       REG_ALLOC_ERROR_SEQ(r2, OperationException);
     }
     catch(...) { passed = false; }
@@ -66,8 +66,8 @@ namespace {
 
 #define REG_EXIST_NORMAL_SEQ(reg) \
   if(passed) { \
-    b.addProcInstr(p, ALSInstr(reg)); \
-    b.addProcInstr(p, ALSRInstr(reg)); \
+    b.addProcInstr(p, PUSHInstr(reg)); \
+    b.addProcInstr(p, PUSHRInstr(reg)); \
     REG_ALLOC_NORMAL_SEQ(reg); \
   }
 
@@ -105,35 +105,35 @@ namespace {
 
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 2));
-      ASSERT_THROW({b.addProcInstr(p, ALSInstr(r));}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, PUSHInstr(r));}, OperationException);
       b.addProcInstr(p, DECInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, ALSInstr(r));
+      b.addProcInstr(p, PUSHInstr(r));
       b.addProcInstr(p, JNZInstr(r, 3));
-      b.addProcInstr(p, ALSInstr(r));
+      b.addProcInstr(p, PUSHInstr(r));
       ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
-      b.addProcInstr(p, FRSInstr());
+      b.addProcInstr(p, POPInstr());
       b.addProcInstr(p, JNZInstr(r, 4));
-      b.addProcInstr(p, ALSInstr(r));
+      b.addProcInstr(p, PUSHInstr(r));
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, -1));}, RangeException);
       ASSERT_THROW({b.addProcInstr(p, JNZInstr(r, 2));}, RangeException);
       b.addProcInstr(p, JNZInstr(r, 1));
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, FRSInstr());
+      b.addProcInstr(p, POPInstr());
       ASSERT_THROW(b.createModule(m), OperationException);
-      b.addProcInstr(p, FRSInstr());
-      b.addProcInstr(p, ALSInstr(r));
+      b.addProcInstr(p, POPInstr());
+      b.addProcInstr(p, PUSHInstr(r));
       b.addProcInstr(p, JNZInstr(r, 2));
-      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
       b.addProcInstr(p, JNZInstr(r, 0));
-      b.addProcInstr(p, FRSInstr());
-      ASSERT_THROW({b.addProcInstr(p, FRSInstr());}, OperationException);
-      b.addProcInstr(p, ALSInstr(r));
-      b.addProcInstr(p, ALSInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, FRSLInstr(3));}, OperationException);
-      b.addProcInstr(p, FRSLInstr(2));
-      b.addProcInstr(p, FRSLInstr(0));
+      b.addProcInstr(p, POPInstr());
+      ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
+      b.addProcInstr(p, PUSHInstr(r));
+      b.addProcInstr(p, PUSHInstr(r));
+      ASSERT_THROW({b.addProcInstr(p, POPLInstr(3));}, OperationException);
+      b.addProcInstr(p, POPLInstr(2));
+      b.addProcInstr(p, POPLInstr(0));
       b.createModule(m);
     }
     catch(...) { passed = false; }
@@ -157,8 +157,8 @@ namespace {
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
-      b.addProcInstr(p, ALSInstr(r2));
-      b.addProcInstr(p, ALSInstr(r3));
+      b.addProcInstr(p, PUSHInstr(r2));
+      b.addProcInstr(p, PUSHInstr(r3));
       ASSERT_THROW({b.addProcInstr(p, LDEInstr(r2, r2, r2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDEInstr(r2, r1, r3));}, TypeException);
       b.addProcInstr(p, LDEInstr(r2, r1, r2));
@@ -212,11 +212,11 @@ namespace {
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
-      b.addProcInstr(p, ALSRInstr(r2));
-      b.addProcInstr(p, ALSRInstr(r3));
-      b.addProcInstr(p, ALSInstr(r4));
+      b.addProcInstr(p, PUSHRInstr(r2));
+      b.addProcInstr(p, PUSHRInstr(r3));
+      b.addProcInstr(p, PUSHInstr(r4));
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4,0,r1));},OperationException);
-      b.addProcInstr(p, ALSRInstr(r1));
+      b.addProcInstr(p, PUSHRInstr(r1));
       b.addProcInstr(p, LDRInstr(r4, 0, r1));
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r3));}, TypeException);
@@ -247,17 +247,17 @@ namespace {
 
       b.addProcInstr(p1, CALLInstr(p1));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
-      b.addProcInstr(p1, ALSInstr(r2));
+      b.addProcInstr(p1, PUSHInstr(r2));
       b.addProcInstr(p1, CALLInstr(p1));
       b.addProcInstr(p1, CALLInstr(p2));
-      b.addProcInstr(p1, ALSRInstr(r1));
-      b.addProcInstr(p1, ALSRInstr(r2));
+      b.addProcInstr(p1, PUSHRInstr(r1));
+      b.addProcInstr(p1, PUSHRInstr(r2));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p1));}, OperationException);
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
-      b.addProcInstr(p1, FRSLInstr(1));
+      b.addProcInstr(p1, POPLInstr(1));
       b.addProcInstr(p1, CALLInstr(p1));
       b.addProcInstr(p1, CALLInstr(p2));
-      b.addProcInstr(p1, FRSInstr());
+      b.addProcInstr(p1, POPInstr());
       b.addProcInstr(p1, CALLInstr(p1));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
     }
@@ -345,8 +345,8 @@ namespace {
     passed = passed && iCPI8.val() == 1; 
     passed = passed && iCPI8.to() == io;
     NEXT_OPCODE(RET);
-    NEXT_INSTR_D(ALS);
-    passed = passed && iALS.reg() == pr;
+    NEXT_INSTR_D(PUSH);
+    passed = passed && iPUSH.reg() == pr;
     NEXT_INSTR(CPI8);
     passed = passed && iCPI8.val() == 1; 
     passed = passed && iCPI8.to() == pr;
@@ -362,7 +362,7 @@ namespace {
     NEXT_INSTR_D(CPB);
     passed = passed && iCPB.from() == pr;
     passed = passed && iCPB.to() == io;
-    NEXT_OPCODE(FRS);
+    NEXT_OPCODE(POP);
     NEXT_OPCODE(RET);
 
     passed = passed && i == proc.code.size();
