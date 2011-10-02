@@ -221,7 +221,7 @@ namespace Ant {
 
         for(int i = 0; i < con.frames.size() - 1; i++)
           for(int j = 0; j < con.frames[i].jumps.size(); j++)
-            if(con.frames[i].jumps[j] >= con.frames[i].firstInstr &&
+            if(con.frames[i].jumps[j] >= frame.firstInstr &&
                index >= con.frames[i].jumps[j])
               throw RangeException();
       }
