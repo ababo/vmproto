@@ -84,6 +84,8 @@ namespace Ant {
       std::vector<VMCodeByte> code;
     };
 
+    enum RegKind { RK_VOID, RK_REF, RK_NOREF, RK_NOVOID };
+
     enum OpCode {
       OPCODE_ILL = 0, // ILLegal
       OPCODE_INC, // INCrement

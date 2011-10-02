@@ -51,28 +51,30 @@ namespace Ant {
       static const uint32_t RESERVED_REG_COUNT = 1;
 
     protected:
+      struct Frame {
+	size_t firstInstr;
+	std::vector<size_t> jumps;
+	RegKind kind; // can't be RK_NOVOID
+	RegId reg;
+      };
       struct ProcCon {
-        typedef std::vector<size_t> Frame;
-	struct Alloc { RegId reg; bool ref; };
         std::vector<Frame> frames;
-        std::vector<Alloc> allocs;
         size_t instrCount;
       };
-      enum RegKind { RK_ANY, RK_REF, RK_NOREF };
 
       VarTypeId assertVarTypeExists(VarTypeId id) const;
       VarTypeId assertProcTypeExists(VarTypeId id) const;
       RegId assertRegExists(RegId id) const;
       ProcId assertProcExists(ProcId id) const;
-      RegId assertRegAllocated(ProcId proc, RegId reg, RegKind kind) const;
+      RegId assertRegAllocated(ProcId proc, RegKind kind, RegId reg) const;
       size_t assertCountInRange(VarTypeId vtype, size_t count);
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
 
-      void applyStackAlloc(ProcId proc, RegId reg, bool asRef);
-      void applyStackFree(ProcId proc);
-      void applyStackFree(ProcId proc, uint32_t level);
+      void applyBeginFrame(ProcId proc, RegKind kind, RegId reg);
+      void applyEndFrame(ProcId proc);
+      void applyEndFrames(ProcId proc, uint32_t level);
       void applyInstrOffset(ProcId proc, ptrdiff_t offset);
       void applyInstrIndex(ProcId proc, size_t index);
       void applyDefault(ProcId proc);

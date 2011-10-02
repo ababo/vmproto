@@ -134,6 +134,11 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, POPLInstr(3));}, OperationException);
       b.addProcInstr(p, POPLInstr(2));
       b.addProcInstr(p, POPLInstr(0));
+      ASSERT_THROW({b.addProcInstr(p, PUSHHInstr(-1));}, RangeException);
+      b.addProcInstr(p, PUSHHInstr(2));
+      ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
+      b.addProcInstr(p, THROWInstr(0));
+      b.addProcInstr(p, POPInstr());
       b.createModule(m);
     }
     catch(...) { passed = false; }

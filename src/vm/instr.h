@@ -43,21 +43,21 @@ namespace Ant {
 
       static void assertRegExists(const ModuleBuilder &mbuilder, RegId reg);
       static void assertRegAllocated(const ModuleBuilder &mbuilder,
-				     ProcId proc, RegId reg, bool refOnly);
+                                     ProcId proc, RegKind kind, RegId reg);
       static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
-				    RegId reg, uint32_t bytes);
+                                    RegId reg, uint32_t bytes);
       static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
       static void assertCompatibleEltCounts(size_t from, size_t to);
       static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
                                      ProcId targetProc);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
-                          RegId reg, VarSpec &vspec, bool refOnly);
+                          RegKind kind, RegId reg, VarSpec &vspec);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,
                            RegId reg, uint32_t vref, VarSpec &vspec);
-      static void applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
-                                  RegId reg, bool asRef);
-      static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc);
-      static void applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
+      static void applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
+                                  RegKind kind, RegId reg);
+      static void applyEndFrame(ModuleBuilder &mbuilder, ProcId proc);
+      static void applyEndFrames(ModuleBuilder &mbuilder, ProcId proc,
 				 uint32_t level);
       static void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
                                    ptrdiff_t offset);
@@ -206,7 +206,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyStackAlloc(mbuilder, proc, reg(), REF);
+        Instr::applyBeginFrame(mbuilder, proc, REF ? RK_REF : RK_NOREF, reg());
       }
     };
 
@@ -221,13 +221,14 @@ namespace Ant {
       size_t size() const { return Instr::size(1); }
       ptrdiff_t offset() const { return ptrdiff_t(getParam2(0)); }
       bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool jumps() const { return true; }
+      size_t jumpIndex(size_t index) const {
+        return size_t(ptrdiff_t(index) + offset()); }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-
-	Instr::applyDefault(mbuilder, proc);
+        Instr::applyBeginFrame(mbuilder, proc, RK_VOID, 0);
+	Instr::applyInstrOffset(mbuilder, proc, offset());
       }
     };
 
@@ -243,7 +244,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyStackFree(mbuilder, proc);
+        Instr::applyEndFrame(mbuilder, proc);
       }
     };
 
@@ -260,7 +261,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyStackFree(mbuilder, proc, level());
+        Instr::applyEndFrames(mbuilder, proc, level());
       }
     };
 
@@ -304,8 +305,8 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::regSpec(mbuilder, proc, from(), fvspec, false);
-	Instr::regSpec(mbuilder, proc, to(), tvspec, false);
+	Instr::regSpec(mbuilder, proc, RK_NOVOID, from(), fvspec);
+	Instr::regSpec(mbuilder, proc, RK_NOVOID, to(), tvspec);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
@@ -354,7 +355,7 @@ namespace Ant {
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
 	Instr::vrefSpec(mbuilder, proc, from(), vref(), fvspec);
-	Instr::regSpec(mbuilder, proc, to(), tvspec, true);
+	Instr::regSpec(mbuilder, proc, RK_REF, to(), tvspec);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertCompatibleEltCounts(fvspec.count, tvspec.count);
         Instr::applyDefault(mbuilder, proc);
@@ -379,8 +380,8 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
 	VarSpec fvspec, tvspec;
-	Instr::regSpec(mbuilder, proc, from(), fvspec, false);
-	Instr::regSpec(mbuilder, proc, to(), tvspec, false);
+	Instr::regSpec(mbuilder, proc, RK_NOVOID, from(), fvspec);
+	Instr::regSpec(mbuilder, proc, RK_NOVOID, to(), tvspec);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
 	Instr::assertRegHasBytes(mbuilder, proc, elt(), 8);
         Instr::applyDefault(mbuilder, proc);
@@ -441,7 +442,6 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-
         Instr::applyDefault(mbuilder, proc);
       }
     };

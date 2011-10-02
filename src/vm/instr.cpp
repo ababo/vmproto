@@ -145,16 +145,14 @@ namespace Ant {
     }
 
     void Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
-                                   RegId reg, bool refOnly) {
+                                   RegKind kind, RegId reg) {
       mbuilder.assertRegExists(reg);
-      ModuleBuilder::RegKind kind = refOnly ?
-	ModuleBuilder::RK_REF : ModuleBuilder::RK_ANY;
-      mbuilder.assertRegAllocated(proc, reg, kind);
+      mbuilder.assertRegAllocated(proc, kind, reg);
     }
 
     void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, uint32_t bytes) {
-      assertRegAllocated(mbuilder, proc, reg, false);
+      assertRegAllocated(mbuilder, proc, RK_NOVOID, reg);
 
       VarSpec vspec;
       mbuilder.regById(reg, vspec);
@@ -181,18 +179,18 @@ namespace Ant {
       mbuilder.procById(targetProc, pr);
       ProcType pt;
       mbuilder.procTypeById(pr.ptype, pt);
-      mbuilder.assertRegAllocated(proc, pt.io, ModuleBuilder::RK_NOREF);
+      mbuilder.assertRegAllocated(proc, RK_NOREF, pt.io);
     }
 
-    void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
-			VarSpec &vspec, bool refOnly) {
-      assertRegAllocated(mbuilder, proc, reg, refOnly);
+    void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc,
+			RegKind kind, RegId reg, VarSpec &vspec) {
+      assertRegAllocated(mbuilder, proc, kind, reg);
       mbuilder.regById(reg, vspec);
     }
 
     void Instr::vrefSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
 			 uint32_t vref, VarSpec &vspec) {
-      assertRegAllocated(mbuilder, proc, reg, false);
+      assertRegAllocated(mbuilder, proc, RK_NOVOID, reg);
       mbuilder.regById(reg, vspec);
 
       VarType vtype;
@@ -204,19 +202,19 @@ namespace Ant {
       vspec = vtype.vrefs[vref];
     }
 
-    void Instr::applyStackAlloc(ModuleBuilder &mbuilder, ProcId proc,
-                                RegId reg, bool asRef) {
+    void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
+                                RegKind kind, RegId reg) {
       mbuilder.assertRegExists(reg);
-      mbuilder.applyStackAlloc(proc, reg, asRef);
+      mbuilder.applyBeginFrame(proc, kind, reg);
     }
 
-    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc) {
-      mbuilder.applyStackFree(proc);
+    void Instr::applyEndFrame(ModuleBuilder &mbuilder, ProcId proc) {
+      mbuilder.applyEndFrame(proc);
     }
 
-    void Instr::applyStackFree(ModuleBuilder &mbuilder, ProcId proc,
+    void Instr::applyEndFrames(ModuleBuilder &mbuilder, ProcId proc,
 			       uint32_t level) {
-      mbuilder.applyStackFree(proc, level);
+      mbuilder.applyEndFrames(proc, level);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,

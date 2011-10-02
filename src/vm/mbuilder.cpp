@@ -49,14 +49,13 @@ namespace Ant {
       return id;
     }
 
-    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegId reg,
-					    RegKind kind) const {
+    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegKind kind,
+					    RegId reg) const {
       const ProcCon &con = procCons[proc];
-      for(int i = con.allocs.size() - 1; i >= 0; i--)
-        if(con.allocs[i].reg == reg)
-	  if(kind == RK_ANY ||
-	     (kind == RK_REF && con.allocs[i].ref) ||
-	     (kind == RK_NOREF && !con.allocs[i].ref))
+      for(int i = con.frames.size() - 1; i >= 0; i--)
+        if(con.frames[i].reg == reg)
+	  if((kind == RK_NOVOID && con.frames[i].kind != RK_VOID) ||
+	     kind == con.frames[i].kind)
 	    return reg;
 	  else break;
 
@@ -146,58 +145,56 @@ namespace Ant {
       ProcCon con;
       con.instrCount = 0;
       con.frames.resize(1);
-      con.frames.back().push_back(0);
-      ProcCon::Alloc alloc = { ptypes[ptype].io, false };
-      con.allocs.push_back(alloc);
+      con.frames.back().firstInstr = 0;
+      con.frames.back().kind = RK_NOREF;
+      con.frames.back().reg = ptypes[ptype].io;
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
     }
 
-    void ModuleBuilder::applyStackAlloc(ProcId proc, RegId reg, bool asRef) {
+    void ModuleBuilder::applyBeginFrame(ProcId proc, RegKind kind, RegId reg) {
       ProcCon &con = procCons[proc];
 
       for(int i = 0; i < con.frames.size(); i++)
-        for(int j = 1; j < con.frames[i].size(); j++)
-          if(con.frames[i][j] == con.instrCount + 1)
+        for(int j = 0; j < con.frames[i].jumps.size(); j++)
+          if(con.frames[i].jumps[j] == con.instrCount + 1)
             throw OperationException();
 
       con.frames.resize(con.frames.size() + 1);
-      con.frames.back().push_back(con.instrCount + 1);
-      ProcCon::Alloc alloc = { reg, asRef };
-      con.allocs.push_back(alloc);
+      con.frames.back().firstInstr = con.instrCount + 1;
+      con.frames.back().kind = kind;
+      con.frames.back().reg = reg;
     }
 
-    void ModuleBuilder::applyStackFree(ProcId proc) {
+    void ModuleBuilder::applyEndFrame(ProcId proc) {
       ProcCon &con = procCons[proc];
 
       if(con.frames.size() == 1)
         throw OperationException();
 
-      ProcCon::Frame &frame = con.frames.back();
-      for(int i = 1; i < frame.size(); i++)
-        if(frame[i] > con.instrCount)
+      Frame &frame = con.frames.back();
+      for(int i = 0; i < frame.jumps.size(); i++)
+        if(frame.jumps[i] > con.instrCount)
           throw OperationException();
 
       con.frames.pop_back();
-      con.allocs.pop_back();
     }
 
-    void ModuleBuilder::applyStackFree(ProcId proc, uint32_t level) {
+    void ModuleBuilder::applyEndFrames(ProcId proc, uint32_t level) {
       ProcCon &con = procCons[proc];
 
       if(level >= con.frames.size())
         throw OperationException();
 
       for(int i = ++level; i < con.frames.size(); i++) {
-	ProcCon::Frame &frame = con.frames[i];
-	for(int i = 1; i < frame.size(); i++)
-	  if(frame[i] > con.instrCount)
+	Frame &frame = con.frames[i];
+	for(int i = 0; i < frame.jumps.size(); i++)
+	  if(frame.jumps[i] > con.instrCount)
 	    throw OperationException();
       }
-	
+
       con.frames.resize(level);
-      con.allocs.resize(level);
     }
 
     void ModuleBuilder::applyInstrOffset(ProcId proc, ptrdiff_t offset) {
@@ -216,32 +213,32 @@ namespace Ant {
       applyDefault(proc);
 
       ProcCon &con = procCons[proc];
-      ProcCon::Frame &frame = con.frames.back();
+      Frame &frame = con.frames.back();
 
       if(index > con.instrCount) {
         if(index >= MB_UINT_MAX(4))
           throw RangeException();
 
         for(int i = 0; i < con.frames.size() - 1; i++)
-          for(int j = 1; j < con.frames[i].size(); j++)
-            if(con.frames[i][j] >= frame[0] &&
-               index >= con.frames[i][j])
+          for(int j = 0; j < con.frames[i].jumps.size(); j++)
+            if(con.frames[i].jumps[j] >= con.frames[i].firstInstr &&
+               index >= con.frames[i].jumps[j])
               throw RangeException();
       }
-      else if(index < frame[0])
+      else if(index < frame.firstInstr)
         throw RangeException();
 
-      frame.push_back(index);
+      frame.jumps.push_back(index);
     }
 
     void ModuleBuilder::applyDefault(ProcId proc) {
       ProcCon &con = procCons[proc];
-      ProcCon::Frame &frame = con.frames.back();
+      Frame &frame = con.frames.back();
 
       for(int i = 0; i < con.frames.size() - 1; i++)
-        for(int j = 1; j < con.frames[i].size(); j++)
-          if(con.frames[i][j] >= frame[0] &&
-             con.instrCount == con.frames[i][j] - 1)
+        for(int j = 0; j < con.frames[i].jumps.size(); j++)
+          if(con.frames[i].jumps[j] >= con.frames[i].firstInstr &&
+             con.instrCount == con.frames[i].jumps[j] - 1)
             throw OperationException();
     }
 
@@ -263,9 +260,9 @@ namespace Ant {
         if(con.frames.size() != 1)
           throw OperationException();
 
-        const ProcCon::Frame &frame = con.frames.back();
-        for(int i = 1; i < frame.size(); i++)
-          if(frame[i] >= con.instrCount)
+        const Frame &frame = con.frames.back();
+        for(int i = 0; i < frame.jumps.size(); i++)
+          if(frame.jumps[i] >= con.instrCount)
             throw OperationException();
       }
     }
