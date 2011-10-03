@@ -209,6 +209,11 @@ namespace Ant {
       mbuilder.applyBeginFrame(proc, kind, reg);
     }
 
+    void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
+                                ptrdiff_t offset) {
+      mbuilder.applyBeginFrame(proc, offset);
+    }
+
     void Instr::applyEndFrame(ModuleBuilder &mbuilder, ProcId proc) {
       mbuilder.applyEndFrame(proc);
     }

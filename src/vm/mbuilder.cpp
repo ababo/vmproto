@@ -167,6 +167,12 @@ namespace Ant {
       con.frames.back().reg = reg;
     }
 
+    void ModuleBuilder::applyBeginFrame(ProcId proc, ptrdiff_t offset) {
+      applyBeginFrame(proc, RK_VOID, 0);      
+      try { applyInstrOffset(proc, offset); }
+      catch(...) { procCons[proc].frames.pop_back(); throw; }
+    }
+
     void ModuleBuilder::applyEndFrame(ProcId proc) {
       ProcCon &con = procCons[proc];
 

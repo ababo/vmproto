@@ -56,6 +56,8 @@ namespace Ant {
                            RegId reg, uint32_t vref, VarSpec &vspec);
       static void applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
                                   RegKind kind, RegId reg);
+      static void applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
+                                  ptrdiff_t offset);
       static void applyEndFrame(ModuleBuilder &mbuilder, ProcId proc);
       static void applyEndFrames(ModuleBuilder &mbuilder, ProcId proc,
 				 uint32_t level);
@@ -227,8 +229,7 @@ namespace Ant {
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyBeginFrame(mbuilder, proc, RK_VOID, 0);
-	Instr::applyInstrOffset(mbuilder, proc, offset());
+        Instr::applyBeginFrame(mbuilder, proc, offset());
       }
     };
 
