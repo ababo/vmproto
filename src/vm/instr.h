@@ -433,10 +433,9 @@ namespace Ant {
     class THROWInstr : public Instr {
       friend class Instr;
     public:
-      THROWInstr(int64_t it) { op = OPCODE_THROW; setParam2(it); }
+      THROWInstr() { op = OPCODE_THROW; }
 
-      size_t size() const { return Instr::size(1); }
-      int64_t it() const { return getParam2(0); }
+      size_t size() const { return 1; }
       bool breaks() const { return false; }
       bool jumps() const { return false; }
       size_t jumpIndex(size_t) const { return 0; }

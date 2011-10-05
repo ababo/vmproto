@@ -318,7 +318,7 @@ namespace Ant {
       procs.clear();
       procCons.clear();
 
-      // exception vector
+      // exception descriptor
       addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, addVarType(8));
     }
 

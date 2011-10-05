@@ -137,7 +137,7 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p, PUSHHInstr(-1));}, RangeException);
       b.addProcInstr(p, PUSHHInstr(2));
       ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
-      b.addProcInstr(p, THROWInstr(0));
+      b.addProcInstr(p, THROWInstr());
       b.addProcInstr(p, POPInstr());
       b.createModule(m);
     }
@@ -393,6 +393,72 @@ namespace {
     return passed;
   }
 
+  bool testQSortPartInstrs(const Proc &proc) {
+    bool passed = true;
+    RegId io = ModuleBuilder::RESERVED_REG_COUNT;
+    RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
+    Instr instr;
+    int i = 0;
+
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR_D(CPB);
+    passed = passed && iCPB.from() == io;
+    passed = passed && iCPB.to() == l;
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR_D(LDB);
+    passed = passed && iLDB.from() == io;
+    passed = passed && iLDB.offset() == 8;
+    passed = passed && iLDB.to() == h;
+    NEXT_OPCODE(PUSHR);
+    NEXT_INSTR_D(LDR);
+    passed = passed && iLDR.from() == io;
+    passed = passed && iLDR.vref() == 0;
+    passed = passed && iLDR.to() == a;
+    NEXT_OPCODE(PUSH);
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR_D(LDE);
+    passed = passed && iLDE.from() == a;
+    passed = passed && iLDE.elt() == h;
+    passed = passed && iLDE.to() == ah;
+    NEXT_INSTR(LDE);
+    passed = passed && iLDE.from() == a;
+    passed = passed && iLDE.elt() == l;
+    passed = passed && iLDE.to() == al;
+    NEXT_INSTR_D(JG);
+    passed = passed && iJG.operand1() == al;
+    passed = passed && iJG.operand2() == ah;
+    passed = passed && iJG.offset() == 7;
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR(LDE);
+    passed = passed && iLDE.from() == a;
+    passed = passed && iLDE.elt() == io;
+    passed = passed && iLDE.to() == h;
+    NEXT_INSTR_D(STE);
+    passed = passed && iSTE.from() == al;
+    passed = passed && iSTE.to() == a;
+    passed = passed && iSTE.elt() == io;
+    NEXT_INSTR(STE);
+    passed = passed && iSTE.from() == h;
+    passed = passed && iSTE.to() == a;
+    passed = passed && iSTE.elt() == l;
+    NEXT_OPCODE(INC);
+    NEXT_OPCODE(POP);
+    NEXT_OPCODE(INC);
+    NEXT_INSTR_D(JNG);
+    passed = passed && iJNG.operand1() == l;
+    passed = passed && iJNG.operand2() == h;
+    passed = passed && iJNG.offset() == -9;
+    NEXT_OPCODE(DEC);
+    NEXT_INSTR_D(POPL);
+    passed = passed && iPOPL.level() == 0;
+
+    return passed;
+  }
+
+  bool testQSortQSortInstrs(const Proc &proc) {
+    return true;
+  }
+
   bool testFactorial() {
     bool passed = true;
 
@@ -401,7 +467,7 @@ namespace {
       createFactorialModule(module);
 
       passed = testFactorialVTypes(module);
-      passed = testFactorialPTypes(module);
+      passed = passed && testFactorialPTypes(module);
       passed = passed && testFactorialRegs(module);
       passed = passed && testFactorialProcs(module);
 
@@ -410,6 +476,55 @@ namespace {
     catch(...) { passed = false; }
 
     return printTestResult(subj, "factorial", passed);
+  }
+
+  bool testQSortVTypes(const Module &module) {
+    VarType vtype;
+    bool passed;
+
+    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+2;
+
+    if(passed) {
+      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT + 1, vtype);
+      passed = vtype.vrefs.size() == 1;
+      passed = passed && !vtype.vrefs[0].count &&
+        vtype.vrefs[0].vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT;
+    }
+
+    return passed;
+  }
+
+  bool testQSortProcs(const Module &module) {
+    bool passed;
+    Proc proc;
+
+    passed = module.procCount() == 2; 
+
+    if(passed) {
+      module.procById(0, proc);
+      passed = passed && testQSortPartInstrs(proc);
+      module.procById(1, proc);
+      passed = passed && testQSortQSortInstrs(proc);
+    }
+
+    return passed;
+  }
+
+  bool testQSort() {
+    bool passed = true;
+
+    try {
+      Module module;
+      createQSortModule(module);
+
+      passed = testQSortVTypes(module);
+      passed = passed && testQSortProcs(module);
+
+      module.drop();
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "qsort", passed);
   }
 
 }
@@ -429,6 +544,7 @@ namespace Ant {
         passed = passed && testRefConsistency();
         passed = passed && testCallConsistency();
         passed = passed && testFactorial();
+        passed = passed && testQSort();
 
         return passed;
       }

@@ -123,6 +123,44 @@ namespace Ant {
         builder.addProcInstr(qsort, CALLInstr(qsort));
         builder.addProcInstr(qsort, POPLInstr(0));
         builder.addProcInstr(qsort, RETInstr());
+
+        builder.createModule(module);
+      }
+
+      void createEHTestModule(Module &module) {
+        ModuleBuilder builder;
+
+        // int ed;
+        // void func1(int *io) {
+        //  if(ed == *io)
+        //    goto l1;
+        //  {
+        //    int t;
+        //    throw ed;
+        //  }
+        // l1:
+        //   return;
+        // }
+
+        // void func2(int *io) {
+        //   ed = 0;
+        //   try {
+        //     try {
+        //       func1(io);
+        //       *io = -1;
+        //       return;
+        //     }
+        //     catch(...) {
+        //       ed = *io; ed *= ed;
+        //       func1(io);
+        //       *io = -2;
+        //       return;
+        //     }
+        //   }
+        //   catch(...) {
+        //     throw -3;
+        //   }
+        // }
       }
 
     }
