@@ -33,6 +33,7 @@ namespace Ant {
       VIRTUAL_CASE(JNZ, left, mod, call); \
       VIRTUAL_CASE(JG, left, mod, call); \
       VIRTUAL_CASE(JNG, left, mod, call); \
+      VIRTUAL_CASE(JE, left, mod, call); \
       VIRTUAL_CASE(CPI1, left, mod, call); \
       VIRTUAL_CASE(CPI2, left, mod, call); \
       VIRTUAL_CASE(CPI4, left, mod, call); \
@@ -42,6 +43,7 @@ namespace Ant {
       VIRTUAL_CASE(PUSHH, left, mod, call); \
       VIRTUAL_CASE(POP, left, mod, call); \
       VIRTUAL_CASE(POPL, left, mod, call); \
+      VIRTUAL_CASE(JMP, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
       VIRTUAL_CASE(LDE, left, mod, call); \
       VIRTUAL_CASE(LDB, left, mod, call); \

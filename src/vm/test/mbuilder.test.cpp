@@ -393,6 +393,41 @@ namespace {
     return passed;
   }
 
+  bool testFactorial() {
+    bool passed = true;
+
+    try {
+      Module module;
+      createFactorialModule(module);
+
+      passed = testFactorialVTypes(module);
+      passed = passed && testFactorialPTypes(module);
+      passed = passed && testFactorialRegs(module);
+      passed = passed && testFactorialProcs(module);
+
+      module.drop();
+    }
+    catch(...) { passed = false; }
+
+    return printTestResult(subj, "factorial", passed);
+  }
+
+  bool testQSortVTypes(const Module &module) {
+    VarType vtype;
+    bool passed;
+
+    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+2;
+
+    if(passed) {
+      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT + 1, vtype);
+      passed = vtype.vrefs.size() == 1;
+      passed = passed && !vtype.vrefs[0].count &&
+        vtype.vrefs[0].vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT;
+    }
+
+    return passed;
+  }
+
   bool testQSortPartInstrs(const Proc &proc) {
     bool passed = true;
     RegId io = ModuleBuilder::RESERVED_REG_COUNT;
@@ -456,40 +491,47 @@ namespace {
   }
 
   bool testQSortQSortInstrs(const Proc &proc) {
-    return true;
-  }
-
-  bool testFactorial() {
     bool passed = true;
+    RegId io = ModuleBuilder::RESERVED_REG_COUNT;
+    RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
+    ProcId part = 0, qsort = 1;
+    Instr instr;
+    int i = 0;
 
-    try {
-      Module module;
-      createFactorialModule(module);
-
-      passed = testFactorialVTypes(module);
-      passed = passed && testFactorialPTypes(module);
-      passed = passed && testFactorialRegs(module);
-      passed = passed && testFactorialProcs(module);
-
-      module.drop();
-    }
-    catch(...) { passed = false; }
-
-    return printTestResult(subj, "factorial", passed);
-  }
-
-  bool testQSortVTypes(const Module &module) {
-    VarType vtype;
-    bool passed;
-
-    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+2;
-
-    if(passed) {
-      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT + 1, vtype);
-      passed = vtype.vrefs.size() == 1;
-      passed = passed && !vtype.vrefs[0].count &&
-        vtype.vrefs[0].vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT;
-    }
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR_D(CPB);
+    passed = passed && iCPB.from() == io;
+    passed = passed && iCPB.to() == l;
+    NEXT_OPCODE(PUSH);
+    NEXT_INSTR_D(LDB);
+    passed = passed && iLDB.from() == io;
+    passed = passed && iLDB.offset() == 8;
+    passed = passed && iLDB.to() == h;
+    NEXT_INSTR_D(JG);
+    passed = passed && iJG.operand1() == h;
+    passed = passed && iJG.operand2() == l;
+    passed = passed && iJG.offset() == 2;
+    NEXT_OPCODE(RET);
+    NEXT_INSTR_D(CALL);
+    passed = passed && iCALL.proc() == part;
+    NEXT_INSTR(CPB);
+    passed = passed && iCPB.from() == io;
+    passed = passed && iCPB.to() == h;
+    NEXT_OPCODE(INC);
+    NEXT_INSTR(CALL);
+    passed = passed && iCALL.proc() == qsort;
+    NEXT_INSTR(CPB);
+    passed = passed && iCPB.from() == l;
+    passed = passed && iCPB.to() == io;
+    NEXT_OPCODE(DEC);
+    NEXT_INSTR_D(STB);
+    passed = passed && iSTB.from() == h;
+    passed = passed && iSTB.to() == io;
+    passed = passed && iSTB.offset() == 8;
+    NEXT_INSTR(CALL);
+    passed = passed && iCALL.proc() == qsort;
+    NEXT_INSTR_D(POPL);
+    passed = passed && iPOPL.level() == 0;
 
     return passed;
   }

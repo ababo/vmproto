@@ -290,6 +290,11 @@ namespace Ant {
      
     }
 
+    void Runtime::ModuleData::emitLLVMCodeJMP(LLVMContext &context,
+					      const JMPInstr &instr) {
+      
+    }
+
 #define BITCAST_PARR(bytes, ptr) \
     new BitCastInst(ptr, TYPE_PTR(TYPE_ARR(bytes)), "", CURRENT_BLOCK)
 
@@ -394,6 +399,7 @@ namespace Ant {
           UJINSTR_CASE(JNZ, ICMP_NE, 0);
           BJINSTR_CASE(JG, ICMP_SGT);
           BJINSTR_CASE(JNG, ICMP_SLE);
+          BJINSTR_CASE(JE, ICMP_EQ);
           CPIINSTR_CASE(CPI1, uint8_t);
           CPIINSTR_CASE(CPI2, uint16_t);
           CPIINSTR_CASE(CPI4, uint32_t);
@@ -403,6 +409,7 @@ namespace Ant {
 	  INSTR_CASE(PUSHH);
           INSTR_CASE(POP);
           INSTR_CASE(POPL);
+          INSTR_CASE(JMP);
           INSTR_CASE(CPB);
           INSTR_CASE(LDE);
           INSTR_CASE(LDB);

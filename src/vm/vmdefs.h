@@ -96,6 +96,7 @@ namespace Ant {
       OPCODE_JNZ, // Jump if Not Zero
       OPCODE_JG, // Jump if Greater
       OPCODE_JNG, // Jump if Not Greater
+      OPCODE_JE, // Jump if Equal
       OPCODE_CPI1, // CoPy Immediate (1-byte) 
       OPCODE_CPI2, // CoPy Immediate (2-bytes)
       OPCODE_CPI4, // CoPy Immediate (4-bytes)
@@ -105,6 +106,7 @@ namespace Ant {
       OPCODE_PUSHH, // PUSH exception Handler
       OPCODE_POP, // POP entity
       OPCODE_POPL, // POP entities to Level
+      OPCODE_JMP, // unconditional JuMP
       OPCODE_CPB, // CoPy Bytes
       OPCODE_LDE, // LoaD array Element
       OPCODE_LDB, // LoaD structure Bytes
@@ -131,6 +133,7 @@ namespace Ant {
     template<uint8_t> class BJInstrT;
     typedef BJInstrT<OPCODE_JG> JGInstr;
     typedef BJInstrT<OPCODE_JNG> JNGInstr;
+    typedef BJInstrT<OPCODE_JE> JEInstr;
 
     template<uint8_t, class> class CPIInstrT;
     typedef CPIInstrT<OPCODE_CPI1, uint8_t> CPI1Instr;
@@ -145,6 +148,7 @@ namespace Ant {
     class PUSHHInstr;
     class POPInstr;
     class POPLInstr;
+    class JMPInstr;
     class CPBInstr;
     class LDEInstr;
     class LDBInstr;

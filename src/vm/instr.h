@@ -168,6 +168,7 @@ namespace Ant {
 
     typedef BJInstrT<OPCODE_JG> JGInstr;
     typedef BJInstrT<OPCODE_JNG> JNGInstr;
+    typedef BJInstrT<OPCODE_JE> JEInstr;
 
     template<uint8_t OP, class VAL> class CPIInstrT : public Instr {
       friend class Instr;
@@ -263,6 +264,25 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::applyEndFrames(mbuilder, proc, level());
+      }
+    };
+
+    class JMPInstr : public Instr {
+      friend class Instr;
+    public:
+      JMPInstr(ptrdiff_t offset) {
+        op = OPCODE_JMP; setParam2(offset); }
+
+      size_t size() const { return Instr::size(1); }
+      ptrdiff_t offset() const { return ptrdiff_t(getParam2(0)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return true; }
+      size_t jumpIndex(size_t index) const {
+        return size_t(ptrdiff_t(index) + offset()); }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+        Instr::applyInstrOffset(mbuilder, proc, offset());
       }
     };
 

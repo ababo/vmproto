@@ -132,15 +132,23 @@ namespace Ant {
 
         // int ed;
         // void func1(int *io) {
-        //  if(ed == *io)
-        //    goto l1;
-        //  {
-        //    int t;
-        //    throw ed;
-        //  }
+        //   if(*io == ed)
+        //     goto l1;
+        //   {
+        //     int io;
+        //     throw ed;
+        //   }
         // l1:
-        //   return;
         // }
+        VarTypeId wordType = builder.addVarType(8);
+        RegId ed = 0, io = builder.addReg(0, wordType);
+        ProcTypeId ptype = builder.addProcType(0, io);
+        ProcId func1 = builder.addProc(0, ptype);
+        builder.addProcInstr(func1, JEInstr(io, ed, 4));
+        builder.addProcInstr(func1, PUSHInstr(io));
+        builder.addProcInstr(func1, THROWInstr());
+        builder.addProcInstr(func1, POPInstr());
+        builder.addProcInstr(func1, RETInstr());
 
         // void func2(int *io) {
         //   ed = 0;
@@ -148,19 +156,36 @@ namespace Ant {
         //     try {
         //       func1(io);
         //       *io = -1;
-        //       return;
         //     }
         //     catch(...) {
         //       ed = *io; ed *= ed;
         //       func1(io);
         //       *io = -2;
-        //       return;
         //     }
         //   }
         //   catch(...) {
         //     throw -3;
         //   }
         // }
+        ProcId func2 = builder.addProc(PFLAG_EXTERNAL, ptype);
+        builder.addProcInstr(func2, CPI8Instr(0, ed));
+        builder.addProcInstr(func2, PUSHHInstr(11));
+        builder.addProcInstr(func2, PUSHHInstr(4));
+        builder.addProcInstr(func2, CALLInstr(func1));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-1), io));
+        builder.addProcInstr(func2, JMPInstr(5));
+        builder.addProcInstr(func2, CPBInstr(io, ed));
+        builder.addProcInstr(func2, MULInstr(ed, ed, ed));
+        builder.addProcInstr(func2, CALLInstr(func1));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-2), io));
+        builder.addProcInstr(func2, POPInstr());
+        builder.addProcInstr(func2, JMPInstr(3));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-3), ed));
+        builder.addProcInstr(func2, THROWInstr());
+        builder.addProcInstr(func2, POPInstr());
+        builder.addProcInstr(func2, RETInstr());
+
+        builder.createModule(module);
       }
 
     }
