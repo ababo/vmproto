@@ -9,6 +9,7 @@ namespace Ant {
 
       void createFactorialModule(Module &module);
       void createQSortModule(Module &module);
+      void createEHTestModule(Module &module);
 
       bool testUtils();
       bool testModuleBuilder();

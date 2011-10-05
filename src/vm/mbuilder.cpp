@@ -51,6 +51,9 @@ namespace Ant {
 
     RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegKind kind,
 					    RegId reg) const {
+      if(regs[reg].flags & VFLAG_PERSISTENT)
+        return reg;
+
       const ProcCon &con = procCons[proc];
       for(int i = con.frames.size() - 1; i >= 0; i--)
         if(con.frames[i].reg == reg)

@@ -94,6 +94,38 @@ namespace {
     return printTestResult(subj, "qsort", passed);
   }
 
+  bool testEH() {
+    bool passed = true;
+    Module module;
+
+    try {
+      SpecifiedVariable<8, 0, 0> io;
+      uint64_t &val = *reinterpret_cast<uint64_t*>(io.elts[0].bytes);
+      ProcId proc = 1;
+
+      createEHTestModule(module);
+      module.unpack();
+
+      val = 0;
+      module.callProc(proc, io);
+      if(val != -1)
+        throw Exception();
+
+      val = 1;
+      module.callProc(proc, io);
+      if(val != -2)
+        throw Exception();
+
+      val = 2;
+      ASSERT_THROW({module.callProc(proc, io);}, RuntimeException);
+    }
+    catch(...) { passed = false; }
+
+    IGNORE_THROW(module.drop());
+
+    return printTestResult(subj, "EH", passed);
+  }
+
 }
 
 namespace Ant {
@@ -105,6 +137,7 @@ namespace Ant {
 
         passed = testFactorial();
 	passed = passed && testQSort();
+        passed = passed && testEH();
 
         return passed;
       }

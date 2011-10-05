@@ -26,6 +26,7 @@ namespace Ant {
   EXCEPTION(TypeException, Exception, "invalid object type");
   EXCEPTION(BugException, Exception, "internal bug");
   EXCEPTION(EnvironmentException, Exception, "bad environment");
+  EXCEPTION(RuntimeException, Exception, "runtime error");
 
 }
 

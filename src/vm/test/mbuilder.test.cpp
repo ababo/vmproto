@@ -394,20 +394,20 @@ namespace {
   }
 
   bool testFactorial() {
-    bool passed = true;
+    bool passed;
+    Module module;
 
     try {
-      Module module;
       createFactorialModule(module);
 
       passed = testFactorialVTypes(module);
       passed = passed && testFactorialPTypes(module);
       passed = passed && testFactorialRegs(module);
       passed = passed && testFactorialProcs(module);
-
-      module.drop();
     }
     catch(...) { passed = false; }
+
+    IGNORE_THROW(module.drop());
 
     return printTestResult(subj, "factorial", passed);
   }
@@ -554,19 +554,80 @@ namespace {
 
   bool testQSort() {
     bool passed = true;
+    Module module;
 
     try {
-      Module module;
       createQSortModule(module);
 
       passed = testQSortVTypes(module);
       passed = passed && testQSortProcs(module);
-
-      module.drop();
     }
     catch(...) { passed = false; }
 
+    IGNORE_THROW(module.drop());
+
     return printTestResult(subj, "qsort", passed);
+  }
+
+  bool testEHProc1Instrs(const Proc &proc) {
+    bool passed = true;
+    Instr instr;
+    int i = 0;
+
+    NEXT_OPCODE(JE);
+    NEXT_OPCODE(PUSH);
+    NEXT_OPCODE(THROW);
+  }
+
+  bool testEHProc2Instrs(const Proc &proc) {
+    bool passed = true;
+    RegId ed = 0, io = ModuleBuilder::RESERVED_REG_COUNT;
+    ProcId func1 = 0;
+    Instr instr;
+    int i = 0;
+
+    NEXT_OPCODE(CPI8);
+    NEXT_INSTR_D(PUSHH);
+    passed = passed && iPUSHH.offset() == 11;
+    NEXT_INSTR(PUSHH);
+    passed = passed && iPUSHH.offset() == 4;
+    NEXT_OPCODE(CALL);
+    NEXT_OPCODE(CPI8);
+    NEXT_INSTR_D(JMP);
+    passed = passed && iJMP.offset() == 5;
+    NEXT_OPCODE(CPB);
+    NEXT_OPCODE(MUL);
+    NEXT_INSTR_D(CALL);
+    NEXT_OPCODE(CPI8);
+    NEXT_OPCODE(POP);
+    NEXT_INSTR(JMP);
+    passed = passed && iJMP.offset() == 3;
+    NEXT_OPCODE(CPI8);
+    NEXT_OPCODE(THROW);
+  }
+
+  bool testEH() {
+    bool passed;
+    Module module;
+
+    try {
+      createEHTestModule(module);
+
+      passed = module.procCount() == 2; 
+
+      if(passed) {
+        Proc proc;
+        module.procById(0, proc);
+        passed = passed && testEHProc1Instrs(proc);
+        module.procById(1, proc);
+        passed = passed && testEHProc2Instrs(proc);
+      }
+    }
+    catch(...) { passed = false; }
+
+    IGNORE_THROW(module.drop());
+
+    return printTestResult(subj, "EH", passed);
   }
 
 }
@@ -587,6 +648,7 @@ namespace Ant {
         passed = passed && testCallConsistency();
         passed = passed && testFactorial();
         passed = passed && testQSort();
+        passed = passed && testEH();
 
         return passed;
       }
