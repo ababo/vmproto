@@ -21,7 +21,7 @@ namespace {
   using namespace std;
   using namespace Ant::VM;
 
-  inline string procName(ProcId proc) {
+  inline string funcName(ProcId proc) {
     ostringstream out;
     out << 'p' << proc;
     return out.str();
@@ -188,11 +188,22 @@ namespace Ant {
 #define TYPE_BARR(len) ArrayType::get(TYPE_INT(8), len)
 #define TYPE_PBARR(len) ArrayType::get(TYPE_PTR(TYPE_INT(8)), len)
 
-    const Type *Runtime::ModuleData::getLLVMTypeById(VarTypeId id) const {
+    const Type *Runtime::ModuleData::getLLVMType(VarTypeId vtype) const {
       vector<const Type*> fields;
       fields.push_back(TYPE_BARR(vtypes[id].bytes));
       fields.push_back(TYPE_PBARR(vtypes[id].vrefs.size()));
       fields.push_back(TYPE_PBARR(vtypes[id].prefs.size()));
+      return StructType::get(llvmModule->getContext(), fields, false);
+    }
+
+#define TYPE_VOID() Type::getVoidTy(llvmModule->getContext())
+
+    const Type *Runtime::ModuleData::getLLVMType(VarSpec &vspec,
+                                                 bool inHeap) const {
+      vector<const Type*> fields;
+      fields.push_back(inHeap ? TYPE_INT(64) : TYPE_VOID());
+      fields.push_back(vspec.count ? TYPE_VOID() : TYPE_INT(64));
+      fields.push_back(ArrayType::get(getLLVMType(vspec.vtype), 0));
       return StructType::get(llvmModule->getContext(), fields, false);
     }
 
@@ -239,8 +250,10 @@ namespace Ant {
 
 #define CONST_INT(bits, val, signed) \
     ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
+#define GET_PBARR(ptr) \
+    GetElementPtrInst::Create(ptr, BINDEXES, BINDEXES + 2, "", CURRENT_BLOCK)
 #define BITCAST_PINT(bits, ptr) \
-    new BitCastInst(ptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
+    new BitCastInst(GET_PBARR(ptr), TYPE_PTR(TYPE_INT(bits)),"",CURRENT_BLOCK)
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
@@ -496,7 +509,7 @@ namespace Ant {
         GlobalValue::LinkageTypes link = external ?
           GlobalValue::ExternalLinkage : GlobalValue::InternalLinkage;
 
-        Function *func = Function::Create(ftype, link, procName(proc),
+        Function *func = Function::Create(ftype, link, funcName(proc),
                                           llvmModule);
         func->setCallingConv(external ? CallingConv::C : CallingConv::Fast);
 
@@ -571,7 +584,7 @@ namespace Ant {
     void Runtime::ModuleData::callProc(ProcId proc, Variable &io) {
       assertUnpacked();
 
-      Function *func = llvmModule->getFunction(procName(proc));
+      Function *func = llvmModule->getFunction(funcName(proc));
       if(!func)
         throw NotFoundException();
 
