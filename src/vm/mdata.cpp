@@ -196,13 +196,13 @@ namespace Ant {
       return StructType::get(llvmModule->getContext(), fields, false);
     }
 
-#define TYPE_VOID() Type::getVoidTy(llvmModule->getContext())
-
     const Type *Runtime::ModuleData::getVarLLVMType(VarSpec &vspec,
                                                     bool inHeap) const {
       vector<const Type*> fields;
-      fields.push_back(inHeap ? TYPE_INT(64) : TYPE_VOID());
-      fields.push_back(vspec.count ? TYPE_VOID() : TYPE_INT(64));
+      if(inHeap)
+        fields.push_back(TYPE_INT(64));
+      if(vspec.count)
+        fields.push_back(TYPE_INT(64));
       fields.push_back(ArrayType::get(getEltLLVMType(vspec.vtype), 0));
       return StructType::get(llvmModule->getContext(), fields, false);
     }
@@ -252,11 +252,29 @@ namespace Ant {
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
 
     Value *Runtime::ModuleData::getElementPtr(LLVMContext &context, Value *ptr,
-                                              int64_t index1, Value *index2,
-                                              int64_t index3, int64_t index4) {
+                                              VarField vfld, Value *elti,
+                                              EltField efld, uint32_t subi) {
+      StructType *vtype = static_cast<StructType*>(ptr->getType());
+      ArrayType *eatype = static_cast<ArrayType*>
+        (vtype->getElementType(vtype->getNumElements() - 1));
+      StructType *etype = static_cast<StructType*>(eatype->getElementType());
+
       vector<Value*> indexes;
       indexes.push_back(CONST_INT(32, 0, false));
-      indexes.push_back(CONST_INT(32, index1, false));
+
+      uint32_t index;
+      switch(vfld) {
+      case VFLD_RCOUNT: index = 0; break;
+      case VFLD_ECOUNT: index = vtype->getNumElements() - 2; break;
+      case VFLD_ELTS: index = vtype->getNumElements() - 1; break;
+      };
+      indexes.push_back(CONST_INT(32, index, false));
+
+      if(vfld == VFLD_ELTS) {
+        indexes.push_back(elti ? CONST_INT(32, 0, false) : elti)
+
+      }
+
       if(index2)
         indexes.push_back(index2);
       if(index3 >= 0)
