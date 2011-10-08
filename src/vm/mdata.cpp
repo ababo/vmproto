@@ -196,17 +196,6 @@ namespace Ant {
       return StructType::get(llvmModule->getContext(), fields, false);
     }
 
-    const Type *Runtime::ModuleData::getVarLLVMType(VarSpec &vspec,
-                                                    bool inHeap) const {
-      vector<const Type*> fields;
-      if(inHeap)
-        fields.push_back(TYPE_INT(64));
-      if(vspec.count)
-        fields.push_back(TYPE_INT(64));
-      fields.push_back(ArrayType::get(getEltLLVMType(vspec.vtype), 0));
-      return StructType::get(llvmModule->getContext(), fields, false);
-    }
-
     void Runtime::ModuleData::prepareLLVMContext(LLVMContext &context) {
       bool prevBreaks = false;
       set<size_t> indexes;
@@ -251,46 +240,43 @@ namespace Ant {
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
 
-    Value *Runtime::ModuleData::getElementPtr(LLVMContext &context, Value *ptr,
-                                              VarField vfld, Value *elti,
-                                              EltField efld, uint32_t subi) {
+    Value *Runtime::ModuleData::specialPtr(LLVMContext &context, Value *vptr,
+                                           SpeField sfld, bool fixed) {
       vector<Value*> indexes;
-      indexes.push_back(CONST_INT(32, 0, false));
+      int64_t index = sfld == SFLD_REF_COUNT ? -1 - !fixed : -1;
+      indexes.push_back(CONST_INT(2, index, true));
 
-      const StructType *vtype = static_cast<const StructType*>(ptr->getType());
-      uint64_t index;
-      switch(vfld) {
-        case VFLD_RCOUNT: index = 0; break;
-        case VFLD_ECOUNT: index = vtype->getNumElements() - 2; break;
-        case VFLD_ELTS: index = vtype->getNumElements() - 1; break;
+      Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "",
+                                    CURRENT_BLOCK);
+
+      return GetElementPtrInst::Create(iptr, indexes.begin(), indexes.end(),
+                                       "", CURRENT_BLOCK);
+    }
+
+    Value *Runtime::ModuleData::elementPtr(LLVMContext &context, Value *vptr,
+                                           Value *elti, EltField efld,
+                                           uint32_t subi = 0) {
+      vector<Value*> indexes;
+      indexes.push_back(elti ? elti : CONST_INT(1, 0, false));
+
+      uint32_t index;
+      const StructType *st = static_cast<const StructType*>(vptr->getType());
+      switch(efld) {
+        case EFLD_BYTES: index = 0; break;
+        case EFLD_VREFS: index = static_cast<const ArrayType*>
+          (st->getElementType(0))->getElementType()->isIntegerTy(); break;
+        case EFLD_PREFS: index = st->getNumElements() - 1; break;
       };
-      indexes.push_back(CONST_INT(32, index, false));
+      indexes.push_back(CONST_INT(2, index, false));
 
-      if(vfld == VFLD_ELTS) {
-        indexes.push_back(elti ? elti : CONST_INT(32, 0, false));
+      indexes.push_back(CONST_INT(32, uint64_t(subi), false));
 
-        const ArrayType *eatype = static_cast<const ArrayType*>
-          (vtype->getElementType(vtype->getNumElements() - 1));
-        const StructType *etype = static_cast<const StructType*>
-          (eatype->getElementType());
-        switch(efld) {
-          case EFLD_BYTES: index = 0; break;
-          case EFLD_VREFS:
-            eatype = static_cast<const ArrayType*>(etype->getElementType(0));
-            index = eatype->getElementType()->isIntegerTy(); break;
-          case EFLD_PREFS: index = etype->getNumElements() - 1; break;
-        };
-        indexes.push_back(CONST_INT(32, index, false));
-
-        indexes.push_back(CONST_INT(32, uint64_t(subi), false));
-      }
-
-      return GetElementPtrInst::Create(ptr, indexes.begin(), indexes.end(), "",
-                                       CURRENT_BLOCK);
+      return GetElementPtrInst::Create(vptr, indexes.begin(), indexes.end(),
+                                       "", CURRENT_BLOCK);
     }
 
 #define BITCAST_PINT(bits, ptr) \
-    new BitCastInst(getElementPtr(context, ptr, VFLD_ELTS), \
+    new BitCastInst(elementPtr(context, ptr, VFLD_ELTS), \
                     TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>

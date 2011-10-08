@@ -15,7 +15,7 @@ namespace Ant {
 
     struct Runtime::ModuleData : Retained<ModuleData> {
       struct LLVMContext;
-      enum VarField { VFLD_RCOUNT, VFLD_ECOUNT, VFLD_ELTS };
+      enum SpeField { SFLD_REF_COUNT, SFLD_ELT_COUNT };
       enum EltField { EFLD_BYTES, EFLD_VREFS, EFLD_PREFS };
 
       ModuleData(const UUID &id);
@@ -50,11 +50,12 @@ namespace Ant {
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
-      const llvm::Type *getVarLLVMType(VarSpec &vspec, bool inHeap) const;
       llvm::Value *regValue(LLVMContext &context, RegId reg);
-      llvm::Value *getElementPtr(LLVMContext &context, llvm::Value *ptr,
-                                 VarField vfld, llvm::Value *elti = NULL,
-                                 EltField efld = EFLD_BYTES, uint32_t subi =0);
+      llvm::Value *specialPtr(LLVMContext &context, llvm::Value *vptr,
+                              SpeField sfld, bool fixed);
+      llvm::Value *elementPtr(LLVMContext &context, llvm::Value *vptr,
+                          llvm::Value *elti = NULL, EltField efld = EFLD_BYTES,
+                              uint32_t subi = 0);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>
