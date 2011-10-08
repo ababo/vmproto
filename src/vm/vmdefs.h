@@ -38,12 +38,6 @@ namespace Ant {
 
     struct Variable {};
 
-    template<bool Fixed> struct SVPartFixed { size_t refCount; };
-    template<> struct SVPartFixed<true> {};
-
-    template<bool InStack> struct SVPartStack { size_t elmCount; };
-    template<> struct SVPartStack<true> {};
-
     template<uint32_t Bytes> struct SVPartBytes { uint8_t bytes[Bytes]; };
     template<> struct SVPartBytes<0> {};
 
@@ -57,11 +51,21 @@ namespace Ant {
       struct SVPartElt : SVPartBytes<Bytes>, SVPartVRefs<VRefs>,
                          SVPartPRefs<PRefs> {};
 
+    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1>
+      struct SVariable : Variable {
+       SVPartElt<Bytes, VRefs, PRefs> elts[Count];
+    };
+
+    template<bool Fixed> struct SVCPartFixed { size_t refCount; };
+    template<> struct SVCPartFixed<true> {};
+
+    template<bool InStack> struct SVCPartStack { size_t elmCount; };
+    template<> struct SVCPartStack<true> {};
+
     template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs,
              size_t Count = 1, bool Fixed = true, bool InStack = true>
-      struct SpecifiedVariable : Variable, SVPartFixed<Fixed>,
-                                 SVPartStack<InStack> {
-       SVPartElt<Bytes, VRefs, PRefs> elts[Count];
+      struct SVContainer : SVCPartFixed<Fixed>, SVCPartStack<InStack> {
+       SVariable<Bytes, VRefs, PRefs, Count> var;
     };
 
     enum VarFlag {
