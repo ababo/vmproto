@@ -190,9 +190,12 @@ namespace Ant {
 
     const Type *Runtime::ModuleData::getEltLLVMType(VarTypeId vtype) const {
       vector<const Type*> fields;
-      fields.push_back(TYPE_BARR(vtypes[vtype].bytes));
-      fields.push_back(TYPE_PBARR(vtypes[vtype].vrefs.size()));
-      fields.push_back(TYPE_PBARR(vtypes[vtype].prefs.size()));
+      if(vtypes[vtype].bytes)
+        fields.push_back(TYPE_BARR(vtypes[vtype].bytes));
+      if(vtypes[vtype].vrefs.size())
+        fields.push_back(TYPE_PBARR(vtypes[vtype].vrefs.size()));
+      if(vtypes[vtype].prefs.size())
+        fields.push_back(TYPE_PBARR(vtypes[vtype].prefs.size()));
       return StructType::get(llvmModule->getContext(), fields, false);
     }
 
@@ -278,6 +281,54 @@ namespace Ant {
 #define BITCAST_PINT(bits, vptr) \
     new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
 
+    Value *Runtime::ModuleData::stackAlloc(LLVMContext &context, RegId reg,
+                                           bool ref, Value *eltCount) {
+      Function *ss = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::stacksave);
+      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK), *vptr;
+
+      const Type *type = getEltLLVMType(regs[reg].vtype);
+
+      if(ref) {
+        type = TYPE_PTR(type);
+        vptr = new AllocaInst(type, "", CURRENT_BLOCK);
+        Constant *zeros = ConstantAggregateZero::get(type);
+        new StoreInst(zeros, vptr, CURRENT_BLOCK);
+      }
+      else {
+        Value *count = eltCount ?
+          eltCount : CONST_INT(64, uint64_t(regs[reg].count), false);
+
+        if(regs[reg].flags & VFLAG_NON_FIXED) {
+          vptr = new AllocaInst(TYPE_INT(64), "", CURRENT_BLOCK);
+          new StoreInst(count, vptr, CURRENT_BLOCK);
+        }
+
+        vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
+
+        vector<Value*> values(1, count); // calculate size of 'count' elements
+        Value *eptr = GetElementPtrInst::Create(vptr, values.begin(),
+                                                values.end(), "",
+                                                CURRENT_BLOCK);
+        Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "", CURRENT_BLOCK);
+        Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "", CURRENT_BLOCK);
+        Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri,
+                                            "", CURRENT_BLOCK);
+
+        Function *ms = Intrinsic::getDeclaration(llvmModule,
+                                                 Intrinsic::memset);
+        values.clear(); // zero fill the elements
+        values.push_back(BITCAST_PINT(8, vptr));
+        values.push_back(CONST_INT(8, 0, false));
+        values.push_back(len);
+        values.push_back(CONST_INT(32, 1, false));
+        values.push_back(CONST_INT(1, 0, false));
+        CallInst::Create(ms, values.begin(), values.end(), "", CURRENT_BLOCK);
+      }
+
+      context.pushFrame(ref, reg, sptr, vptr);
+    }
+
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
                                                const UOInstrT<OP> &instr) {
@@ -330,16 +381,7 @@ namespace Ant {
     template<uint8_t OP, bool REF>
       void Runtime::ModuleData::emitLLVMCodePUSH(LLVMContext &context,
                                             const PUSHInstrT<OP, REF> &instr) {
-      Function *ss = Intrinsic::getDeclaration(llvmModule,
-                                               Intrinsic::stacksave);
-      RegId reg = instr.reg();
-      const Type *type = getEltLLVMType(regs[reg].vtype);
-      Constant *zeros = ConstantAggregateZero::get(type);
-      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK);
-      Value *count = CONST_INT(64, uint64_t(regs[reg].count), false);
-      Value *vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
-      new StoreInst(zeros, vptr, CURRENT_BLOCK);
-      context.pushFrame(false, reg, sptr, vptr);
+      stackAlloc(context, instr.reg(), REF);
     }
 
     void Runtime::ModuleData::emitLLVMCodePUSHH(LLVMContext &context,
