@@ -43,9 +43,11 @@ namespace Ant {
       void assertUnpacked() const;
 
       void prepareLLVMFPM();
+      void createLLVMPVars();
       void createLLVMFuncs();
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
+      llvm::Value *regValue(LLVMContext &context, RegId reg);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>
