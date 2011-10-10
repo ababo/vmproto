@@ -453,6 +453,11 @@ namespace Ant {
 
     }
 
+    void Runtime::ModuleData::emitLLVMCodeSTR(LLVMContext &context,
+                                              const STRInstr &instr) {
+
+    }
+
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
 					      const CALLInstr &instr) {
 
@@ -534,6 +539,7 @@ namespace Ant {
           INSTR_CASE(LDR);
           INSTR_CASE(STE);
           INSTR_CASE(STB);
+          INSTR_CASE(STR);
           INSTR_CASE(CALL);
 	  INSTR_CASE(THROW);
           INSTR_CASE(RET);
@@ -570,7 +576,7 @@ namespace Ant {
           if(regs[reg].flags & VFLAG_NON_FIXED) {
             new GlobalVariable(*llvmModule, TYPE_INT(64), false,
                                GlobalValue::InternalLinkage,
-                               CONST_INT(64, uint64_t(regs[reg].count), false),
+                               CONST_INT(64, uint64_t(regs[reg].count), true),
                                "", gvar, threadLocal);
           }
         }

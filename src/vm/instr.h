@@ -432,6 +432,32 @@ namespace Ant {
       }
     };
 
+    class STRInstr : public Instr {
+      friend class Instr;
+    public:
+      STRInstr(RegId from, RegId to, uint32_t vref) {
+        op = OPCODE_STR; set3Params(from, to, vref);
+      }
+
+      size_t size() const { return Instr::size(3); }
+      RegId from() const { return RegId(getParam(0)); }
+      RegId to() const { return RegId(getParam(1)); }
+      uint32_t vref() const { return uint32_t(getParam(2)); }
+      bool breaks() const { return false; }
+      bool jumps() const { return false; }
+      size_t jumpIndex(size_t) const { return 0; }
+
+    protected:
+      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
+	VarSpec fvspec, tvspec;
+        Instr::regSpec(mbuilder, proc, RK_REF, from(), fvspec);
+	Instr::vrefSpec(mbuilder, proc, to(), vref(), tvspec);
+	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
+	Instr::assertSafeRefCopy(fvspec, tvspec);
+        Instr::applyDefault(mbuilder, proc);
+      }
+    };
+
     class CALLInstr : public Instr {
       friend class Instr;
     public:

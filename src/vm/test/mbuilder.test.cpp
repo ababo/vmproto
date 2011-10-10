@@ -260,16 +260,26 @@ namespace {
       b.addProcInstr(p, PUSHRInstr(r3));
       b.addProcInstr(p, PUSHInstr(r4));
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4,0,r1));},OperationException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1,r4,0));},OperationException);
       b.addProcInstr(p, PUSHRInstr(r1));
       b.addProcInstr(p, LDRInstr(r4, 0, r1));
+      b.addProcInstr(p, STRInstr(r1, r4, 0));
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r3));}, TypeException);
+      b.addProcInstr(p, STRInstr(r2, r4, 0));
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r3, r4, 0));}, TypeException);
       b.addProcInstr(p, LDRInstr(r4, 1, r1));
       b.addProcInstr(p, LDRInstr(r4, 1, r2));
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 1));}, TypeException);
+      b.addProcInstr(p, STRInstr(r2, r4, 1));
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 1, r3));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r3, r4, 1));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 2, r1));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 2, r2));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r2, r4, 2));}, TypeException);
       b.addProcInstr(p, LDRInstr(r4, 2, r3));
+      b.addProcInstr(p, STRInstr(r3, r4, 2));
     }
     catch(...) { passed = false; }
 
@@ -475,9 +485,7 @@ namespace {
     int i = 0;
 
     NEXT_OPCODE(PUSH);
-    NEXT_INSTR_D(CPB);
-    passed = passed && iCPB.from() == io;
-    passed = passed && iCPB.to() == l;
+    NEXT_OPCODE(CPB);
     NEXT_OPCODE(PUSH);
     NEXT_INSTR_D(LDB);
     passed = passed && iLDB.from() == io;
@@ -532,15 +540,13 @@ namespace {
   bool testQSortQSortInstrs(const Proc &proc) {
     bool passed = true;
     RegId io = RESERVED_REG_COUNT;
-    RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
+    RegId l = io + 1, h = l + 1, a = h + 1, cio = a + 3;
     ProcId part = 0, qsort = 1;
     Instr instr;
     int i = 0;
 
     NEXT_OPCODE(PUSH);
-    NEXT_INSTR_D(CPB);
-    passed = passed && iCPB.from() == io;
-    passed = passed && iCPB.to() == l;
+    NEXT_OPCODE(CPB);
     NEXT_OPCODE(PUSH);
     NEXT_INSTR_D(LDB);
     passed = passed && iLDB.from() == io;
@@ -551,21 +557,32 @@ namespace {
     passed = passed && iJG.operand2() == l;
     passed = passed && iJG.offset() == 2;
     NEXT_OPCODE(RET);
+    NEXT_OPCODE(PUSHR);
+    NEXT_INSTR_D(LDR);
+    passed = passed && iLDR.from() == io;
+    passed = passed && iLDR.vref() == 0;
+    passed = passed && iLDR.to() == a;
+    NEXT_OPCODE(PUSH);
+    NEXT_OPCODE(CPB);
+    NEXT_INSTR_D(STB);
+    passed = passed && iSTB.from() == h;
+    passed = passed && iSTB.to() == cio;
+    passed = passed && iSTB.offset() == 8;
+    NEXT_INSTR_D(STR);
+    passed = passed && iSTR.from() == a;
+    passed = passed && iSTR.to() == cio;
+    passed = passed && iSTR.vref() == 0;
     NEXT_INSTR_D(CALL);
     passed = passed && iCALL.proc() == part;
-    NEXT_INSTR(CPB);
-    passed = passed && iCPB.from() == io;
-    passed = passed && iCPB.to() == h;
+    NEXT_OPCODE(CPB);
     NEXT_OPCODE(INC);
     NEXT_INSTR(CALL);
     passed = passed && iCALL.proc() == qsort;
-    NEXT_INSTR(CPB);
-    passed = passed && iCPB.from() == l;
-    passed = passed && iCPB.to() == io;
+    NEXT_OPCODE(CPB);
     NEXT_OPCODE(DEC);
-    NEXT_INSTR_D(STB);
+    NEXT_INSTR(STB);
     passed = passed && iSTB.from() == h;
-    passed = passed && iSTB.to() == io;
+    passed = passed && iSTB.to() == cio;
     passed = passed && iSTB.offset() == 8;
     NEXT_INSTR(CALL);
     passed = passed && iCALL.proc() == qsort;

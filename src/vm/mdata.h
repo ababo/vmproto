@@ -83,6 +83,7 @@ namespace Ant {
       void emitLLVMCodeLDR(LLVMContext &context, const LDRInstr &instr);
       void emitLLVMCodeSTE(LLVMContext &context, const STEInstr &instr);
       void emitLLVMCodeSTB(LLVMContext &context, const STBInstr &instr);
+      void emitLLVMCodeSTR(LLVMContext &context, const STRInstr &instr);
       void emitLLVMCodeCALL(LLVMContext &context, const CALLInstr &instr);
       void emitLLVMCodeTHROW(LLVMContext &context, const THROWInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);

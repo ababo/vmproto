@@ -50,6 +50,7 @@ namespace Ant {
       VIRTUAL_CASE(LDR, left, mod, call); \
       VIRTUAL_CASE(STE, left, mod, call); \
       VIRTUAL_CASE(STB, left, mod, call); \
+      VIRTUAL_CASE(STR, left, mod, call); \
       VIRTUAL_CASE(CALL, left, mod, call); \
       VIRTUAL_CASE(THROW, left, mod, call); \
       VIRTUAL_CASE(RET, left, mod, call); \

@@ -138,6 +138,7 @@ namespace Ant {
       OPCODE_LDR, // LoaD structure Reference
       OPCODE_STE, // STore array Element
       OPCODE_STB, // STore structure Bytes
+      OPCODE_STR, // STore structure Reference
       OPCODE_CALL, // CALL procedure
       OPCODE_THROW, // THROW exception
       OPCODE_RET // RETurn
@@ -180,6 +181,7 @@ namespace Ant {
     class LDRInstr;
     class STEInstr;
     class STBInstr;
+    class STRInstr;
     class CALLInstr;
     class THROWInstr;
     class RETInstr;

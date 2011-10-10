@@ -100,11 +100,16 @@ namespace Ant {
         //     goto l1;
         //   return;
         // l1:
-        //   part(io);
-        //   h = io->l++;
-        //   qsort(io);
-        //   io->l = l, io->h = --h;
-        //   qsort(io);
+        //   {
+        //     int *a = io->a;
+        //     struct ioType cio;
+        //     cio.l = l, cio.h = h, cio.a = a;
+        //     part(&cio);
+        //     h = cio.l++;
+        //     qsort(&cio);
+        //     cio.l = l, cio.h = --h;
+        //     qsort(&cio);
+        //   }
         // }
         ProcId qsort = builder.addProc(PFLAG_EXTERNAL, ptype);
         builder.addProcInstr(qsort, PUSHInstr(l));
@@ -113,13 +118,20 @@ namespace Ant {
         builder.addProcInstr(qsort, LDBInstr(io, 8, h));
         builder.addProcInstr(qsort, JGInstr(h, l, 2));
         builder.addProcInstr(qsort, RETInstr());
+        RegId cio = builder.addReg(0, ioType);
+        builder.addProcInstr(qsort, PUSHRInstr(a));
+        builder.addProcInstr(qsort, LDRInstr(io, 0, a));
+        builder.addProcInstr(qsort, PUSHInstr(cio));
+        builder.addProcInstr(qsort, CPBInstr(l, cio));
+        builder.addProcInstr(qsort, STBInstr(h, cio, 8));
+        builder.addProcInstr(qsort, STRInstr(a, cio, 0));
         builder.addProcInstr(qsort, CALLInstr(part));
-        builder.addProcInstr(qsort, CPBInstr(io, h));
-        builder.addProcInstr(qsort, INCInstr(io));
+        builder.addProcInstr(qsort, CPBInstr(cio, h));
+        builder.addProcInstr(qsort, INCInstr(cio));
         builder.addProcInstr(qsort, CALLInstr(qsort));
-        builder.addProcInstr(qsort, CPBInstr(l, io));
+        builder.addProcInstr(qsort, CPBInstr(l, cio));
         builder.addProcInstr(qsort, DECInstr(h));
-        builder.addProcInstr(qsort, STBInstr(h, io, 8));
+        builder.addProcInstr(qsort, STBInstr(h, cio, 8));
         builder.addProcInstr(qsort, CALLInstr(qsort));
         builder.addProcInstr(qsort, POPLInstr(0));
         builder.addProcInstr(qsort, RETInstr());
