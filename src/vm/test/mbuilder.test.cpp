@@ -25,22 +25,17 @@ namespace {
       ProcTypeId pt;
       ProcId p;
  
-      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_PERSISTENT, vt);},
-                   FlagsException);
-      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_THREAD_LOCAL, vt);},
-                   FlagsException);
-      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_FIRST_RESERVED, vt);},
-                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_PERSISTENT,vt);},FlagsException);
+    ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_THREAD_LOCAL,vt);},FlagsException);
+  ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_FIRST_RESERVED,vt);},FlagsException);
       ASSERT_THROW({b.addVarTypeVRef(vt, 0, vt, 0);}, RangeException);
 
       ASSERT_THROW({r = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
       ASSERT_THROW({r = b.addReg(0, vt, 0);}, RangeException);
       r = b.addReg(0, vt);
 
-      ASSERT_THROW({pt = b.addProcType(PTFLAG_FIRST_RESERVED, r);},
-                   FlagsException);
-
-      ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);},FlagsException);
+     ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r);},FlagsException);
+      ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);}, FlagsException);
 
       ASSERT_THROW({b.createModule(m);}, OperationException);
       b.addVarTypeVRef(vt, 0, vt);
@@ -286,30 +281,43 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId vt = b.addVarType(1);
-      RegId r1 = b.addReg(0, vt);
-      RegId r2 = b.addReg(0, vt);
-      ProcTypeId pt1 = b.addProcType(0, r1);
-      ProcTypeId pt2 = b.addProcType(0, r2);
+      VarTypeId iovt = b.addVarType(1);
+      VarTypeId vt1 = b.addVarType(1);
+      VarTypeId vt2 = b.addVarType(1);
+      RegId io = b.addReg(0, iovt);
+      RegId r1 = b.addReg(0, vt1);
+      RegId r11 = b.addReg(0, vt1);
+      RegId r12 = b.addReg(VFLAG_THREAD_LOCAL, vt1);
+      RegId r13 = b.addReg(0, vt2);
+      RegId r14 = b.addReg(0, vt1, 2);
+      RegId r2 = b.addReg(VFLAG_NON_FIXED, vt1);
+      RegId r21 = b.addReg(VFLAG_NON_FIXED, vt1, 2);
+      ProcTypeId pt1 = b.addProcType(0, io);
+      ProcTypeId pt2 = b.addProcType(0, r1);
+      ProcTypeId pt3 = b.addProcType(0, r2);
       ProcId p1 = b.addProc(0, pt1);
       ProcId p2 = b.addProc(0, pt2);
+      ProcId p3 = b.addProc(0, pt3);
 
-      b.addProcInstr(p1, CALLInstr(p1));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, PUSHInstr(r1));
+      b.addProcInstr(p1, CALLInstr(p2));
+      b.addProcInstr(p1, PUSHHInstr(100));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, PUSHRInstr(r1));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, PUSHInstr(r11));
+      b.addProcInstr(p1, CALLInstr(p2));
+      b.addProcInstr(p1, PUSHInstr(r12));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, PUSHInstr(r13));
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, PUSHInstr(r14));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
       b.addProcInstr(p1, PUSHInstr(r2));
-      b.addProcInstr(p1, CALLInstr(p1));
-      b.addProcInstr(p1, CALLInstr(p2));
-      b.addProcInstr(p1, PUSHRInstr(r1));
-      b.addProcInstr(p1, PUSHRInstr(r2));
-      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p1));}, OperationException);
-      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
-      b.addProcInstr(p1, POPInstr());
-      b.addProcInstr(p1, POPInstr());
-      b.addProcInstr(p1, CALLInstr(p1));
-      b.addProcInstr(p1, CALLInstr(p2));
-      b.addProcInstr(p1, POPInstr());
-      b.addProcInstr(p1, CALLInstr(p1));
-      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, CALLInstr(p3));
+      b.addProcInstr(p1, PUSHInstr(r21));
+      b.addProcInstr(p1, CALLInstr(p3));
     }
     catch(...) { passed = false; }
 
