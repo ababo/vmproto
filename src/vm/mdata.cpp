@@ -254,40 +254,44 @@ namespace Ant {
     Value *Runtime::ModuleData::getElementPtr(LLVMContext &context, Value *ptr,
                                               VarField vfld, Value *elti,
                                               EltField efld, uint32_t subi) {
-      StructType *vtype = static_cast<StructType*>(ptr->getType());
-      ArrayType *eatype = static_cast<ArrayType*>
-        (vtype->getElementType(vtype->getNumElements() - 1));
-      StructType *etype = static_cast<StructType*>(eatype->getElementType());
-
       vector<Value*> indexes;
       indexes.push_back(CONST_INT(32, 0, false));
 
-      uint32_t index;
+      const StructType *vtype = static_cast<const StructType*>(ptr->getType());
+      uint64_t index;
       switch(vfld) {
-      case VFLD_RCOUNT: index = 0; break;
-      case VFLD_ECOUNT: index = vtype->getNumElements() - 2; break;
-      case VFLD_ELTS: index = vtype->getNumElements() - 1; break;
+        case VFLD_RCOUNT: index = 0; break;
+        case VFLD_ECOUNT: index = vtype->getNumElements() - 2; break;
+        case VFLD_ELTS: index = vtype->getNumElements() - 1; break;
       };
       indexes.push_back(CONST_INT(32, index, false));
 
       if(vfld == VFLD_ELTS) {
-        indexes.push_back(elti ? CONST_INT(32, 0, false) : elti)
+        indexes.push_back(elti ? elti : CONST_INT(32, 0, false));
 
+        const ArrayType *eatype = static_cast<const ArrayType*>
+          (vtype->getElementType(vtype->getNumElements() - 1));
+        const StructType *etype = static_cast<const StructType*>
+          (eatype->getElementType());
+        switch(efld) {
+          case EFLD_BYTES: index = 0; break;
+          case EFLD_VREFS:
+            eatype = static_cast<const ArrayType*>(etype->getElementType(0));
+            index = eatype->getElementType()->isIntegerTy(); break;
+          case EFLD_PREFS: index = etype->getNumElements() - 1; break;
+        };
+        indexes.push_back(CONST_INT(32, index, false));
+
+        indexes.push_back(CONST_INT(32, uint64_t(subi), false));
       }
 
-      if(index2)
-        indexes.push_back(index2);
-      if(index3 >= 0)
-        indexes.push_back(CONST_INT(32, index3, false));
-      if(index4 >= 0)
-        indexes.push_back(CONST_INT(32, index4, false));
       return GetElementPtrInst::Create(ptr, indexes.begin(), indexes.end(), "",
                                        CURRENT_BLOCK);
     }
 
 #define BITCAST_PINT(bits, ptr) \
-    new BitCastInst(getElementPtr(context, ptr, 2), TYPE_PTR(TYPE_INT(bits)), \
-                    "", CURRENT_BLOCK)
+    new BitCastInst(getElementPtr(context, ptr, VFLD_ELTS), \
+                    TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
@@ -377,7 +381,7 @@ namespace Ant {
     }
 
 #define BITCAST_PARR(bytes, ptr) \
-    new BitCastInst(getElementPtr(context, ptr, 2), \
+    new BitCastInst(getElementPtr(context, ptr, VFLD_ELTS), \
                     TYPE_PTR(TYPE_BARR(bytes)), "", CURRENT_BLOCK)
 
     void Runtime::ModuleData::emitLLVMCodeCPB(LLVMContext &context,
