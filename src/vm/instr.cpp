@@ -185,6 +185,17 @@ namespace Ant {
       mbuilder.assertRegAllocated(proc, RK_NOREF, pt.io);
     }
 
+    void Instr::assertRegFixed(const ModuleBuilder &mbuilder, RegId reg,
+                               bool fixed) {
+      mbuilder.assertRegExists(reg);
+
+      VarSpec vspec;
+      mbuilder.regById(reg, vspec);
+
+      if(fixed ^ vspec.count)
+        throw TypeException();
+    }
+
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc,
 			RegKind kind, RegId reg, VarSpec &vspec) {
       assertRegAllocated(mbuilder, proc, kind, reg);
@@ -208,6 +219,10 @@ namespace Ant {
     void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
                                 RegKind kind, RegId reg) {
       mbuilder.assertRegExists(reg);
+
+      if(kind == RK_NOREF)
+        assertRegFixed(mbuilder, reg, true);
+
       mbuilder.applyBeginFrame(proc, kind, reg);
     }
 

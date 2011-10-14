@@ -50,6 +50,8 @@ namespace Ant {
       static void assertCompatibleEltCounts(size_t from, size_t to);
       static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
                                      ProcId targetProc);
+      static void assertRegFixed(const ModuleBuilder &mbuilder, RegId reg,
+                                 bool fixed);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
                           RegKind kind, RegId reg, VarSpec &vspec);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,

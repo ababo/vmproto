@@ -44,7 +44,9 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(8);
-      RegId r1 = b.addReg(0, vt), r2 = b.addReg(0, vt);
+      RegId r1 = b.addReg(0, vt);
+      RegId r2 = b.addReg(0, vt);
+      RegId r3 = b.addReg(0, vt, 0);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
@@ -58,6 +60,8 @@ namespace {
       REG_ALLOC_NORMAL_SEQ(r2);
       b.addProcInstr(p, POPInstr());
       REG_ALLOC_ERROR_SEQ(r2, OperationException);
+
+      ASSERT_THROW({b.addProcInstr(p, PUSHInstr(r3));}, TypeException);
     }
     catch(...) { passed = false; }
 
