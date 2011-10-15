@@ -5,8 +5,28 @@
 #include <stdint.h>
 #include <vector>
 
+#include "utils.h"
+
 namespace Ant {
   namespace VM {
+
+    const uint32_t MODULE_VTYPES_MAX = MB_UINT_MAX(2);
+    const uint32_t MODULE_PTYPES_MAX = MB_UINT_MAX(2);
+    const uint32_t MODULE_REGS_MAX = MB_UINT_MAX(2);
+    const uint32_t MODULE_PROCS_MAX = MB_UINT_MAX(2);
+
+    const uint32_t ELT_BYTES_MAX = MB_UINT_MAX(2);
+    const uint32_t ELT_VREFS_MAX = MB_UINT_MAX(2);
+    const uint32_t ELT_PREFS_MAX = MB_UINT_MAX(2);
+
+#ifdef SHORT_PTR
+    const size_t VAR_COUNT_MAX = 0xFFFF;
+#else
+    const size_t VAR_COUNT_MAX = MB_UINT_MAX(4);
+#endif
+
+    const uint32_t RESERVED_VAR_TYPE_COUNT = 1;
+    const uint32_t RESERVED_REG_COUNT = 1;
 
     typedef uint32_t VarTypeId;
     typedef uint32_t ProcTypeId;

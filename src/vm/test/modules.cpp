@@ -49,7 +49,7 @@ namespace Ant {
         // struct ioType { int l, h, *a; };
         VarTypeId wordType = builder.addVarType(8);
         VarTypeId ioType = builder.addVarType(16);
-        builder.addVarTypeVRef(VFLAG_NON_FIXED, ioType, wordType);
+        builder.addVarTypeVRef(ioType, VFLAG_NON_FIXED, wordType);
 
         // void part(struct ioType *io) {
         //   int l = io->l, h = io->h, *a = io->a, al, ah = a[h];

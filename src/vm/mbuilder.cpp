@@ -1,5 +1,4 @@
 #include "../exception.h"
-#include "../sarithm.h"
 #include "instr.h"
 #include "mbuilder.h"
 #include "mdata.h"
@@ -65,24 +64,10 @@ namespace Ant {
       throw OperationException();
     }
 
-    size_t ModuleBuilder::assertCountInRange(VarTypeId vtype, size_t count) {
-      assertVarTypeExists(vtype);
-
-      if(count > MB_UINT_MAX(4))
-        throw RangeException();
-
-      if(count ?
-         !safeToMultiply(count, vtypes[vtype].bytes + sizeof(size_t)) :
-         !safeToAdd(vtypes[vtype].bytes, 2 * sizeof(size_t)))
-        throw RangeException();
-
-      return count;
-    }
-
     VarTypeId ModuleBuilder::addVarType(uint32_t bytes) {
-      if(vtypes.size() >= MB_UINT_MAX(2))
+      if(vtypes.size() > MODULE_VTYPES_MAX)
         throw RangeException();
-      if(bytes > MB_UINT_MAX(2))
+      if(bytes > ELT_BYTES_MAX)
         throw RangeException();
 
       VarType vtype;
@@ -92,25 +77,27 @@ namespace Ant {
       return VarTypeId(vtypes.size() - 1);
     }
 
-    void ModuleBuilder::addVarTypeVRef(uint32_t flags, VarTypeId id,
+    void ModuleBuilder::addVarTypeVRef(VarTypeId id, uint32_t flags,
                                        VarTypeId vtype, size_t count) {
      if(flags & ~VFLAG_NON_FIXED)
        throw FlagsException();
+      if(!count || count > VAR_COUNT_MAX)
+        throw RangeException();
 
       VarType &vt = vtypes[assertVarTypeExists(id)];
-      if(vt.vrefs.size() >= MB_UINT_MAX(2))
+      if(vt.vrefs.size() > ELT_VREFS_MAX)
         throw RangeException();
 
       VarSpec vspec;
       vspec.flags = flags;
-      vspec.vtype = vtype;
-      vspec.count = assertCountInRange(vtype, count);
+      vspec.vtype = assertVarTypeExists(vtype);
+      vspec.count = count;
 
       vt.vrefs.push_back(vspec);
     }
 
     ProcTypeId ModuleBuilder::addProcType(uint32_t flags, RegId io) {
-      if(ptypes.size() >= MB_UINT_MAX(2))
+      if(ptypes.size() > MODULE_PTYPES_MAX)
         throw RangeException();
       if(flags >= PTFLAG_FIRST_RESERVED)
         throw FlagsException();
@@ -125,20 +112,24 @@ namespace Ant {
 
     RegId ModuleBuilder::addReg(uint32_t flags, VarTypeId vtype,
 				size_t count) {
-     if(flags >= VFLAG_FIRST_RESERVED)
+      if(regs.size() > MODULE_REGS_MAX)
+        throw RangeException();
+      if(flags >= VFLAG_FIRST_RESERVED)
         throw FlagsException();
+      if(!count || count > VAR_COUNT_MAX)
+        throw RangeException();
 
       VarSpec reg;
       reg.flags = flags;
-      reg.vtype = vtype;
-      reg.count = assertCountInRange(vtype, count);
+      reg.vtype = assertVarTypeExists(vtype);
+      reg.count = count;
 
       regs.push_back(reg);
       return RegId(regs.size() - 1);
     }
 
     ProcId ModuleBuilder::addProc(uint32_t flags, ProcTypeId ptype) {
-      if(procs.size() >= MB_UINT_MAX(2))
+      if(procs.size() >= MODULE_PROCS_MAX)
         throw RangeException();
       if(flags >= PFLAG_FIRST_RESERVED)
         throw FlagsException();
@@ -266,6 +257,12 @@ namespace Ant {
     }
 
     void ModuleBuilder::assertConsistency() const {
+      for(VarTypeId vtype = RESERVED_VAR_TYPE_COUNT; vtype < vtypes.size();
+          vtype++)
+        if(!vtypes[vtype].bytes && !vtypes[vtype].vrefs.size() &&
+           !vtypes[vtype].prefs.size())
+          throw OperationException();
+
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         const ProcCon &con = procCons[proc];
 

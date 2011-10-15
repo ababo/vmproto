@@ -14,6 +14,45 @@ namespace {
 
   const String subj = "Ant::VM::ModuleBuilder";
 
+  bool testModuleConsistency() {
+    bool passed = true;
+    Module m;
+
+    try {
+      ModuleBuilder b;
+      VarTypeId vt = b.addVarType(0);
+      RegId r;
+      ProcTypeId pt;
+      ProcId p;
+ 
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_PERSISTENT, vt);},
+                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_THREAD_LOCAL, vt);},
+                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_FIRST_RESERVED, vt);},
+                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, 0, vt, 0);}, RangeException);
+
+      ASSERT_THROW({r = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
+      ASSERT_THROW({r = b.addReg(0, vt, 0);}, RangeException);
+      r = b.addReg(0, vt);
+
+      ASSERT_THROW({pt = b.addProcType(PTFLAG_FIRST_RESERVED, r);},
+                   FlagsException);
+
+      ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);},FlagsException);
+
+      ASSERT_THROW({b.createModule(m);}, OperationException);
+      b.addVarTypeVRef(vt, 0, vt);
+      b.createModule(m);
+    }
+    catch(...) { passed = false; }
+
+    IGNORE_THROW(m.drop());
+
+    return printTestResult(subj, "moduleConsistency", passed);
+  }
+
 #define REG_ALLOC_NORMAL_SEQ(reg) \
   if(passed) { \
     b.addProcInstr(p, CPI8Instr(0, reg)); \
@@ -207,9 +246,9 @@ namespace {
       ModuleBuilder b;
       VarTypeId vt1 = b.addVarType(7);
       VarTypeId vt2 = b.addVarType(0);
-      b.addVarTypeVRef(0, vt2, vt1);
-      b.addVarTypeVRef(0, vt2, vt1, 2);
-      b.addVarTypeVRef(VFLAG_NON_FIXED, vt2, vt1);
+      b.addVarTypeVRef(vt2, 0, vt1);
+      b.addVarTypeVRef(vt2, 0, vt1, 2);
+      b.addVarTypeVRef(vt2, VFLAG_NON_FIXED, vt1);
       RegId r1 = b.addReg(0, vt1);
       RegId r2 = b.addReg(0, vt1, 2);
       RegId r3 = b.addReg(VFLAG_NON_FIXED, vt1);
@@ -275,15 +314,15 @@ namespace {
     VarType vtype;
     bool passed;
 
-    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+1;
+    passed = module.varTypeCount() == RESERVED_VAR_TYPE_COUNT + 1;
 
     if(passed) {
-      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT, vtype);
+      module.varTypeById(RESERVED_VAR_TYPE_COUNT, vtype);
       passed = vtype.bytes == 8 && !vtype.vrefs.size() && !vtype.prefs.size();
     }
 
-    ASSERT_THROW({module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT+1,
-				     vtype);}, NotFoundException);
+    ASSERT_THROW({module.varTypeById(RESERVED_VAR_TYPE_COUNT + 1, vtype);},
+                 NotFoundException);
 
     return passed;
   }
@@ -296,7 +335,7 @@ namespace {
 
     if(passed) {
       module.procTypeById(0, ptype);
-      passed = !ptype.flags && ptype.io == ModuleBuilder::RESERVED_REG_COUNT;
+      passed = !ptype.flags && ptype.io == RESERVED_REG_COUNT;
     }
 
     ASSERT_THROW({module.procTypeById(1, ptype);}, NotFoundException);
@@ -308,16 +347,16 @@ namespace {
     bool passed;
     VarSpec reg;
 
-    passed = module.regCount() == ModuleBuilder::RESERVED_REG_COUNT + 2;
-    module.regById(ModuleBuilder::RESERVED_REG_COUNT, reg);
+    passed = module.regCount() == RESERVED_REG_COUNT + 2;
+    module.regById(RESERVED_REG_COUNT, reg);
     passed = passed && !reg.flags &&
-      reg.vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT && reg.count == 1;
-    module.regById(ModuleBuilder::RESERVED_REG_COUNT + 1, reg);
+      reg.vtype == RESERVED_VAR_TYPE_COUNT && reg.count == 1;
+    module.regById(RESERVED_REG_COUNT + 1, reg);
     passed = passed && !reg.flags &&
-      reg.vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT && reg.count == 1;
+      reg.vtype == RESERVED_VAR_TYPE_COUNT && reg.count == 1;
 
-    ASSERT_THROW({module.regById(ModuleBuilder::RESERVED_REG_COUNT + 2, reg);},
-		 NotFoundException);
+    ASSERT_THROW({module.regById(RESERVED_REG_COUNT + 2, reg);},
+                 NotFoundException);
 
     return passed;
   }
@@ -339,7 +378,7 @@ namespace {
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = ModuleBuilder::RESERVED_REG_COUNT, pr = io + 1;
+    RegId io = RESERVED_REG_COUNT, pr = io + 1;
     Instr instr;
     int i = 0;
 
@@ -416,13 +455,13 @@ namespace {
     VarType vtype;
     bool passed;
 
-    passed = module.varTypeCount() == ModuleBuilder::RESERVED_VAR_TYPE_COUNT+2;
+    passed = module.varTypeCount() == RESERVED_VAR_TYPE_COUNT+2;
 
     if(passed) {
-      module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT + 1, vtype);
+      module.varTypeById(RESERVED_VAR_TYPE_COUNT + 1, vtype);
       passed = vtype.vrefs.size() == 1;
       passed = passed && vtype.vrefs[0].flags == VFLAG_NON_FIXED &&
-        vtype.vrefs[0].vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT;
+        vtype.vrefs[0].vtype == RESERVED_VAR_TYPE_COUNT;
     }
 
     return passed;
@@ -430,7 +469,7 @@ namespace {
 
   bool testQSortPartInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = ModuleBuilder::RESERVED_REG_COUNT;
+    RegId io = RESERVED_REG_COUNT;
     RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
     Instr instr;
     int i = 0;
@@ -492,7 +531,7 @@ namespace {
 
   bool testQSortQSortInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = ModuleBuilder::RESERVED_REG_COUNT;
+    RegId io = RESERVED_REG_COUNT;
     RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
     ProcId part = 0, qsort = 1;
     Instr instr;
@@ -581,7 +620,7 @@ namespace {
 
   bool testEHProc2Instrs(const Proc &proc) {
     bool passed = true;
-    RegId ed = 0, io = ModuleBuilder::RESERVED_REG_COUNT;
+    RegId ed = 0, io = RESERVED_REG_COUNT;
     ProcId func1 = 0;
     Instr instr;
     int i = 0;
@@ -640,6 +679,7 @@ namespace Ant {
         bool passed;
 
         passed = testRegExistence();
+        passed = passed && testModuleConsistency();
         passed = passed && testRegAllocation();
         passed = passed && testStackConsistency();
         passed = passed && testEltConsistency();

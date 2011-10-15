@@ -1,5 +1,5 @@
-#ifndef __SARITHM_INCLUDED__
-#define __SARITHM_INCLUDED__
+#ifndef __MATH_INCLUDED__
+#define __MATH_INCLUDED__
 
 #include <stdint.h>
 
@@ -17,4 +17,4 @@ namespace Ant {
 
 }
 
-#endif // __SARITHM_INCLUDED__
+#endif // __MATH_INCLUDED__

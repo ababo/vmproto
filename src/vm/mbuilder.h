@@ -37,7 +37,7 @@ namespace Ant {
       }
 
       VarTypeId addVarType(uint32_t bytes);
-      void addVarTypeVRef(uint32_t flags, VarTypeId id, VarTypeId vtype,
+      void addVarTypeVRef(VarTypeId id, uint32_t flags, VarTypeId vtype,
                           size_t count = 1);
       void addVarTypePRef(VarTypeId id, ProcTypeId ptype);
       ProcTypeId addProcType(uint32_t flags, RegId io);
@@ -47,9 +47,6 @@ namespace Ant {
 
       void resetModule();
       void createModule(Module &module);
-
-      static const uint32_t RESERVED_VAR_TYPE_COUNT = 1;
-      static const uint32_t RESERVED_REG_COUNT = 1;
 
     protected:
       struct Frame {
@@ -68,7 +65,6 @@ namespace Ant {
       RegId assertRegExists(RegId id) const;
       ProcId assertProcExists(ProcId id) const;
       RegId assertRegAllocated(ProcId proc, RegKind kind, RegId reg) const;
-      size_t assertCountInRange(VarTypeId vtype, size_t count);
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;

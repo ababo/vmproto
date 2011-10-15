@@ -6,9 +6,9 @@ MAKE = make
 PROG = program
 
 INC = -I$(PPATH)/depend/utf8/source
-OPT = -g -DCONFIG_DEBUG
+CONF = -g -DCONFIG_DEBUG -DSHORT_PTR
 CFLLVM = `llvm-config --cppflags`
-CFLAGS = $(INC) $(OPT) -D$(PLATFORM) $(CFLLVM)
+CFLAGS = $(INC) $(CONF) -D$(PLATFORM) $(CFLLVM)
 
 LFLLVM = `llvm-config --ldflags --libs core jit native`
 LFLAGS = $(LFLLVM)
