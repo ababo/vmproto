@@ -171,8 +171,10 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertCompatibleEltCounts(size_t from, size_t to) {
-      if((!from && to) || (from && !to) || from < to)
+    void Instr::assertSafeRefCopy(VarSpec &from, VarSpec &to) {
+      bool nfFrom = from.flags & VFLAG_NON_FIXED;
+      bool nfTo = to.flags & VFLAG_NON_FIXED;
+      if(nfFrom ^ nfTo || from.count < to.count)
         throw TypeException();
     }
 
@@ -183,17 +185,6 @@ namespace Ant {
       ProcType pt;
       mbuilder.procTypeById(pr.ptype, pt);
       mbuilder.assertRegAllocated(proc, RK_NOREF, pt.io);
-    }
-
-    void Instr::assertRegFixed(const ModuleBuilder &mbuilder, RegId reg,
-                               bool fixed) {
-      mbuilder.assertRegExists(reg);
-
-      VarSpec vspec;
-      mbuilder.regById(reg, vspec);
-
-      if(fixed ^ vspec.count)
-        throw TypeException();
     }
 
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc,
@@ -219,10 +210,6 @@ namespace Ant {
     void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
                                 RegKind kind, RegId reg) {
       mbuilder.assertRegExists(reg);
-
-      if(kind == RK_NOREF)
-        assertRegFixed(mbuilder, reg, true);
-
       mbuilder.applyBeginFrame(proc, kind, reg);
     }
 

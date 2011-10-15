@@ -47,11 +47,9 @@ namespace Ant {
       static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                     RegId reg, uint32_t bytes);
       static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
-      static void assertCompatibleEltCounts(size_t from, size_t to);
+      static void assertSafeRefCopy(VarSpec &from, VarSpec &to);
       static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
                                      ProcId targetProc);
-      static void assertRegFixed(const ModuleBuilder &mbuilder, RegId reg,
-                                 bool fixed);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
                           RegKind kind, RegId reg, VarSpec &vspec);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,
@@ -380,7 +378,7 @@ namespace Ant {
 	Instr::vrefSpec(mbuilder, proc, from(), vref(), fvspec);
 	Instr::regSpec(mbuilder, proc, RK_REF, to(), tvspec);
 	Instr::assertSameVarType(fvspec.vtype, tvspec.vtype);
-	Instr::assertCompatibleEltCounts(fvspec.count, tvspec.count);
+	Instr::assertSafeRefCopy(fvspec, tvspec);
         Instr::applyDefault(mbuilder, proc);
       }
     };

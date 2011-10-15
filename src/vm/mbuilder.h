@@ -37,7 +37,8 @@ namespace Ant {
       }
 
       VarTypeId addVarType(uint32_t bytes);
-      void addVarTypeVRef(VarTypeId id, VarTypeId vtype, size_t count = 1);
+      void addVarTypeVRef(uint32_t flags, VarTypeId id, VarTypeId vtype,
+                          size_t count = 1);
       void addVarTypePRef(VarTypeId id, ProcTypeId ptype);
       ProcTypeId addProcType(uint32_t flags, RegId io);
       RegId addReg(uint32_t flags, VarTypeId vtype, size_t count = 1);

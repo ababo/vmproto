@@ -45,9 +45,10 @@ namespace Ant {
     };
 
     enum VarFlag {
-      VFLAG_PERSISTENT = 0x1,
-      VFLAG_THREAD_LOCAL = 0x2,
-      VFLAG_FIRST_RESERVED = 0x4
+      VFLAG_NON_FIXED = 0x1,
+      VFLAG_PERSISTENT = 0x2,
+      VFLAG_THREAD_LOCAL = 0x4,
+      VFLAG_FIRST_RESERVED = 0x8
     };
 
     struct VarSpec {

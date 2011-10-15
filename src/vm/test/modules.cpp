@@ -49,7 +49,7 @@ namespace Ant {
         // struct ioType { int l, h, *a; };
         VarTypeId wordType = builder.addVarType(8);
         VarTypeId ioType = builder.addVarType(16);
-        builder.addVarTypeVRef(ioType, wordType, 0);
+        builder.addVarTypeVRef(VFLAG_NON_FIXED, ioType, wordType);
 
         // void part(struct ioType *io) {
         //   int l = io->l, h = io->h, *a = io->a, al, ah = a[h];
@@ -72,7 +72,7 @@ namespace Ant {
         RegId h = builder.addReg(0, wordType);
         builder.addProcInstr(part, PUSHInstr(h));
         builder.addProcInstr(part, LDBInstr(io, 8, h));
-        RegId a = builder.addReg(0, wordType, 0);
+        RegId a = builder.addReg(VFLAG_NON_FIXED, wordType);
         builder.addProcInstr(part, PUSHRInstr(a));
         builder.addProcInstr(part, LDRInstr(io, 0, a));
         RegId al = builder.addReg(0, wordType);

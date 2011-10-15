@@ -92,14 +92,17 @@ namespace Ant {
       return VarTypeId(vtypes.size() - 1);
     }
 
-    void ModuleBuilder::addVarTypeVRef(VarTypeId id, VarTypeId vtype,
-				       size_t count) {
+    void ModuleBuilder::addVarTypeVRef(uint32_t flags, VarTypeId id,
+                                       VarTypeId vtype, size_t count) {
+     if(flags & ~VFLAG_NON_FIXED)
+       throw FlagsException();
+
       VarType &vt = vtypes[assertVarTypeExists(id)];
       if(vt.vrefs.size() >= MB_UINT_MAX(2))
         throw RangeException();
 
       VarSpec vspec;
-      vspec.flags = 0;
+      vspec.flags = flags;
       vspec.vtype = vtype;
       vspec.count = assertCountInRange(vtype, count);
 

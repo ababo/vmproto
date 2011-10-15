@@ -44,9 +44,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(8);
-      RegId r1 = b.addReg(0, vt);
-      RegId r2 = b.addReg(0, vt);
-      RegId r3 = b.addReg(0, vt, 0);
+      RegId r1 = b.addReg(0, vt), r2 = b.addReg(0, vt);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
@@ -60,8 +58,6 @@ namespace {
       REG_ALLOC_NORMAL_SEQ(r2);
       b.addProcInstr(p, POPInstr());
       REG_ALLOC_ERROR_SEQ(r2, OperationException);
-
-      ASSERT_THROW({b.addProcInstr(p, PUSHInstr(r3));}, TypeException);
     }
     catch(...) { passed = false; }
 
@@ -211,12 +207,12 @@ namespace {
       ModuleBuilder b;
       VarTypeId vt1 = b.addVarType(7);
       VarTypeId vt2 = b.addVarType(0);
-      b.addVarTypeVRef(vt2, vt1);
-      b.addVarTypeVRef(vt2, vt1, 2);
-      b.addVarTypeVRef(vt2, vt1, 0);
+      b.addVarTypeVRef(0, vt2, vt1);
+      b.addVarTypeVRef(0, vt2, vt1, 2);
+      b.addVarTypeVRef(VFLAG_NON_FIXED, vt2, vt1);
       RegId r1 = b.addReg(0, vt1);
       RegId r2 = b.addReg(0, vt1, 2);
-      RegId r3 = b.addReg(0, vt1, 0);
+      RegId r3 = b.addReg(VFLAG_NON_FIXED, vt1);
       RegId r4 = b.addReg(0, vt2);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
@@ -425,7 +421,7 @@ namespace {
     if(passed) {
       module.varTypeById(ModuleBuilder::RESERVED_VAR_TYPE_COUNT + 1, vtype);
       passed = vtype.vrefs.size() == 1;
-      passed = passed && !vtype.vrefs[0].count &&
+      passed = passed && vtype.vrefs[0].flags == VFLAG_NON_FIXED &&
         vtype.vrefs[0].vtype == ModuleBuilder::RESERVED_VAR_TYPE_COUNT;
     }
 

@@ -255,11 +255,11 @@ namespace Ant {
 
     Value *Runtime::ModuleData::elementPtr(LLVMContext &context, Value *vptr,
                                            Value *elti, EltField efld,
-                                           uint32_t subi = 0) {
+                                           uint32_t subi) {
       vector<Value*> indexes;
       indexes.push_back(elti ? elti : CONST_INT(1, 0, false));
 
-      uint32_t index;
+      uint64_t index;
       const StructType *st = static_cast<const StructType*>(vptr->getType());
       switch(efld) {
         case EFLD_BYTES: index = 0; break;
@@ -275,9 +275,8 @@ namespace Ant {
                                        "", CURRENT_BLOCK);
     }
 
-#define BITCAST_PINT(bits, ptr) \
-    new BitCastInst(elementPtr(context, ptr, VFLD_ELTS), \
-                    TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
+#define BITCAST_PINT(bits, vptr) \
+    new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
@@ -334,10 +333,11 @@ namespace Ant {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
       RegId reg = instr.reg();
-      const Type *type = getVarLLVMType(regs[reg], false);
+      const Type *type = getEltLLVMType(regs[reg].vtype);
       Constant *zeros = ConstantAggregateZero::get(type);
       Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK);
-      Value *vptr = new AllocaInst(type, "", CURRENT_BLOCK);
+      Value *count = CONST_INT(64, uint64_t(regs[reg].count), false);
+      Value *vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
       new StoreInst(zeros, vptr, CURRENT_BLOCK);
       context.pushFrame(false, reg, sptr, vptr);
     }
@@ -366,9 +366,8 @@ namespace Ant {
       
     }
 
-#define BITCAST_PARR(bytes, ptr) \
-    new BitCastInst(getElementPtr(context, ptr, VFLD_ELTS), \
-                    TYPE_PTR(TYPE_BARR(bytes)), "", CURRENT_BLOCK)
+#define BITCAST_PARR(bytes, vptr) \
+    new BitCastInst(vptr, TYPE_PTR(TYPE_BARR(bytes)), "", CURRENT_BLOCK)
 
     void Runtime::ModuleData::emitLLVMCodeCPB(LLVMContext &context,
                                               const CPBInstr &instr) {
@@ -511,7 +510,7 @@ namespace Ant {
     void Runtime::ModuleData::createLLVMPVars() {
       for(RegId reg = 0; reg < regs.size(); reg++)
         if(regs[reg].flags & VFLAG_PERSISTENT) {
-          const Type *type = getVarLLVMType(regs[reg], false);
+          const Type *type = getEltLLVMType(regs[reg].vtype);
 
           GlobalVariable *gvar =
             new GlobalVariable(*llvmModule, type, false,
@@ -526,7 +525,7 @@ namespace Ant {
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
 	RegId io = ptypes[procs[proc].ptype].io;
-        argTypes.push_back(TYPE_PTR(getVarLLVMType(regs[io], false)));
+        argTypes.push_back(TYPE_PTR(getEltLLVMType(regs[io].vtype)));
         const Type *voidType = Type::getVoidTy(llvmModule->getContext());
         FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
 
