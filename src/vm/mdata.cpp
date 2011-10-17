@@ -315,8 +315,9 @@ namespace Ant {
         Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri,
                                             "", CURRENT_BLOCK);
 
+        const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
         Function *ms = Intrinsic::getDeclaration(llvmModule,
-                                                 Intrinsic::memset);
+                                                 Intrinsic::memset, types, 2);
         values.clear(); // zero fill the elements
         values.push_back(BITCAST_PINT(8, vptr));
         values.push_back(CONST_INT(8, 0, false));
