@@ -50,7 +50,8 @@ namespace Ant {
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
-      llvm::Value *regValue(LLVMContext &context, RegId reg);
+      llvm::Value *regValue(LLVMContext &context, RegId reg,
+                            bool dereferenceIfNeeded = true);
       llvm::Value *specialPtr(LLVMContext &context, llvm::Value *vptr,
                               SpeField sfld, bool fixed);
       llvm::Value *elementPtr(LLVMContext &context, llvm::Value *vptr,

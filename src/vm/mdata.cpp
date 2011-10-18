@@ -231,17 +231,21 @@ namespace Ant {
     }
 
 #define CURRENT_BLOCK context.blocks[context.blockIndex]
-
-    Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg) {
-      LLVMContext::Frame *frame = context.findFrame(reg);
-      if(frame)
-        return frame->ref ?
-          new LoadInst(frame->vptr, "", CURRENT_BLOCK) : frame->vptr;
-      else return llvmModule->getGlobalVariable(varName(reg), true);
-    }
-
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
+
+    Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
+                                         bool dereferenceIfNeeded) {
+      LLVMContext::Frame *frame = context.findFrame(reg);
+      if(frame)
+        return frame->ref && dereferenceIfNeeded ?
+          new LoadInst(frame->vptr, "", CURRENT_BLOCK) : frame->vptr;
+      else {
+        Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
+        return new BitCastInst(vptr, TYPE_PTR(getEltLLVMType(regs[reg].vtype)),
+                               "", CURRENT_BLOCK);
+      }
+    }
 
     Value *Runtime::ModuleData::specialPtr(LLVMContext &context, Value *vptr,
                                            SpeField sfld, bool fixed) {
@@ -322,7 +326,7 @@ namespace Ant {
         values.push_back(BITCAST_PINT(8, vptr));
         values.push_back(CONST_INT(8, 0, false));
         values.push_back(len);
-        values.push_back(CONST_INT(32, 1, false));
+        values.push_back(CONST_INT(32, 0, false));
         values.push_back(CONST_INT(1, 0, false));
         CallInst::Create(ms, values.begin(), values.end(), "", CURRENT_BLOCK);
       }
@@ -554,13 +558,21 @@ namespace Ant {
       for(RegId reg = 0; reg < regs.size(); reg++)
         if(regs[reg].flags & VFLAG_PERSISTENT) {
           const Type *type = getEltLLVMType(regs[reg].vtype);
+          type = ArrayType::get(type, regs[reg].count);
+          bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL;
 
           GlobalVariable *gvar =
             new GlobalVariable(*llvmModule, type, false,
                                GlobalValue::InternalLinkage,
-                               ConstantAggregateZero::get(type), varName(reg));
+                               ConstantAggregateZero::get(type), varName(reg),
+                               NULL, threadLocal);
 
-          gvar->setThreadLocal(regs[reg].flags & VFLAG_THREAD_LOCAL);
+          if(regs[reg].flags & VFLAG_NON_FIXED) {
+            new GlobalVariable(*llvmModule, TYPE_INT(64), false,
+                               GlobalValue::InternalLinkage,
+                               CONST_INT(64, uint64_t(regs[reg].count), false),
+                               "", gvar, threadLocal);
+          }
         }
     }
 
