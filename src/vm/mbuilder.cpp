@@ -241,7 +241,8 @@ namespace Ant {
       for(int i = 0; i < con.frames.size() - 1; i++)
         for(int j = 0; j < con.frames[i].jumps.size(); j++)
           if(con.frames[i].jumps[j] >= con.frames[i].firstInstr &&
-             con.instrCount == con.frames[i].jumps[j] - 1)
+             // "- 1" removed because of POPL which closes several frames
+             con.instrCount == con.frames[i].jumps[j]/*- 1*/)
             throw OperationException();
     }
 
