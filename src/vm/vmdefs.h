@@ -15,6 +15,11 @@ namespace Ant {
     const uint32_t MODULE_REGS_MAX = MB_UINT_MAX(2);
     const uint32_t MODULE_PROCS_MAX = MB_UINT_MAX(2);
 
+    const size_t PROC_INSTR_MAX = MB_UINT_MAX(4);
+
+    const ptrdiff_t INSTR_OFFSET_MIN = MB_INT_MIN(1);
+    const ptrdiff_t INSTR_OFFSET_MAX = MB_INT_MAX(1);
+
     const uint32_t ELT_BYTES_MAX = MB_UINT_MAX(2);
     const uint32_t ELT_VREFS_MAX = MB_UINT_MAX(2);
     const uint32_t ELT_PREFS_MAX = MB_UINT_MAX(2);
@@ -130,7 +135,6 @@ namespace Ant {
       OPCODE_PUSHR, // PUSH Reference
       OPCODE_PUSHH, // PUSH exception Handler
       OPCODE_POP, // POP entity
-      OPCODE_POPL, // POP entities to Level
       OPCODE_JMP, // unconditional JuMP
       OPCODE_CPB, // CoPy Bytes
       OPCODE_LDE, // LoaD array Element
@@ -173,7 +177,6 @@ namespace Ant {
 
     class PUSHHInstr;
     class POPInstr;
-    class POPLInstr;
     class JMPInstr;
     class CPBInstr;
     class LDEInstr;

@@ -151,8 +151,7 @@ namespace {
       b.addProcInstr(p, PUSHInstr(r));
       b.addProcInstr(p, JNZInstr(r, 3));
       b.addProcInstr(p, PUSHInstr(r));
-      // the check below is not valid already (because of POPL instruction)
-      // ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
+      ASSERT_THROW({b.addProcInstr(p, DECInstr(r));}, OperationException);
       b.addProcInstr(p, POPInstr());
       b.addProcInstr(p, JNZInstr(r, 4));
       b.addProcInstr(p, PUSHInstr(r));
@@ -169,11 +168,6 @@ namespace {
       b.addProcInstr(p, JNZInstr(r, 0));
       b.addProcInstr(p, POPInstr());
       ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
-      b.addProcInstr(p, PUSHInstr(r));
-      b.addProcInstr(p, PUSHInstr(r));
-      ASSERT_THROW({b.addProcInstr(p, POPLInstr(3));}, OperationException);
-      b.addProcInstr(p, POPLInstr(2));
-      b.addProcInstr(p, POPLInstr(0));
       ASSERT_THROW({b.addProcInstr(p, PUSHHInstr(-1));}, RangeException);
       b.addProcInstr(p, PUSHHInstr(2));
       ASSERT_THROW({b.addProcInstr(p, POPInstr());}, OperationException);
@@ -309,7 +303,8 @@ namespace {
       b.addProcInstr(p1, PUSHRInstr(r2));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p1));}, OperationException);
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
-      b.addProcInstr(p1, POPLInstr(1));
+      b.addProcInstr(p1, POPInstr());
+      b.addProcInstr(p1, POPInstr());
       b.addProcInstr(p1, CALLInstr(p1));
       b.addProcInstr(p1, CALLInstr(p2));
       b.addProcInstr(p1, POPInstr());
@@ -532,8 +527,7 @@ namespace {
     passed = passed && iJNG.operand2() == h;
     passed = passed && iJNG.offset() == -9;
     NEXT_OPCODE(DEC);
-    NEXT_INSTR_D(POPL);
-    passed = passed && iPOPL.level() == 0;
+    NEXT_OPCODE(POP);
 
     return passed;
   }
@@ -587,8 +581,7 @@ namespace {
     passed = passed && iSTB.offset() == 8;
     NEXT_INSTR(CALL);
     passed = passed && iCALL.proc() == qsort;
-    NEXT_INSTR_D(POPL);
-    passed = passed && iPOPL.level() == 0;
+    NEXT_OPCODE(POP);
 
     return passed;
   }
@@ -645,7 +638,7 @@ namespace {
 
     NEXT_OPCODE(CPI8);
     NEXT_INSTR_D(PUSHH);
-    passed = passed && iPUSHH.offset() == 16;
+    passed = passed && iPUSHH.offset() == 17;
     NEXT_INSTR(PUSHH);
     passed = passed && iPUSHH.offset() == 7;
     NEXT_OPCODE(PUSH);
@@ -654,15 +647,15 @@ namespace {
     NEXT_OPCODE(CPI8);
     NEXT_OPCODE(POP);
     NEXT_INSTR_D(JMP);
-    passed = passed && iJMP.offset() == 7;
+    passed = passed && iJMP.offset() == 8;
     NEXT_OPCODE(PUSH);
     NEXT_OPCODE(CPB);
     NEXT_OPCODE(CPB);
     NEXT_OPCODE(MUL);
     NEXT_INSTR_D(CALL);
     NEXT_OPCODE(CPI8);
-    NEXT_INSTR_D(POPL);
-    passed = passed && iPOPL.level() == 1;
+    NEXT_OPCODE(POP);
+    NEXT_OPCODE(POP);
     NEXT_INSTR(JMP);
     passed = passed && iJMP.offset() == 3;
     NEXT_OPCODE(CPI8);

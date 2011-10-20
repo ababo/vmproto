@@ -3,7 +3,6 @@
 #include "mbuilder.h"
 #include "mdata.h"
 #include "module.h"
-#include "utils.h"
 
 namespace {
 
@@ -65,7 +64,7 @@ namespace Ant {
     }
 
     VarTypeId ModuleBuilder::addVarType(uint32_t bytes) {
-      if(vtypes.size() > MODULE_VTYPES_MAX)
+      if(vtypes.size() >= MODULE_VTYPES_MAX)
         throw RangeException();
       if(bytes > ELT_BYTES_MAX)
         throw RangeException();
@@ -85,7 +84,7 @@ namespace Ant {
         throw RangeException();
 
       VarType &vt = vtypes[assertVarTypeExists(id)];
-      if(vt.vrefs.size() > ELT_VREFS_MAX)
+      if(vt.vrefs.size() >= ELT_VREFS_MAX)
         throw RangeException();
 
       VarSpec vspec;
@@ -97,7 +96,7 @@ namespace Ant {
     }
 
     ProcTypeId ModuleBuilder::addProcType(uint32_t flags, RegId io) {
-      if(ptypes.size() > MODULE_PTYPES_MAX)
+      if(ptypes.size() >= MODULE_PTYPES_MAX)
         throw RangeException();
       if(flags >= PTFLAG_FIRST_RESERVED)
         throw FlagsException();
@@ -112,7 +111,7 @@ namespace Ant {
 
     RegId ModuleBuilder::addReg(uint32_t flags, VarTypeId vtype,
 				size_t count) {
-      if(regs.size() > MODULE_REGS_MAX)
+      if(regs.size() >= MODULE_REGS_MAX)
         throw RangeException();
       if(flags >= VFLAG_FIRST_RESERVED)
         throw FlagsException();
@@ -184,24 +183,8 @@ namespace Ant {
       con.frames.pop_back();
     }
 
-    void ModuleBuilder::applyEndFrames(ProcId proc, uint32_t level) {
-      ProcCon &con = procCons[proc];
-
-      if(level >= con.frames.size())
-        throw OperationException();
-
-      for(int i = ++level; i < con.frames.size(); i++) {
-	Frame &frame = con.frames[i];
-	for(int i = 0; i < frame.jumps.size(); i++)
-	  if(frame.jumps[i] > con.instrCount)
-	    throw OperationException();
-      }
-
-      con.frames.resize(level);
-    }
-
     void ModuleBuilder::applyInstrOffset(ProcId proc, ptrdiff_t offset) {
-      if(offset < MB_INT_MIN(1) || offset > MB_INT_MAX(1))
+      if(offset < INSTR_OFFSET_MIN || offset > INSTR_OFFSET_MAX)
         throw RangeException();
 
       ptrdiff_t index = ptrdiff_t(procCons[proc].instrCount) + offset;
@@ -219,7 +202,7 @@ namespace Ant {
       Frame &frame = con.frames.back();
 
       if(index > con.instrCount) {
-        if(index >= MB_UINT_MAX(4))
+        if(index >= PROC_INSTR_MAX)
           throw RangeException();
 
         for(int i = 0; i < con.frames.size() - 1; i++)
@@ -241,13 +224,12 @@ namespace Ant {
       for(int i = 0; i < con.frames.size() - 1; i++)
         for(int j = 0; j < con.frames[i].jumps.size(); j++)
           if(con.frames[i].jumps[j] >= con.frames[i].firstInstr &&
-             // "- 1" removed because of POPL which closes several frames
-             con.instrCount == con.frames[i].jumps[j]/*- 1*/)
+             con.instrCount == con.frames[i].jumps[j] - 1)
             throw OperationException();
     }
 
     size_t ModuleBuilder::addProcInstr(ProcId id, const Instr &instr) {
-      if(procCons[assertProcExists(id)].instrCount >= MB_UINT_MAX(4))
+      if(procCons[assertProcExists(id)].instrCount >= PROC_INSTR_MAX)
         throw RangeException();
       instr.assertConsistency(*this, id);
 

@@ -59,8 +59,6 @@ namespace Ant {
       static void applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
                                   ptrdiff_t offset);
       static void applyEndFrame(ModuleBuilder &mbuilder, ProcId proc);
-      static void applyEndFrames(ModuleBuilder &mbuilder, ProcId proc,
-				 uint32_t level);
       static void applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,
                                    ptrdiff_t offset);
       static void applyDefault(ModuleBuilder &mbuilder, ProcId proc);
@@ -247,23 +245,6 @@ namespace Ant {
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
         Instr::applyEndFrame(mbuilder, proc);
-      }
-    };
-
-    class POPLInstr : public Instr {
-      friend class Instr;
-    public:
-      POPLInstr(uint32_t level) { op = OPCODE_POPL; setParam(level); }
-
-      size_t size() const { return Instr::size(1); }
-      uint32_t level() const { return uint32_t(getParam(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
-
-    protected:
-      void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
-        Instr::applyEndFrames(mbuilder, proc, level());
       }
     };
 

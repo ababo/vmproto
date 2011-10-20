@@ -75,7 +75,6 @@ namespace Ant {
                               const PUSHInstrT<OP, REF> &instr);
       void emitLLVMCodePUSHH(LLVMContext &context, const PUSHHInstr &instr);
       void emitLLVMCodePOP(LLVMContext &context, const POPInstr &instr);
-      void emitLLVMCodePOPL(LLVMContext &context, const POPLInstr &instr);
       void emitLLVMCodeJMP(LLVMContext &context, const JMPInstr &instr);
       void emitLLVMCodeCPB(LLVMContext &context, const CPBInstr &instr);
       void emitLLVMCodeLDE(LLVMContext &context, const LDEInstr &instr);

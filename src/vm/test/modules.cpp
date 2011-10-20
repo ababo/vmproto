@@ -91,7 +91,11 @@ namespace Ant {
         builder.addProcInstr(part, INCInstr(l));
         builder.addProcInstr(part, JNGInstr(l, h, -9));
         builder.addProcInstr(part, DECInstr(io));
-        builder.addProcInstr(part, POPLInstr(0));
+        builder.addProcInstr(part, POPInstr());
+        builder.addProcInstr(part, POPInstr());
+        builder.addProcInstr(part, POPInstr());
+        builder.addProcInstr(part, POPInstr());
+        builder.addProcInstr(part, POPInstr());
         builder.addProcInstr(part, RETInstr());
 
         // void qsort(struct ioType *io) {
@@ -133,7 +137,10 @@ namespace Ant {
         builder.addProcInstr(qsort, DECInstr(h));
         builder.addProcInstr(qsort, STBInstr(h, cio, 8));
         builder.addProcInstr(qsort, CALLInstr(qsort));
-        builder.addProcInstr(qsort, POPLInstr(0));
+        builder.addProcInstr(qsort, POPInstr());
+        builder.addProcInstr(qsort, POPInstr());
+        builder.addProcInstr(qsort, POPInstr());
+        builder.addProcInstr(qsort, POPInstr());
         builder.addProcInstr(qsort, RETInstr());
 
         builder.createModule(module);
@@ -184,24 +191,25 @@ namespace Ant {
         // }
         ProcId func2 = builder.addProc(PFLAG_EXTERNAL, ptype);
         builder.addProcInstr(func2, CPI8Instr(0, ed));
-        builder.addProcInstr(func2, PUSHHInstr(16));
+        builder.addProcInstr(func2, PUSHHInstr(17));
         builder.addProcInstr(func2, PUSHHInstr(7));
         RegId cio = builder.addReg(0, wordType);
         builder.addProcInstr(func2, PUSHInstr(cio));
         builder.addProcInstr(func2, CPBInstr(io, cio));
         builder.addProcInstr(func2, CALLInstr(func1));
-        builder.addProcInstr(func2, CPI8Instr(uint64_t(-1), io));
+        builder.addProcInstr(func2, CPI8Instr(-1, io));
         builder.addProcInstr(func2, POPInstr());
-        builder.addProcInstr(func2, JMPInstr(7));
+        builder.addProcInstr(func2, JMPInstr(8));
         builder.addProcInstr(func2, PUSHInstr(cio));
         builder.addProcInstr(func2, CPBInstr(io, cio));
         builder.addProcInstr(func2, CPBInstr(io, ed));
         builder.addProcInstr(func2, MULInstr(ed, ed, ed));
         builder.addProcInstr(func2, CALLInstr(func1));
-        builder.addProcInstr(func2, CPI8Instr(uint64_t(-2), io));
-        builder.addProcInstr(func2, POPLInstr(1));
+        builder.addProcInstr(func2, CPI8Instr(-2, io));
+        builder.addProcInstr(func2, POPInstr());
+        builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, JMPInstr(3));
-        builder.addProcInstr(func2, CPI8Instr(uint64_t(-3), ed));
+        builder.addProcInstr(func2, CPI8Instr(-3, ed));
         builder.addProcInstr(func2, THROWInstr());
         builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, RETInstr());

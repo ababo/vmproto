@@ -42,7 +42,6 @@ namespace Ant {
       VIRTUAL_CASE(PUSHR, left, mod, call); \
       VIRTUAL_CASE(PUSHH, left, mod, call); \
       VIRTUAL_CASE(POP, left, mod, call); \
-      VIRTUAL_CASE(POPL, left, mod, call); \
       VIRTUAL_CASE(JMP, left, mod, call); \
       VIRTUAL_CASE(CPB, left, mod, call); \
       VIRTUAL_CASE(LDE, left, mod, call); \
@@ -221,11 +220,6 @@ namespace Ant {
 
     void Instr::applyEndFrame(ModuleBuilder &mbuilder, ProcId proc) {
       mbuilder.applyEndFrame(proc);
-    }
-
-    void Instr::applyEndFrames(ModuleBuilder &mbuilder, ProcId proc,
-			       uint32_t level) {
-      mbuilder.applyEndFrames(proc, level);
     }
 
     void Instr::applyInstrOffset(ModuleBuilder &mbuilder, ProcId proc,

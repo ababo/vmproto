@@ -403,11 +403,6 @@ namespace Ant {
       context.popFrame();
     }
 
-    void Runtime::ModuleData::emitLLVMCodePOPL(LLVMContext &context,
-					       const POPLInstr &instr) {
-     
-    }
-
     void Runtime::ModuleData::emitLLVMCodeJMP(LLVMContext &context,
 					      const JMPInstr &instr) {
       
@@ -531,7 +526,6 @@ namespace Ant {
           PUSHINSTR_CASE(PUSHR, true);
 	  INSTR_CASE(PUSHH);
           INSTR_CASE(POP);
-          INSTR_CASE(POPL);
           INSTR_CASE(JMP);
           INSTR_CASE(CPB);
           INSTR_CASE(LDE);

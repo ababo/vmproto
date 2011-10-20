@@ -72,7 +72,6 @@ namespace Ant {
       void applyBeginFrame(ProcId proc, RegKind kind, RegId reg);
       void applyBeginFrame(ProcId proc, ptrdiff_t offset);
       void applyEndFrame(ProcId proc);
-      void applyEndFrames(ProcId proc, uint32_t level);
       void applyInstrOffset(ProcId proc, ptrdiff_t offset);
       void applyInstrIndex(ProcId proc, size_t index);
       void applyDefault(ProcId proc);
