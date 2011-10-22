@@ -65,6 +65,7 @@ namespace Ant {
       RegId assertRegExists(RegId id) const;
       ProcId assertProcExists(ProcId id) const;
       RegId assertRegAllocated(ProcId proc, RegKind kind, RegId reg) const;
+      ProcId assertProcCallable(ProcId proc, ProcId targetProc) const;
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;

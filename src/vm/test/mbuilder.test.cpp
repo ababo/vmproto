@@ -21,7 +21,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(0);
-      RegId r;
+      RegId r1, r2;
       ProcTypeId pt;
       ProcId p;
  
@@ -30,11 +30,15 @@ namespace {
   ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_FIRST_RESERVED,vt);},FlagsException);
       ASSERT_THROW({b.addVarTypeVRef(vt, 0, vt, 0);}, RangeException);
 
-      ASSERT_THROW({r = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
-      ASSERT_THROW({r = b.addReg(0, vt, 0);}, RangeException);
-      r = b.addReg(0, vt);
+      ASSERT_THROW({r1 = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
+      ASSERT_THROW({r1 = b.addReg(0, vt, 0);}, RangeException);
+      r1 = b.addReg(0, vt);
+      r2 = b.addReg(VFLAG_NON_FIXED, vt);
 
-     ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r);},FlagsException);
+    ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r1);},FlagsException);
+      pt = b.addProcType(0, r1);
+      ASSERT_THROW({pt = b.addProcType(0, r2);}, TypeException);
+
       ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);}, FlagsException);
 
       ASSERT_THROW({b.createModule(m);}, OperationException);
@@ -281,28 +285,26 @@ namespace {
 
     try {
       ModuleBuilder b;
-      VarTypeId iovt = b.addVarType(1);
+      VarTypeId iovt = b.addVarType(8);
       VarTypeId vt1 = b.addVarType(1);
       VarTypeId vt2 = b.addVarType(1);
       RegId io = b.addReg(0, iovt);
       RegId r1 = b.addReg(0, vt1);
-      RegId r11 = b.addReg(0, vt1);
-      RegId r12 = b.addReg(VFLAG_THREAD_LOCAL, vt1);
+      RegId r11 = b.addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, vt1);
+      RegId r12 = b.addReg(VFLAG_NON_FIXED, vt1);
       RegId r13 = b.addReg(0, vt2);
       RegId r14 = b.addReg(0, vt1, 2);
-      RegId r2 = b.addReg(VFLAG_NON_FIXED, vt1);
-      RegId r21 = b.addReg(VFLAG_NON_FIXED, vt1, 2);
       ProcTypeId pt1 = b.addProcType(0, io);
       ProcTypeId pt2 = b.addProcType(0, r1);
-      ProcTypeId pt3 = b.addProcType(0, r2);
       ProcId p1 = b.addProc(0, pt1);
       ProcId p2 = b.addProc(0, pt2);
-      ProcId p3 = b.addProc(0, pt3);
+      ProcId pn = p2 + 1;
 
+      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(pn));}, NotFoundException);
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
       b.addProcInstr(p1, PUSHInstr(r1));
       b.addProcInstr(p1, CALLInstr(p2));
-      b.addProcInstr(p1, PUSHHInstr(100));
+      b.addProcInstr(p1, PUSHHInstr(50));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
       b.addProcInstr(p1, PUSHRInstr(r1));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
@@ -314,10 +316,6 @@ namespace {
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
       b.addProcInstr(p1, PUSHInstr(r14));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
-      b.addProcInstr(p1, PUSHInstr(r2));
-      b.addProcInstr(p1, CALLInstr(p3));
-      b.addProcInstr(p1, PUSHInstr(r21));
-      b.addProcInstr(p1, CALLInstr(p3));
     }
     catch(...) { passed = false; }
 
@@ -703,8 +701,8 @@ namespace Ant {
       bool testModuleBuilder() {
         bool passed;
 
-        passed = testRegExistence();
-        passed = passed && testModuleConsistency();
+        passed = testModuleConsistency();
+        passed = passed && testRegExistence();
         passed = passed && testRegAllocation();
         passed = passed && testStackConsistency();
         passed = passed && testEltConsistency();

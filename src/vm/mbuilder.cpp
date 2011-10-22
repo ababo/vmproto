@@ -63,6 +63,24 @@ namespace Ant {
       throw OperationException();
     }
 
+    ProcId ModuleBuilder::assertProcCallable(ProcId proc,
+                                             ProcId targetProc) const {
+      const Frame &frame = procCons[proc].frames.back();
+
+      if(frame.kind != RK_NOREF)
+        throw OperationException();
+
+      const VarSpec &svspec = regs[frame.reg];
+      const VarSpec &tvspec = regs[ptypes[procs[targetProc].ptype].io];
+
+      if(svspec.flags & VFLAG_NON_FIXED ||
+         svspec.vtype != tvspec.vtype ||
+         svspec.count != tvspec.count)
+        throw OperationException();
+
+      return targetProc;
+    }
+
     VarTypeId ModuleBuilder::addVarType(uint32_t bytes) {
       if(vtypes.size() >= MODULE_VTYPES_MAX)
         throw RangeException();
@@ -100,10 +118,12 @@ namespace Ant {
         throw RangeException();
       if(flags >= PTFLAG_FIRST_RESERVED)
         throw FlagsException();
+      if(regs[assertRegExists(io)].flags & VFLAG_NON_FIXED)
+        throw TypeException();
 
       ProcType ptype;
       ptype.flags = flags;
-      ptype.io = assertRegExists(io);
+      ptype.io = io;
 
       ptypes.push_back(ptype);
       return ProcTypeId(ptypes.size() - 1);

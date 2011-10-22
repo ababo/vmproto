@@ -47,9 +47,9 @@ namespace Ant {
       static void assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                     RegId reg, uint32_t bytes);
       static void assertSameVarType(VarTypeId vtype1, VarTypeId vtype2);
-      static void assertSafeRefCopy(VarSpec &from, VarSpec &to);
-      static void assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
-                                     ProcId targetProc);
+      static void assertSafeRefCopy(const VarSpec &from, const VarSpec &to);
+      static void assertProcCallable(const ModuleBuilder &mbuilder,
+                                     ProcId proc, ProcId targetProc);
       static void regSpec(const ModuleBuilder &mbuilder, ProcId proc,
                           RegKind kind, RegId reg, VarSpec &vspec);
       static void vrefSpec(const ModuleBuilder &mbuilder, ProcId proc,

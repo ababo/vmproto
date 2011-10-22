@@ -171,20 +171,17 @@ namespace Ant {
         throw TypeException();
     }
 
-    void Instr::assertSafeRefCopy(VarSpec &from, VarSpec &to) {
+    void Instr::assertSafeRefCopy(const VarSpec &from, const VarSpec &to) {
       bool nfFrom = from.flags & VFLAG_NON_FIXED;
       bool nfTo = to.flags & VFLAG_NON_FIXED;
       if(nfFrom ^ nfTo || from.count < to.count)
         throw TypeException();
     }
 
-    void Instr::assertProcCallable(ModuleBuilder &mbuilder, ProcId proc,
+    void Instr::assertProcCallable(const ModuleBuilder &mbuilder, ProcId proc,
                                    ProcId targetProc) {
-      Proc pr;
-      mbuilder.procById(targetProc, pr);
-      ProcType pt;
-      mbuilder.procTypeById(pr.ptype, pt);
-      mbuilder.assertRegAllocated(proc, RK_NOREF, pt.io);
+      mbuilder.assertProcExists(targetProc);
+      mbuilder.assertProcCallable(proc, targetProc);
     }
 
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc,
