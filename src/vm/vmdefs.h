@@ -61,20 +61,20 @@ namespace Ant {
        SVPartElt<Bytes, VRefs, PRefs> elts[Count];
     };
 
-    template<bool Fixed> struct SVCPartFixed { size_t refCount; };
-    template<> struct SVCPartFixed<true> {};
+    template<bool RefCount> struct SVCPartRefCount { size_t refCount; };
+    template<> struct SVCPartRefCount<false> {};
 
-    template<bool InStack> struct SVCPartStack { size_t elmCount; };
-    template<> struct SVCPartStack<true> {};
+    template<bool EltCount> struct SVCPartEltCount { size_t eltCount; };
+    template<> struct SVCPartEltCount<false> {};
 
-    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs,
-             size_t Count = 1, bool Fixed = true, bool InStack = true>
-      struct SVContainer : SVCPartFixed<Fixed>, SVCPartStack<InStack> {
+    template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,
+      bool RefCount = false, bool EltCount = false>
+     struct SVContainer : SVCPartEltCount<EltCount>,SVCPartRefCount<RefCount> {
        SVariable<Bytes, VRefs, PRefs, Count> var;
     };
 
     enum VarFlag {
-      VFLAG_NON_FIXED = 0x1,
+      VFLAG_NON_FIXED_REF = 0x1,
       VFLAG_PERSISTENT = 0x2,
       VFLAG_THREAD_LOCAL = 0x4,
       VFLAG_FIRST_RESERVED = 0x8

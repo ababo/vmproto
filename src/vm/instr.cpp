@@ -172,8 +172,8 @@ namespace Ant {
     }
 
     void Instr::assertSafeRefCopy(const VarSpec &from, const VarSpec &to) {
-      bool nfFrom = from.flags & VFLAG_NON_FIXED;
-      bool nfTo = to.flags & VFLAG_NON_FIXED;
+      bool nfFrom = from.flags & VFLAG_NON_FIXED_REF;
+      bool nfTo = to.flags & VFLAG_NON_FIXED_REF;
       if(nfFrom ^ nfTo || from.count < to.count)
         throw TypeException();
     }

@@ -248,10 +248,9 @@ namespace Ant {
     }
 
     Value *Runtime::ModuleData::specialPtr(LLVMContext &context, Value *vptr,
-                                           SpeField sfld, bool fixed) {
+                                           SpeField sfld) {
       vector<Value*> indexes;
-      int64_t index = sfld == SFLD_REF_COUNT ? -1 - !fixed : -1;
-      indexes.push_back(CONST_INT(2, index, true));
+      indexes.push_back(CONST_INT(2, sfld == SFLD_REF_COUNT ? -1 : -2, true));
 
       Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "",
                                     CURRENT_BLOCK);
@@ -284,55 +283,6 @@ namespace Ant {
 
 #define BITCAST_PINT(bits, vptr) \
     new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
-
-    Value *Runtime::ModuleData::stackAlloc(LLVMContext &context, RegId reg,
-                                           bool ref, Value *eltCount) {
-      Function *ss = Intrinsic::getDeclaration(llvmModule,
-                                               Intrinsic::stacksave);
-      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK), *vptr;
-
-      const Type *type = getEltLLVMType(regs[reg].vtype);
-
-      if(ref) {
-        type = TYPE_PTR(type);
-        vptr = new AllocaInst(type, "", CURRENT_BLOCK);
-        Constant *zeros = ConstantAggregateZero::get(type);
-        new StoreInst(zeros, vptr, CURRENT_BLOCK);
-      }
-      else {
-        Value *count = eltCount ?
-          eltCount : CONST_INT(64, uint64_t(regs[reg].count), false);
-
-        if(regs[reg].flags & VFLAG_NON_FIXED) {
-          vptr = new AllocaInst(TYPE_INT(64), "", CURRENT_BLOCK);
-          new StoreInst(count, vptr, CURRENT_BLOCK);
-        }
-
-        vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
-
-        vector<Value*> values(1, count); // calculate size of 'count' elements
-        Value *eptr = GetElementPtrInst::Create(vptr, values.begin(),
-                                                values.end(), "",
-                                                CURRENT_BLOCK);
-        Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "", CURRENT_BLOCK);
-        Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "", CURRENT_BLOCK);
-        Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri,
-                                            "", CURRENT_BLOCK);
-
-        const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
-        Function *ms = Intrinsic::getDeclaration(llvmModule,
-                                                 Intrinsic::memset, types, 2);
-        values.clear(); // zero fill the elements
-        values.push_back(BITCAST_PINT(8, vptr));
-        values.push_back(CONST_INT(8, 0, false));
-        values.push_back(len);
-        values.push_back(CONST_INT(32, 0, false));
-        values.push_back(CONST_INT(1, 0, false));
-        CallInst::Create(ms, values.begin(), values.end(), "", CURRENT_BLOCK);
-      }
-
-      context.pushFrame(ref, reg, sptr, vptr);
-    }
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
@@ -383,10 +333,51 @@ namespace Ant {
                     CURRENT_BLOCK);
     }
 
+    Value *Runtime::ModuleData::zeroVariable(LLVMContext &context, Value *vptr,
+                                             Value *count) {
+      vector<Value*> args(1, count); // calculate size of 'count' elements
+      Value *eptr = GetElementPtrInst::Create(vptr, args.begin(), args.end(),
+                                              "", CURRENT_BLOCK);
+      Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "", CURRENT_BLOCK);
+      Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "", CURRENT_BLOCK);
+      Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri, "",
+                                          CURRENT_BLOCK);
+      
+      const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
+      Function *ms = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::memset, types, 2);
+      args.clear(); // zero fill the elements
+      args.push_back(BITCAST_PINT(8, vptr));
+      args.push_back(CONST_INT(8, 0, false));
+      args.push_back(len);
+      args.push_back(CONST_INT(32, 0, false));
+      args.push_back(CONST_INT(1, 0, false));
+      CallInst::Create(ms, args.begin(), args.end(), "", CURRENT_BLOCK);
+    }
+
     template<uint8_t OP, bool REF>
       void Runtime::ModuleData::emitLLVMCodePUSH(LLVMContext &context,
                                             const PUSHInstrT<OP, REF> &instr) {
-      stackAlloc(context, instr.reg(), REF);
+      Function *ss = Intrinsic::getDeclaration(llvmModule,
+                                               Intrinsic::stacksave);
+      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK), *vptr;
+
+      RegId reg = instr.reg();
+      const Type *type = getEltLLVMType(regs[reg].vtype);
+
+      if(REF) {
+        type = TYPE_PTR(type);
+        vptr = new AllocaInst(type, "", CURRENT_BLOCK);
+        Constant *zeros = ConstantAggregateZero::get(type);
+        new StoreInst(zeros, vptr, CURRENT_BLOCK);
+      }
+      else {
+        Value *count = CONST_INT(64, uint64_t(regs[reg].count), false);
+        vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
+        zeroVariable(context, vptr, count);
+      }
+
+      context.pushFrame(REF, reg, sptr, vptr);
     }
 
     void Runtime::ModuleData::emitLLVMCodePUSHH(LLVMContext &context,
@@ -567,7 +558,7 @@ namespace Ant {
                                ConstantAggregateZero::get(type), varName(reg),
                                NULL, threadLocal);
 
-          if(regs[reg].flags & VFLAG_NON_FIXED) {
+          if(regs[reg].flags & VFLAG_NON_FIXED_REF) {
             new GlobalVariable(*llvmModule, TYPE_INT(64), false,
                                GlobalValue::InternalLinkage,
                                CONST_INT(64, uint64_t(regs[reg].count), true),

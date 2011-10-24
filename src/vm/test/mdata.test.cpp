@@ -73,10 +73,10 @@ namespace {
 	-222, -74, -23, -1, 0, 6, 13, 34, 34, 43, 56, 78, 123, 268, 876, 994 };
 
       SVariable<16, 1, 0> io;
-      SVContainer<8, 0, 0, QSORT_ARR_COUNT, false, false> a;
+      SVContainer<8, 0, 0, QSORT_ARR_COUNT, true, true> a;
       *reinterpret_cast<uint64_t*>(io.elts[0].bytes) = 0;
       *reinterpret_cast<uint64_t*>(io.elts[8].bytes) = QSORT_ARR_COUNT - 1;
-      a.refCount = 1, a.elmCount = QSORT_ARR_COUNT;
+      a.refCount = 1, a.eltCount = QSORT_ARR_COUNT;
       io.elts[0].vrefs[0] = &a.var;
 
       ProcId proc = 1;

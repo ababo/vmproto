@@ -73,9 +73,7 @@ namespace Ant {
       const VarSpec &svspec = regs[frame.reg];
       const VarSpec &tvspec = regs[ptypes[procs[targetProc].ptype].io];
 
-      if(svspec.flags & VFLAG_NON_FIXED ||
-         svspec.vtype != tvspec.vtype ||
-         svspec.count != tvspec.count)
+      if(svspec.vtype != tvspec.vtype || svspec.count != tvspec.count)
         throw OperationException();
 
       return targetProc;
@@ -96,7 +94,7 @@ namespace Ant {
 
     void ModuleBuilder::addVarTypeVRef(VarTypeId id, uint32_t flags,
                                        VarTypeId vtype, size_t count) {
-     if(flags & ~VFLAG_NON_FIXED)
+     if(flags & ~VFLAG_NON_FIXED_REF)
        throw FlagsException();
       if(!count || count > VAR_COUNT_MAX)
         throw RangeException();
@@ -118,12 +116,10 @@ namespace Ant {
         throw RangeException();
       if(flags >= PTFLAG_FIRST_RESERVED)
         throw FlagsException();
-      if(regs[assertRegExists(io)].flags & VFLAG_NON_FIXED)
-        throw TypeException();
 
       ProcType ptype;
       ptype.flags = flags;
-      ptype.io = io;
+      ptype.io = assertRegExists(io);
 
       ptypes.push_back(ptype);
       return ProcTypeId(ptypes.size() - 1);

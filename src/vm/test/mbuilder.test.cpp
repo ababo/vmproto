@@ -21,7 +21,7 @@ namespace {
     try {
       ModuleBuilder b;
       VarTypeId vt = b.addVarType(0);
-      RegId r1, r2;
+      RegId r;
       ProcTypeId pt;
       ProcId p;
  
@@ -30,14 +30,12 @@ namespace {
   ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_FIRST_RESERVED,vt);},FlagsException);
       ASSERT_THROW({b.addVarTypeVRef(vt, 0, vt, 0);}, RangeException);
 
-      ASSERT_THROW({r1 = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
-      ASSERT_THROW({r1 = b.addReg(0, vt, 0);}, RangeException);
-      r1 = b.addReg(0, vt);
-      r2 = b.addReg(VFLAG_NON_FIXED, vt);
+      ASSERT_THROW({r = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
+      ASSERT_THROW({r = b.addReg(0, vt, 0);}, RangeException);
+      r = b.addReg(0, vt);
 
-    ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r1);},FlagsException);
-      pt = b.addProcType(0, r1);
-      ASSERT_THROW({pt = b.addProcType(0, r2);}, TypeException);
+     ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r);},FlagsException);
+      pt = b.addProcType(0, r);
 
       ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);}, FlagsException);
 
@@ -242,10 +240,10 @@ namespace {
       VarTypeId vt2 = b.addVarType(0);
       b.addVarTypeVRef(vt2, 0, vt1);
       b.addVarTypeVRef(vt2, 0, vt1, 2);
-      b.addVarTypeVRef(vt2, VFLAG_NON_FIXED, vt1);
+      b.addVarTypeVRef(vt2, VFLAG_NON_FIXED_REF, vt1);
       RegId r1 = b.addReg(0, vt1);
       RegId r2 = b.addReg(0, vt1, 2);
-      RegId r3 = b.addReg(VFLAG_NON_FIXED, vt1);
+      RegId r3 = b.addReg(VFLAG_NON_FIXED_REF, vt1);
       RegId r4 = b.addReg(0, vt2);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
@@ -291,7 +289,7 @@ namespace {
       RegId io = b.addReg(0, iovt);
       RegId r1 = b.addReg(0, vt1);
       RegId r11 = b.addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, vt1);
-      RegId r12 = b.addReg(VFLAG_NON_FIXED, vt1);
+      RegId r12 = b.addReg(VFLAG_NON_FIXED_REF, vt1);
       RegId r13 = b.addReg(0, vt2);
       RegId r14 = b.addReg(0, vt1, 2);
       ProcTypeId pt1 = b.addProcType(0, io);
@@ -311,7 +309,7 @@ namespace {
       b.addProcInstr(p1, PUSHInstr(r11));
       b.addProcInstr(p1, CALLInstr(p2));
       b.addProcInstr(p1, PUSHInstr(r12));
-      ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
+      b.addProcInstr(p1, CALLInstr(p2));
       b.addProcInstr(p1, PUSHInstr(r13));
       ASSERT_THROW({b.addProcInstr(p1, CALLInstr(p2));}, OperationException);
       b.addProcInstr(p1, PUSHInstr(r14));
@@ -472,7 +470,7 @@ namespace {
     if(passed) {
       module.varTypeById(RESERVED_VAR_TYPE_COUNT + 1, vtype);
       passed = vtype.vrefs.size() == 1;
-      passed = passed && vtype.vrefs[0].flags == VFLAG_NON_FIXED &&
+      passed = passed && vtype.vrefs[0].flags == VFLAG_NON_FIXED_REF &&
         vtype.vrefs[0].vtype == RESERVED_VAR_TYPE_COUNT;
     }
 
