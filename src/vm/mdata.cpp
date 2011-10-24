@@ -319,10 +319,18 @@ namespace Ant {
       BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
     }
 
-    template<uint8_t OP, llvm::ICmpInst::Predicate>
+    template<uint8_t OP, llvm::ICmpInst::Predicate PR>
       void Runtime::ModuleData::emitLLVMCodeBJ(LLVMContext &context,
                                                const BJInstrT<OP> &instr) {
-
+      Value *operand1 = BITCAST_PINT(64, regValue(context, instr.operand1()));
+      Value *operand2 = BITCAST_PINT(64, regValue(context, instr.operand2()));
+      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
+      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
+      ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val1, val2);
+      size_t jindex = instr.jumpIndex(context.instrIndex);
+      BasicBlock *jblock = context.jumpBlock(jindex);
+      BasicBlock *nblock = context.blocks[context.blockIndex + 1];
+      BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
     }
 
     template<uint8_t OP, class VAL>
@@ -335,7 +343,7 @@ namespace Ant {
 
     Value *Runtime::ModuleData::zeroVariable(LLVMContext &context, Value *vptr,
                                              Value *count) {
-      vector<Value*> args(1, count); // calculate size of 'count' elements
+      vector<Value*> args(1, count);
       Value *eptr = GetElementPtrInst::Create(vptr, args.begin(), args.end(),
                                               "", CURRENT_BLOCK);
       Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "", CURRENT_BLOCK);
@@ -346,7 +354,7 @@ namespace Ant {
       const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
       Function *ms = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::memset, types, 2);
-      args.clear(); // zero fill the elements
+      args.clear();
       args.push_back(BITCAST_PINT(8, vptr));
       args.push_back(CONST_INT(8, 0, false));
       args.push_back(len);
@@ -396,7 +404,9 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeJMP(LLVMContext &context,
 					      const JMPInstr &instr) {
-      
+      size_t jindex = instr.jumpIndex(context.instrIndex);
+      BasicBlock *jblock = context.jumpBlock(jindex);
+      BranchInst::Create(jblock, CURRENT_BLOCK);      
     }
 
 #define BITCAST_PARR(bytes, vptr) \
