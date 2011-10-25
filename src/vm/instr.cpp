@@ -232,16 +232,12 @@ namespace Ant {
       VIRTUAL_CALL(, const, assertConsistency(mbuilder, proc), );
     }
 
-    bool Instr::breaks() const {
-      VIRTUAL_CALL(return, const, breaks(), false);
+    bool Instr::branches() const {
+      VIRTUAL_CALL(return, const, branches(), false);
     }
 
-    bool Instr::jumps() const {
-      VIRTUAL_CALL(return, const, jumps(), false);
-    }
-
-    size_t Instr::jumpIndex(size_t index) const {
-      VIRTUAL_CALL(return, const, jumpIndex(index), 0);
+    size_t Instr::branchIndex(size_t index) const {
+      VIRTUAL_CALL(return, const, branchIndex(index), 0);
     }
 
   }

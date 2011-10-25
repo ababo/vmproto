@@ -200,23 +200,23 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::prepareLLVMContext(LLVMContext &context) {
-      bool prevBreaks = false;
+      bool newBlock = false;
       set<size_t> indexes;
       Instr instr;
       indexes.insert(0);
       for(size_t i = 0, j = 0; j < procs[context.proc].code.size();
           i++, j += instr.size()) {
-        if(prevBreaks) {
+        if(newBlock) {
           indexes.insert(i);
-          prevBreaks = false;
+          newBlock = false;
         }
 
         instr.set(&procs[context.proc].code[j]);
-        if(instr.jumps()) {
-          indexes.insert(i + 1);
-          indexes.insert(instr.jumpIndex(i));
+        if(instr.branches()) {
+          size_t bi = instr.branchIndex(i);
+          indexes.insert(bi);
+          newBlock = true;
         }
-        else prevBreaks = instr.breaks();
       }
       context.blockIndexes.assign(indexes.begin(), indexes.end());
       sort(context.blockIndexes.begin(), context.blockIndexes.end());
@@ -313,7 +313,7 @@ namespace Ant {
       Value *val = new LoadInst(it, "", CURRENT_BLOCK);
       ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val,
                                    CONST_INT(64, CO, false));
-      size_t jindex = instr.jumpIndex(context.instrIndex);
+      size_t jindex = instr.branchIndex(context.instrIndex);
       BasicBlock *jblock = context.jumpBlock(jindex);
       BasicBlock *nblock = context.blocks[context.blockIndex + 1];
       BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
@@ -327,7 +327,7 @@ namespace Ant {
       Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
       Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
       ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val1, val2);
-      size_t jindex = instr.jumpIndex(context.instrIndex);
+      size_t jindex = instr.branchIndex(context.instrIndex);
       BasicBlock *jblock = context.jumpBlock(jindex);
       BasicBlock *nblock = context.blocks[context.blockIndex + 1];
       BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
@@ -404,7 +404,7 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeJMP(LLVMContext &context,
 					      const JMPInstr &instr) {
-      size_t jindex = instr.jumpIndex(context.instrIndex);
+      size_t jindex = instr.branchIndex(context.instrIndex);
       BasicBlock *jblock = context.jumpBlock(jindex);
       BranchInst::Create(jblock, CURRENT_BLOCK);      
     }

@@ -25,9 +25,8 @@ namespace Ant {
       VMCode data() const { return &op; }
 
       size_t size() const;
-      bool breaks() const;
-      bool jumps() const;
-      size_t jumpIndex(size_t index) const;
+      bool branches() const;
+      size_t branchIndex(size_t index) const;
 
     protected:
       void setParam(uint64_t p);
@@ -76,9 +75,8 @@ namespace Ant {
 
       size_t size() const { return Instr::size(1); }
       RegId it() const { return RegId(getParam(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -101,9 +99,8 @@ namespace Ant {
       RegId operand1() const { return RegId(getParam(0)); }
       RegId operand2() const { return RegId(getParam(1)); }
       RegId result() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -127,9 +124,8 @@ namespace Ant {
       size_t size() const { return Instr::size(2); }
       RegId it() const { return RegId(getParam(0)); }
       ptrdiff_t offset() const { return ptrdiff_t(getParam2(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
+      bool branches() const { return true; }
+      size_t branchIndex(size_t index) const {
         return size_t(ptrdiff_t(index) + offset()); }
 
     protected:
@@ -151,9 +147,8 @@ namespace Ant {
       RegId operand1() const { return RegId(getParam(0)); }
       RegId operand2() const { return RegId(getParam(1)); }
       ptrdiff_t offset() const { return ptrdiff_t(getParam2(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
+      bool branches() const { return true; }
+      size_t branchIndex(size_t index) const {
         return size_t(ptrdiff_t(index) + offset()); }
 
     protected:
@@ -178,9 +173,8 @@ namespace Ant {
       size_t size() const { return Instr::size(2); }
       VAL val() const { return VAL(getParam(0)); }
       RegId to() const { return RegId(getParam(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -201,9 +195,8 @@ namespace Ant {
 
       size_t size() const { return Instr::size(1); }
       RegId reg() const { return RegId(getParam(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -221,9 +214,8 @@ namespace Ant {
 
       size_t size() const { return Instr::size(1); }
       ptrdiff_t offset() const { return ptrdiff_t(getParam2(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
+      bool branches() const { return true; }
+      size_t branchIndex(size_t index) const {
         return size_t(ptrdiff_t(index) + offset()); }
 
     protected:
@@ -238,9 +230,8 @@ namespace Ant {
       POPInstr() { op = OPCODE_POP; }
 
       size_t size() const { return 1; }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -256,9 +247,8 @@ namespace Ant {
 
       size_t size() const { return Instr::size(1); }
       ptrdiff_t offset() const { return ptrdiff_t(getParam2(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return true; }
-      size_t jumpIndex(size_t index) const {
+      bool branches() const { return true; }
+      size_t branchIndex(size_t index) const {
         return size_t(ptrdiff_t(index) + offset()); }
 
     protected:
@@ -277,9 +267,8 @@ namespace Ant {
       size_t size() const { return Instr::size(2); }
       RegId from() const { return RegId(getParam(0)); }
       RegId to() const { return RegId(getParam(1)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -300,9 +289,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       RegId elt() const { return RegId(getParam(1)); }
       RegId to() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -326,9 +314,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       uint32_t offset() const { return uint32_t(getParam(1)); }
       RegId to() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -349,9 +336,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       uint32_t vref() const { return uint32_t(getParam(1)); }
       RegId to() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -375,9 +361,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       RegId to() const { return RegId(getParam(1)); }
       RegId elt() const { return RegId(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -401,9 +386,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       RegId to() const { return RegId(getParam(1)); }
       uint32_t offset() const { return uint32_t(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -424,9 +408,8 @@ namespace Ant {
       RegId from() const { return RegId(getParam(0)); }
       RegId to() const { return RegId(getParam(1)); }
       uint32_t vref() const { return uint32_t(getParam(2)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -446,9 +429,8 @@ namespace Ant {
 
       size_t size() const { return Instr::size(1); }
       ProcId proc() const { return ProcId(getParam(0)); }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -463,9 +445,8 @@ namespace Ant {
       THROWInstr() { op = OPCODE_THROW; }
 
       size_t size() const { return 1; }
-      bool breaks() const { return false; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return false; }
+      size_t branchIndex(size_t) const { return 0; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
@@ -479,9 +460,8 @@ namespace Ant {
       RETInstr() { op = OPCODE_RET; }
 
       size_t size() const { return 1; }
-      bool breaks() const { return true; }
-      bool jumps() const { return false; }
-      size_t jumpIndex(size_t) const { return 0; }
+      bool branches() const { return true; }
+      size_t branchIndex(size_t index) const { return index + 1; }
 
     protected:
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const {
