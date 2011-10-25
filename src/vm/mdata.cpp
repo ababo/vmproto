@@ -253,8 +253,9 @@ namespace Ant {
         if(frame->ref && dereferenceIfNeeded) {
           Value *cond = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE,
                                      frame->vptr, CONST_INT(64, 0, false));
-          return new LoadInst(checkValue(context, frame->vptr, cond, -1), "",
-                              CURRENT_BLOCK);
+          return new LoadInst(checkValue(context, frame->vptr, cond,
+                                         VMECODE_NULL_DEREF),
+                              "", CURRENT_BLOCK);
         }
         else return frame->vptr;
       else {

@@ -6,8 +6,7 @@ OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc
 
-main: prereq $(OBJS)
-	$(TG) $(TGFLAGS) *.h *.cpp
+main: prereq $(OBJS) ;
 
 $(ODIR)/%.o: ./%.cpp ./*.h
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -21,4 +20,3 @@ prereq:
 
 clean:
 	rm -f $(ODIR)/*.o
-	rm -f TAGS

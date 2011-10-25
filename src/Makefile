@@ -11,8 +11,9 @@ OBJS_ALL = $(shell find $(ODIR) -type f -name '*.o')
 include $(PPATH)/src/Makefile.inc
 
 main: prereq $(OBJS)
+	rm -f TAGS
+	find . -name \*.h -o -name \*.cpp | xargs $(TG) -a $(TGFLAGS)
 	$(LD) -o $(ODIR)/$(PROG) $(OBJS_ALL) $(LFLAGS)
-	$(TG) $(TGFLAGS) *.h *.cpp
 
 $(ODIR)/%.o: ./%.cpp ./*.h
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -26,6 +27,6 @@ prereq:
 .PHONY: clean
 
 clean: $(SUBS)
+	rm -f TAGS
 	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
 	rm -f $(ODIR)/*.o $(ODIR)/$(PROG)
-	rm -f TAGS

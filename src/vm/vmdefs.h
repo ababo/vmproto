@@ -30,21 +30,20 @@ namespace Ant {
     const size_t VAR_COUNT_MAX = MB_UINT_MAX(4);
 #endif
 
-    const uint32_t PRESET_VAR_TYPE_COUNT = 1;
-    const uint32_t PRESET_REG_COUNT = 1;
-
     typedef uint32_t VarTypeId;
-
-    const VarTypeId PRESET_VAR_TYPE_WORD = 0;
-
     typedef uint32_t ProcTypeId;
     typedef uint32_t ProcId;
     typedef uint32_t RegId;
 
-    const RegId PRESET_REG_ED = 0;
-
     typedef uint8_t VMCodeByte;
     typedef const VMCodeByte *VMCode;
+
+    const uint32_t PRESET_VAR_TYPE_COUNT = 1;
+    const uint32_t PRESET_REG_COUNT = 1;
+
+    const VarTypeId PRESET_VAR_TYPE_WORD = 0;
+
+    const RegId PRESET_REG_ED = 0;
 
     struct Variable {};
 
@@ -193,6 +192,10 @@ namespace Ant {
     class CALLInstr;
     class THROWInstr;
     class RETInstr;
+
+    enum VMExceptionCode {
+      VMECODE_NULL_DEREF = -1,
+    };
 
   }
 }
