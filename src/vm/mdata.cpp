@@ -251,11 +251,10 @@ namespace Ant {
       LLVMContext::Frame *frame = context.findFrame(reg);
       if(frame)
         if(frame->ref && dereferenceIfNeeded) {
-          Value *cond = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE,
-                                     frame->vptr, CONST_INT(64, 0, false));
-          return new LoadInst(checkValue(context, frame->vptr, cond,
-                                         VMECODE_NULL_DEREF),
-                              "", CURRENT_BLOCK);
+          Value *vptr = new LoadInst(frame->vptr, "", CURRENT_BLOCK);
+          Value *cond = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE, vptr,
+                                     CONST_INT(64, 0, false));
+          return checkValue(context, vptr, cond, VMECODE_NULL_DEREF);
         }
         else return frame->vptr;
       else {
@@ -413,6 +412,11 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
+      LLVMContext::Frame &frame = context.frames.back();
+      if(frame.ref) {
+
+      }
+
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.frames.back().sptr);
