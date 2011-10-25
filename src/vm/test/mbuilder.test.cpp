@@ -324,14 +324,14 @@ namespace {
     VarType vtype;
     bool passed;
 
-    passed = module.varTypeCount() == RESERVED_VAR_TYPE_COUNT + 1;
+    passed = module.varTypeCount() == PRESET_VAR_TYPE_COUNT + 1;
 
     if(passed) {
-      module.varTypeById(RESERVED_VAR_TYPE_COUNT, vtype);
+      module.varTypeById(PRESET_VAR_TYPE_COUNT, vtype);
       passed = vtype.bytes == 8 && !vtype.vrefs.size() && !vtype.prefs.size();
     }
 
-    ASSERT_THROW({module.varTypeById(RESERVED_VAR_TYPE_COUNT + 1, vtype);},
+    ASSERT_THROW({module.varTypeById(PRESET_VAR_TYPE_COUNT + 1, vtype);},
                  NotFoundException);
 
     return passed;
@@ -345,7 +345,7 @@ namespace {
 
     if(passed) {
       module.procTypeById(0, ptype);
-      passed = !ptype.flags && ptype.io == RESERVED_REG_COUNT;
+      passed = !ptype.flags && ptype.io == PRESET_REG_COUNT;
     }
 
     ASSERT_THROW({module.procTypeById(1, ptype);}, NotFoundException);
@@ -357,15 +357,15 @@ namespace {
     bool passed;
     VarSpec reg;
 
-    passed = module.regCount() == RESERVED_REG_COUNT + 2;
-    module.regById(RESERVED_REG_COUNT, reg);
+    passed = module.regCount() == PRESET_REG_COUNT + 2;
+    module.regById(PRESET_REG_COUNT, reg);
     passed = passed && !reg.flags &&
-      reg.vtype == RESERVED_VAR_TYPE_COUNT && reg.count == 1;
-    module.regById(RESERVED_REG_COUNT + 1, reg);
+      reg.vtype == PRESET_VAR_TYPE_COUNT && reg.count == 1;
+    module.regById(PRESET_REG_COUNT + 1, reg);
     passed = passed && !reg.flags &&
-      reg.vtype == RESERVED_VAR_TYPE_COUNT && reg.count == 1;
+      reg.vtype == PRESET_VAR_TYPE_COUNT && reg.count == 1;
 
-    ASSERT_THROW({module.regById(RESERVED_REG_COUNT + 2, reg);},
+    ASSERT_THROW({module.regById(PRESET_REG_COUNT + 2, reg);},
                  NotFoundException);
 
     return passed;
@@ -388,7 +388,7 @@ namespace {
 
   bool testFactorialInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = RESERVED_REG_COUNT, pr = io + 1;
+    RegId io = PRESET_REG_COUNT, pr = io + 1;
     Instr instr;
     int i = 0;
 
@@ -465,13 +465,13 @@ namespace {
     VarType vtype;
     bool passed;
 
-    passed = module.varTypeCount() == RESERVED_VAR_TYPE_COUNT+2;
+    passed = module.varTypeCount() == PRESET_VAR_TYPE_COUNT+2;
 
     if(passed) {
-      module.varTypeById(RESERVED_VAR_TYPE_COUNT + 1, vtype);
+      module.varTypeById(PRESET_VAR_TYPE_COUNT + 1, vtype);
       passed = vtype.vrefs.size() == 1;
       passed = passed && vtype.vrefs[0].flags == VFLAG_NON_FIXED_REF &&
-        vtype.vrefs[0].vtype == RESERVED_VAR_TYPE_COUNT;
+        vtype.vrefs[0].vtype == PRESET_VAR_TYPE_COUNT;
     }
 
     return passed;
@@ -479,7 +479,7 @@ namespace {
 
   bool testQSortPartInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = RESERVED_REG_COUNT;
+    RegId io = PRESET_REG_COUNT;
     RegId l = io + 1, h = l + 1, a = h + 1, al = a + 1, ah = al + 1;
     Instr instr;
     int i = 0;
@@ -538,7 +538,7 @@ namespace {
 
   bool testQSortQSortInstrs(const Proc &proc) {
     bool passed = true;
-    RegId io = RESERVED_REG_COUNT;
+    RegId io = PRESET_REG_COUNT;
     RegId l = io + 1, h = l + 1, a = h + 1, cio = a + 3;
     ProcId part = 0, qsort = 1;
     Instr instr;
@@ -635,7 +635,7 @@ namespace {
 
   bool testEHProc2Instrs(const Proc &proc) {
     bool passed = true;
-    RegId ed = 0, io = RESERVED_REG_COUNT;
+    RegId ed = 0, io = PRESET_REG_COUNT;
     ProcId func1 = 0;
     Instr instr;
     int i = 0;

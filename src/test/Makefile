@@ -12,6 +12,7 @@ main: prereq $(OBJS) ;
 
 $(ODIR)/%.o: ./%.cpp ./*.h
 	$(CC) -c -o $@ $< $(CFLAGS)
+	$(TG) -a $(TGFLAGS) $<
 
 .PHONY: prereq
 
@@ -24,3 +25,4 @@ prereq:
 clean: $(SUBS)
 	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
 	rm -f $(ODIR)/*.o
+	rm -f TAGS

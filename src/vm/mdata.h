@@ -47,6 +47,7 @@ namespace Ant {
       void prepareLLVMFPM();
       void createLLVMPVars();
       void createLLVMFuncs();
+      void createThrowFunc();
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
@@ -59,6 +60,8 @@ namespace Ant {
                               uint32_t subi = 0);
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
+      llvm::Value *checkValue(LLVMContext &context, llvm::Value *val,
+                              llvm::Value *cond, int64_t ed);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>

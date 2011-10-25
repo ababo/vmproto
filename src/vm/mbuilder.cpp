@@ -256,7 +256,7 @@ namespace Ant {
     }
 
     void ModuleBuilder::assertConsistency() const {
-      for(VarTypeId vtype = RESERVED_VAR_TYPE_COUNT; vtype < vtypes.size();
+      for(VarTypeId vtype = PRESET_VAR_TYPE_COUNT; vtype < vtypes.size();
           vtype++)
         if(!vtypes[vtype].bytes && !vtypes[vtype].vrefs.size() &&
            !vtypes[vtype].prefs.size())

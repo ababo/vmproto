@@ -160,7 +160,7 @@ namespace Ant {
         // l1:
         // }
         VarTypeId wordType = builder.addVarType(8);
-        RegId ed = 0, io = builder.addReg(0, wordType);
+        RegId ed = PRESET_REG_ED, io = builder.addReg(0, wordType);
         ProcTypeId ptype = builder.addProcType(0, io);
         ProcId func1 = builder.addProc(0, ptype);
         builder.addProcInstr(func1, JEInstr(io, ed, 4));

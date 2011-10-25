@@ -21,6 +21,8 @@ namespace {
   using namespace std;
   using namespace Ant::VM;
 
+  const char *THROW_FUNC_NAME = "throw";
+
   inline string funcName(ProcId proc) {
     ostringstream out;
     out << 'p' << proc;
@@ -234,12 +236,27 @@ namespace Ant {
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
 
+    Value *Runtime::ModuleData::checkValue(LLVMContext &context, Value *val,
+                                           Value *cond, int64_t ed) {
+      Function *func = llvmModule->getFunction(THROW_FUNC_NAME);
+      vector<Value*> args(1, CONST_INT(64, ed, true));
+      Value *call = CallInst::Create(func, args.begin(), args.end(), "",
+                                     CURRENT_BLOCK);
+      call = new BitCastInst(call, val->getType(), "", CURRENT_BLOCK);
+      return SelectInst::Create(cond, val, call, "", CURRENT_BLOCK);
+    }
+
     Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
                                          bool dereferenceIfNeeded) {
       LLVMContext::Frame *frame = context.findFrame(reg);
       if(frame)
-        return frame->ref && dereferenceIfNeeded ?
-          new LoadInst(frame->vptr, "", CURRENT_BLOCK) : frame->vptr;
+        if(frame->ref && dereferenceIfNeeded) {
+          Value *cond = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE,
+                                     frame->vptr, CONST_INT(64, 0, false));
+          return new LoadInst(checkValue(context, frame->vptr, cond, -1), "",
+                              CURRENT_BLOCK);
+        }
+        else return frame->vptr;
       else {
         Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
         return new BitCastInst(vptr, TYPE_PTR(getEltLLVMType(regs[reg].vtype)),
@@ -577,7 +594,31 @@ namespace Ant {
         }
     }
 
+    void Runtime::ModuleData::createThrowFunc() {
+      vector<const Type*> argTypes;
+      argTypes.push_back(TYPE_INT(64));
+      const Type *retType = TYPE_PTR(TYPE_INT(8));
+      FunctionType *ftype = FunctionType::get(retType, argTypes, false);
+
+      Function *func = Function::Create(ftype, GlobalValue::InternalLinkage,
+                                        THROW_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::Fast);
+
+      BasicBlock *block = BasicBlock::Create(llvmModule->getContext(), "",
+                                             func, 0);
+
+      Value *vptr = llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
+      vptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
+      new StoreInst(func->arg_begin(), vptr, block);
+
+      new UnwindInst(llvmModule->getContext(), block);
+
+      llvmFPM->run(*func);
+    }
+
     void Runtime::ModuleData::createLLVMFuncs() {
+      createThrowFunc();
+
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
 	RegId io = ptypes[procs[proc].ptype].io;
@@ -597,13 +638,7 @@ namespace Ant {
         prepareLLVMContext(context);
         emitLLVMCode(context);
 
-#ifdef CONFIG_DEBUG
-        func->dump();
         llvmFPM->run(*func);
-        func->dump();
-#else
-        llvmFPM->run(*func);
-#endif
       }
     }
 
@@ -639,6 +674,9 @@ namespace Ant {
           createLLVMFuncs();
 
 #ifdef CONFIG_DEBUG
+          cerr << endl;
+          llvmModule->dump();
+          cerr << endl;
           if(verifyModule(*llvmModule, PrintMessageAction))
             throw BugException();
 #endif
