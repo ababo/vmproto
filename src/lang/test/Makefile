@@ -6,11 +6,11 @@ OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 include $(PPATH)/src/Makefile.inc
 
-main: prereq $(OBJS) ;
+main: prereq $(OBJS)
+	$(TG) -a $(TGFLAGS) *.h *.cpp
 
 $(ODIR)/%.o: ./%.cpp ./*.h
 	$(CC) -c -o $@ $< $(CFLAGS)
-	$(TG) -a $(TGFLAGS) $<
 
 .PHONY: prereq
 

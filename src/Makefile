@@ -12,10 +12,10 @@ include $(PPATH)/src/Makefile.inc
 
 main: prereq $(OBJS)
 	$(LD) -o $(ODIR)/$(PROG) $(OBJS_ALL) $(LFLAGS)
+	$(TG) -a $(TGFLAGS) *.h *.cpp
 
 $(ODIR)/%.o: ./%.cpp ./*.h
 	$(CC) -c -o $@ $< $(CFLAGS)
-	$(TG) -a $(TGFLAGS) $<
 
 .PHONY: prereq
 
