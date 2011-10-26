@@ -426,34 +426,42 @@ namespace Ant {
 
     }
 
+#define CONST_PTR(type, ptr) \
+    ConstantExpr::getCast(Instruction::IntToPtr, \
+                          CONST_INT(64, uint64_t(ptr), false), \
+                          TYPE_PTR(type))
+
     void Runtime::ModuleData::releaseVariable(LLVMContext &context,
                                            const VarSpec &vspec, Value *vptr) {
+      Value *ptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
+                                     context.currentBlock);
       Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                 vptr, CONST_INT(64, 0, false));
-      BasicBlock *tblock = BasicBlock::Create(llvmModule->getContext(),
-                                              "", context.func, 0);
-      BasicBlock *fblock = BasicBlock::Create(llvmModule->getContext(),
-                                              "", context.func, 0);
-      BranchInst::Create(tblock, fblock, cond, context.currentBlock);
-      context.currentBlock = fblock;
+                                 ptri, CONST_INT(64, 0, false));
+      BasicBlock *decBlock = BasicBlock::Create(llvmModule->getContext(),
+                                                "", context.func, 0);
+      BasicBlock *endBlock = BasicBlock::Create(llvmModule->getContext(),
+                                                "", context.func, 0);
+      BranchInst::Create(decBlock, endBlock, cond, context.currentBlock);
+      context.currentBlock = endBlock;
 
-      Value *rcptr = specialPtr(vptr, SFLD_REF_COUNT, tblock);
-      Value *rcval = new LoadInst(rcptr, "", tblock);
+      Value *rcptr = specialPtr(vptr, SFLD_REF_COUNT, decBlock);
+      Value *rcval = new LoadInst(rcptr, "", decBlock);
       rcval = BinaryOperator::Create(Instruction::Sub, rcval,
-                                     CONST_INT(64, 1, false), "", tblock);
-      new StoreInst(rcval, rcptr, tblock);
-      cond = new ICmpInst(*tblock, ICmpInst::ICMP_EQ, rcval,
+                                     CONST_INT(64, 1, false), "", decBlock);
+      new StoreInst(rcval, rcptr, decBlock);
+      cond = new ICmpInst(*decBlock, ICmpInst::ICMP_NE, rcval,
                           CONST_INT(64, 0, false));
-      fblock = BasicBlock::Create(llvmModule->getContext(), "",context.func,0);
-      BranchInst::Create(context.currentBlock, fblock, cond, tblock);
+      BasicBlock *desBlock = BasicBlock::Create(llvmModule->getContext(), "",
+                                                context.func, 0);
+      BranchInst::Create(desBlock, endBlock, cond, decBlock);
 
-      Function *ds = llvmModule->getFunction(DESTROY_FUNC_NAME);
+      Function *des = llvmModule->getFunction(DESTROY_FUNC_NAME);
       vector<Value*> args;
-      args.push_back(CONST_INT(64, uint64_t(&vtypes), 64));
-      args.push_back(CONST_INT(64, uint64_t(&vspec), 64));
-      args.push_back(vptr);
-      CallInst::Create(ds, args.begin(), args.end(), "", fblock);
-      BranchInst::Create(context.currentBlock, fblock);      
+      args.push_back(CONST_PTR(TYPE_INT(8), &vtypes));
+      args.push_back(CONST_PTR(TYPE_INT(8), &vspec));
+      args.push_back(new BitCastInst(vptr, TYPE_PTR(TYPE_INT(8)),"",desBlock));
+      CallInst::Create(des, args.begin(), args.end(), "", desBlock);
+      BranchInst::Create(endBlock, desBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
