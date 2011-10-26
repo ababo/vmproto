@@ -71,9 +71,7 @@ namespace Ant {
         vector<size_t>::iterator iter = lower_bound(blockIndexes.begin(),
                                                     blockIndexes.end(),
                                                     instrIndex);
-        if(iter == blockIndexes.end() || *iter != instrIndex)
-          return NULL;
-
+        ASSERT(iter != blockIndexes.end() && *iter == instrIndex);
         return blocks[distance(blockIndexes.begin(), iter)];
       }
 
@@ -263,7 +261,7 @@ namespace Ant {
           Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
           Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
                                      vptr, CONST_INT(64, 0, false));
-          emitThrowIfNot(context, cond, VMECODE_NULL_DEREF);
+          emitThrowIfNot(context, cond, VMECODE_NULL_DEREFERENCING);
           return vptr;
         }
         else return frame->vptr;
@@ -275,15 +273,14 @@ namespace Ant {
     }
 
     Value *Runtime::ModuleData::specialPtr(LLVMContext &context, Value *vptr,
-                                           SpeField sfld) {
+                                           SpeField sfld, BasicBlock *block) {
       vector<Value*> indexes;
       indexes.push_back(CONST_INT(2, sfld == SFLD_REF_COUNT ? -1 : -2, true));
 
-      Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "",
-                                    context.currentBlock);
+      Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
 
       return GetElementPtrInst::Create(iptr, indexes.begin(), indexes.end(),
-                                       "", context.currentBlock);
+                                       "", block);
     }
 
     Value *Runtime::ModuleData::elementPtr(LLVMContext &context, Value *vptr,
@@ -423,10 +420,39 @@ namespace Ant {
 
     }
 
+    void freeHeapVariable(const VarSpec &vspec, Value *vptr,
+                          llvm::BasicBlock *block);
+    void releaseHeapVariable(const VarSpec &vspec, Value *vptr,
+                             llvm::BasicBlock *block);
+
+
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
       LLVMContext::Frame &frame = context.frames.back();
       if(frame.ref) {
+        Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
+        Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
+                                   vptr, CONST_INT(64, 0, false));
+
+        BasicBlock *rcldBlock = BasicBlock::Create(llvmModule->getContext(),
+                                                   "", context.func, 0);
+        BasicBlock *exitBlock = BasicBlock::Create(llvmModule->getContext(),
+                                                   "", context.func, 0);
+        BranchInst::Create(rcldBlock, exitBlock, cond, context.currentBlock);
+        context.currentBlock = exitBlock;
+
+        Value *rcptr = specialPtr(context, vptr, SFLD_REF_COUNT, rcldBlock);
+        Value *rcval = new LoadInst(rcptr, "", rcldBlock);
+        rcval = BinaryOperator::Create(Instruction::Sub, rcval,
+                                       CONST_INT(64, 1, false), "", rcldBlock);
+        new StoreInst(rcval, rcptr, rcldBlock);
+        cond = new ICmpInst(*rcldBlock, ICmpInst::ICMP_NE, rcval,
+                            CONST_INT(64, 0, false));
+        BasicBlock *freeBlock = BasicBlock::Create(llvmModule->getContext(),
+                                                   "", context.func, 0);
+        BranchInst::Create(exitBlock, freeBlock, cond, rcldBlock);
+
+        
 
       }
 

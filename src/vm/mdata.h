@@ -54,13 +54,17 @@ namespace Ant {
       llvm::Value *regValue(LLVMContext &context, RegId reg,
                             bool dereferenceIfNeeded = true);
       llvm::Value *specialPtr(LLVMContext &context, llvm::Value *vptr,
-                              SpeField sfld);
+                              SpeField sfld, llvm::BasicBlock *block);
       llvm::Value *elementPtr(LLVMContext &context, llvm::Value *vptr,
                           llvm::Value *elti = NULL, EltField efld = EFLD_BYTES,
                               uint32_t subi = 0);
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
       void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
+      void freeHeapVariable(const VarSpec &vspec, Value *vptr,
+                            llvm::BasicBlock *block);
+      void releaseHeapVariable(const VarSpec &vspec, Value *vptr,
+                               llvm::BasicBlock *block);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>

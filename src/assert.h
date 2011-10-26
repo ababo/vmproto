@@ -8,8 +8,8 @@
 #ifdef CONFIG_DEBUG
 #define ASSERT(val) \
   if(!(val)) { \
-    cerr << endl << "Assertion failed at location: "; \
-    cerr << __FILE__ << ":" << __LINE__ << endl << endl; \
+    std::cerr << std::endl << "Assertion failed at location: "; \
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl << std::endl; \
     throw Ant::BugException(); \
   }
 #else
