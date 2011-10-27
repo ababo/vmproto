@@ -2,6 +2,7 @@
 #include <set>
 #include <sstream>
 
+#include "../assert.h"
 #include "../exception.h"
 #include "instr.h"
 #include "llvm/Analysis/Passes.h"
@@ -66,12 +67,13 @@ namespace Ant {
       }
       void popFrame() { frames.pop_back(); }
 
-      BasicBlock *jumpBlock(size_t jumpIndex) {
+      BasicBlock *branchBlock(size_t instrIndex) {
         vector<size_t>::iterator iter = lower_bound(blockIndexes.begin(),
                                                     blockIndexes.end(),
-                                                    jumpIndex);
-        if(iter == blockIndexes.end())
-          throw BugException();
+                                                    instrIndex);
+        if(iter == blockIndexes.end() || *iter != instrIndex)
+          return NULL;
+
         return blocks[distance(blockIndexes.begin(), iter)];
       }
 
@@ -80,6 +82,7 @@ namespace Ant {
       size_t instrIndex, blockIndex;
       std::vector<size_t> blockIndexes;
       std::vector<llvm::BasicBlock*> blocks;
+      llvm::BasicBlock *currentBlock; // sometimes != blocks[blockIndex]
       std::vector<Frame> frames;
     };
 
@@ -216,7 +219,8 @@ namespace Ant {
         instr.set(&procs[context.proc].code[j]);
         if(instr.branches()) {
           size_t bi = instr.branchIndex(i);
-          indexes.insert(bi);
+          if(bi != i + 1) // this line prevents an unnecessary ending block
+            indexes.insert(bi);
           newBlock = true;
         }
       }
@@ -227,23 +231,28 @@ namespace Ant {
       for(size_t i = 0; i < context.blockIndexes.size(); i++)
         context.blocks.push_back(BasicBlock::Create(llvmModule->getContext(),
                                                     "", context.func, 0));
+      context.currentBlock = context.blocks[0];
 
       context.pushFrame(false, ptypes[procs[context.proc].ptype].io, NULL,
                         context.func->arg_begin());
     }
 
-#define CURRENT_BLOCK context.blocks[context.blockIndex]
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
 
-    Value *Runtime::ModuleData::checkValue(LLVMContext &context, Value *val,
-                                           Value *cond, int64_t ed) {
+    void Runtime::ModuleData::emitThrowIfNot(LLVMContext &context, Value *cond,
+                                             int64_t edValue) {
+      BasicBlock *fblock = BasicBlock::Create(llvmModule->getContext(),
+                                              "", context.func, 0);
       Function *func = llvmModule->getFunction(THROW_FUNC_NAME);
-      vector<Value*> args(1, CONST_INT(64, ed, true));
-      Value *call = CallInst::Create(func, args.begin(), args.end(), "",
-                                     CURRENT_BLOCK);
-      call = new BitCastInst(call, val->getType(), "", CURRENT_BLOCK);
-      return SelectInst::Create(cond, val, call, "", CURRENT_BLOCK);
+      vector<Value*> args(1, CONST_INT(64, edValue, true));
+      CallInst::Create(func, args.begin(), args.end(), "", fblock);
+      new UnreachableInst(llvmModule->getContext(), fblock);
+
+      BasicBlock *tblock = BasicBlock::Create(llvmModule->getContext(),
+                                              "", context.func, 0);
+      BranchInst::Create(tblock, fblock, cond, context.currentBlock);
+      context.currentBlock = tblock;
     }
 
     Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
@@ -251,16 +260,17 @@ namespace Ant {
       LLVMContext::Frame *frame = context.findFrame(reg);
       if(frame)
         if(frame->ref && dereferenceIfNeeded) {
-          Value *vptr = new LoadInst(frame->vptr, "", CURRENT_BLOCK);
-          Value *cond = new ICmpInst(*CURRENT_BLOCK, ICmpInst::ICMP_NE, vptr,
-                                     CONST_INT(64, 0, false));
-          return checkValue(context, vptr, cond, VMECODE_NULL_DEREF);
+          Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
+          Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
+                                     vptr, CONST_INT(64, 0, false));
+          emitThrowIfNot(context, cond, VMECODE_NULL_DEREF);
+          return vptr;
         }
         else return frame->vptr;
       else {
         Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
         return new BitCastInst(vptr, TYPE_PTR(getEltLLVMType(regs[reg].vtype)),
-                               "", CURRENT_BLOCK);
+                               "", context.currentBlock);
       }
     }
 
@@ -270,10 +280,10 @@ namespace Ant {
       indexes.push_back(CONST_INT(2, sfld == SFLD_REF_COUNT ? -1 : -2, true));
 
       Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "",
-                                    CURRENT_BLOCK);
+                                    context.currentBlock);
 
       return GetElementPtrInst::Create(iptr, indexes.begin(), indexes.end(),
-                                       "", CURRENT_BLOCK);
+                                       "", context.currentBlock);
     }
 
     Value *Runtime::ModuleData::elementPtr(LLVMContext &context, Value *vptr,
@@ -295,20 +305,20 @@ namespace Ant {
       indexes.push_back(CONST_INT(32, uint64_t(subi), false));
 
       return GetElementPtrInst::Create(vptr, indexes.begin(), indexes.end(),
-                                       "", CURRENT_BLOCK);
+                                       "", context.currentBlock);
     }
 
 #define BITCAST_PINT(bits, vptr) \
-    new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", CURRENT_BLOCK)
+    new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", context.currentBlock)
 
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
                                                const UOInstrT<OP> &instr) {
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
-      Value *val = new LoadInst(it, "", CURRENT_BLOCK);
+      Value *val = new LoadInst(it, "", context.currentBlock);
       Value *co = CONST_INT(64, CO, false);
-      val = BinaryOperator::Create(IOP, val, co, "", CURRENT_BLOCK);
-      new StoreInst(val, it, CURRENT_BLOCK);
+      val = BinaryOperator::Create(IOP, val, co, "", context.currentBlock);
+      new StoreInst(val, it, context.currentBlock);
     }
 
     template<uint8_t OP, Instruction::BinaryOps IOP>
@@ -317,23 +327,24 @@ namespace Ant {
       Value *operand1 = BITCAST_PINT(64, regValue(context, instr.operand1()));
       Value *operand2 = BITCAST_PINT(64, regValue(context, instr.operand2()));
       Value *result = BITCAST_PINT(64, regValue(context, instr.result()));
-      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
-      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
-      Value *val3 = BinaryOperator::Create(IOP, val1, val2, "", CURRENT_BLOCK);
-      new StoreInst(val3, result, CURRENT_BLOCK);
+      Value *val1 = new LoadInst(operand1, "", context.currentBlock);
+      Value *val2 = new LoadInst(operand2, "", context.currentBlock);
+      Value *val3 = BinaryOperator::Create(IOP, val1, val2, "",
+                                           context.currentBlock);
+      new StoreInst(val3, result, context.currentBlock);
     }
 
     template<uint8_t OP, llvm::ICmpInst::Predicate PR, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUJ(LLVMContext &context,
                                                const UJInstrT<OP> &instr) {
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
-      Value *val = new LoadInst(it, "", CURRENT_BLOCK);
-      ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val,
+      Value *val = new LoadInst(it, "", context.currentBlock);
+      ICmpInst* cmp = new ICmpInst(*context.currentBlock, PR, val,
                                    CONST_INT(64, CO, false));
       size_t jindex = instr.branchIndex(context.instrIndex);
-      BasicBlock *jblock = context.jumpBlock(jindex);
-      BasicBlock *nblock = context.blocks[context.blockIndex + 1];
-      BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
+      BasicBlock *tblock = context.branchBlock(jindex);
+      BasicBlock *fblock = context.blocks[context.blockIndex + 1];
+      BranchInst::Create(tblock, fblock, cmp, context.currentBlock);
     }
 
     template<uint8_t OP, llvm::ICmpInst::Predicate PR>
@@ -341,13 +352,13 @@ namespace Ant {
                                                const BJInstrT<OP> &instr) {
       Value *operand1 = BITCAST_PINT(64, regValue(context, instr.operand1()));
       Value *operand2 = BITCAST_PINT(64, regValue(context, instr.operand2()));
-      Value *val1 = new LoadInst(operand1, "", CURRENT_BLOCK);
-      Value *val2 = new LoadInst(operand2, "", CURRENT_BLOCK);
-      ICmpInst* cmp = new ICmpInst(*CURRENT_BLOCK, PR, val1, val2);
+      Value *val1 = new LoadInst(operand1, "", context.currentBlock);
+      Value *val2 = new LoadInst(operand2, "", context.currentBlock);
+      ICmpInst* cmp = new ICmpInst(*context.currentBlock, PR, val1, val2);
       size_t jindex = instr.branchIndex(context.instrIndex);
-      BasicBlock *jblock = context.jumpBlock(jindex);
-      BasicBlock *nblock = context.blocks[context.blockIndex + 1];
-      BranchInst::Create(jblock, nblock, cmp, CURRENT_BLOCK);
+      BasicBlock *tblock = context.branchBlock(jindex);
+      BasicBlock *fblock = context.blocks[context.blockIndex + 1];
+      BranchInst::Create(tblock, fblock, cmp, context.currentBlock);
     }
 
     template<uint8_t OP, class VAL>
@@ -355,18 +366,20 @@ namespace Ant {
                                              const CPIInstrT<OP, VAL> &instr) {
       Value *to = BITCAST_PINT(sizeof(VAL), regValue(context, instr.to()));
       new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()), false), to,
-                    CURRENT_BLOCK);
+                    context.currentBlock);
     }
 
     Value *Runtime::ModuleData::zeroVariable(LLVMContext &context, Value *vptr,
                                              Value *count) {
       vector<Value*> args(1, count);
       Value *eptr = GetElementPtrInst::Create(vptr, args.begin(), args.end(),
-                                              "", CURRENT_BLOCK);
-      Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "", CURRENT_BLOCK);
-      Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "", CURRENT_BLOCK);
+                                              "", context.currentBlock);
+      Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
+                                      context.currentBlock);
+      Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "",
+                                      context.currentBlock);
       Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri, "",
-                                          CURRENT_BLOCK);
+                                          context.currentBlock);
       
       const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
       Function *ms = Intrinsic::getDeclaration(llvmModule,
@@ -377,7 +390,7 @@ namespace Ant {
       args.push_back(len);
       args.push_back(CONST_INT(32, 0, false));
       args.push_back(CONST_INT(1, 0, false));
-      CallInst::Create(ms, args.begin(), args.end(), "", CURRENT_BLOCK);
+      CallInst::Create(ms, args.begin(), args.end(), "", context.currentBlock);
     }
 
     template<uint8_t OP, bool REF>
@@ -385,20 +398,20 @@ namespace Ant {
                                             const PUSHInstrT<OP, REF> &instr) {
       Function *ss = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stacksave);
-      Value *sptr = CallInst::Create(ss, "", CURRENT_BLOCK), *vptr;
+      Value *sptr = CallInst::Create(ss, "", context.currentBlock), *vptr;
 
       RegId reg = instr.reg();
       const Type *type = getEltLLVMType(regs[reg].vtype);
 
       if(REF) {
         type = TYPE_PTR(type);
-        vptr = new AllocaInst(type, "", CURRENT_BLOCK);
+        vptr = new AllocaInst(type, "", context.currentBlock);
         Constant *zeros = ConstantAggregateZero::get(type);
-        new StoreInst(zeros, vptr, CURRENT_BLOCK);
+        new StoreInst(zeros, vptr, context.currentBlock);
       }
       else {
         Value *count = CONST_INT(64, uint64_t(regs[reg].count), false);
-        vptr = new AllocaInst(type, count, "", CURRENT_BLOCK);
+        vptr = new AllocaInst(type, count, "", context.currentBlock);
         zeroVariable(context, vptr, count);
       }
 
@@ -420,19 +433,18 @@ namespace Ant {
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.frames.back().sptr);
-      CallInst::Create(sr, args.begin(), args.end(), "", CURRENT_BLOCK);
+      CallInst::Create(sr, args.begin(), args.end(), "", context.currentBlock);
       context.popFrame();
     }
 
     void Runtime::ModuleData::emitLLVMCodeJMP(LLVMContext &context,
 					      const JMPInstr &instr) {
       size_t jindex = instr.branchIndex(context.instrIndex);
-      BasicBlock *jblock = context.jumpBlock(jindex);
-      BranchInst::Create(jblock, CURRENT_BLOCK);      
+      BranchInst::Create(context.branchBlock(jindex), context.currentBlock);
     }
 
 #define BITCAST_PARR(bytes, vptr) \
-    new BitCastInst(vptr, TYPE_PTR(TYPE_BARR(bytes)), "", CURRENT_BLOCK)
+    new BitCastInst(vptr, TYPE_PTR(TYPE_BARR(bytes)), "", context.currentBlock)
 
     void Runtime::ModuleData::emitLLVMCodeCPB(LLVMContext &context,
                                               const CPBInstr &instr) {
@@ -442,8 +454,8 @@ namespace Ant {
       uint32_t mbytes = fbytes < tbytes ? fbytes : tbytes;
       Value *from = BITCAST_PARR(mbytes, regValue(context, f));
       Value *to = BITCAST_PARR(mbytes, regValue(context, t));
-      Value *val = new LoadInst(from, "", CURRENT_BLOCK);
-      new StoreInst(val, to, CURRENT_BLOCK);
+      Value *val = new LoadInst(from, "", context.currentBlock);
+      new StoreInst(val, to, context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeLDE(LLVMContext &context,
@@ -488,7 +500,7 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
                                               const RETInstr &instr) {
-      ReturnInst::Create(llvmModule->getContext(), CURRENT_BLOCK);
+      ReturnInst::Create(llvmModule->getContext(), context.currentBlock);
     }
 
 #define UOINSTR_CASE(op, iop, co) \
@@ -566,10 +578,10 @@ namespace Ant {
         size_t nextBlockIndex = context.blockIndex + 1;
         if(nextBlockIndex < context.blocks.size() &&
            context.blockIndexes[nextBlockIndex] == context.instrIndex) {
-          BasicBlock *block = context.blocks[context.blockIndex];
-          if(!block->getTerminator())
-            BranchInst::Create(context.blocks[nextBlockIndex], block);
-          context.blockIndex++;
+          if(!context.currentBlock->getTerminator())
+            BranchInst::Create(context.blocks[nextBlockIndex],
+                               context.currentBlock);
+          context.currentBlock = context.blocks[++context.blockIndex];
         }
       }
 
@@ -602,7 +614,7 @@ namespace Ant {
     void Runtime::ModuleData::createThrowFunc() {
       vector<const Type*> argTypes;
       argTypes.push_back(TYPE_INT(64));
-      const Type *retType = TYPE_PTR(TYPE_INT(8));
+      const Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function *func = Function::Create(ftype, GlobalValue::InternalLinkage,
@@ -649,12 +661,7 @@ namespace Ant {
 
     void Runtime::ModuleData::prepareLLVMFPM() {
       llvmFPM->add(new TargetData(*llvmEE->getTargetData()));
-      llvmFPM->add(createBasicAliasAnalysisPass());
-      llvmFPM->add(createInstructionCombiningPass());
-      llvmFPM->add(createReassociatePass());
-      llvmFPM->add(createGVNPass());
-      llvmFPM->add(createCFGSimplificationPass());
-
+      // add passes here
       llvmFPM->doInitialization();
     }
 
