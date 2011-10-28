@@ -61,10 +61,6 @@ namespace Ant {
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
       void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
-      void freeHeapVariable(const VarSpec &vspec, Value *vptr,
-                            llvm::BasicBlock *block);
-      void releaseHeapVariable(const VarSpec &vspec, Value *vptr,
-                               llvm::BasicBlock *block);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>

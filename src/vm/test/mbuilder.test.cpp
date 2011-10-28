@@ -238,16 +238,19 @@ namespace {
       ModuleBuilder b;
       VarTypeId vt1 = b.addVarType(7);
       VarTypeId vt2 = b.addVarType(0);
+      VarTypeId vt3 = b.addVarType(7);
       b.addVarTypeVRef(vt2, 0, vt1);
       b.addVarTypeVRef(vt2, 0, vt1, 2);
       b.addVarTypeVRef(vt2, VFLAG_NON_FIXED_REF, vt1);
       RegId r1 = b.addReg(0, vt1);
       RegId r2 = b.addReg(0, vt1, 2);
-      RegId r3 = b.addReg(VFLAG_NON_FIXED_REF, vt1);
+      RegId r3 = b.addReg(VFLAG_NON_FIXED_REF, vt1, 2);
       RegId r4 = b.addReg(0, vt2);
+      RegId r5 = b.addReg(0, vt3);
       ProcTypeId pt = b.addProcType(0, r1);
       ProcId p = b.addProc(0, pt);
 
+      b.addProcInstr(p, PUSHInstr(r1));
       b.addProcInstr(p, PUSHRInstr(r2));
       b.addProcInstr(p, PUSHRInstr(r3));
       b.addProcInstr(p, PUSHInstr(r4));
@@ -256,22 +259,27 @@ namespace {
       b.addProcInstr(p, PUSHRInstr(r1));
       b.addProcInstr(p, LDRInstr(r4, 0, r1));
       b.addProcInstr(p, STRInstr(r1, r4, 0));
-      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r2));}, TypeException);
-      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r3));}, TypeException);
-      b.addProcInstr(p, STRInstr(r2, r4, 0));
-      ASSERT_THROW({b.addProcInstr(p, STRInstr(r3, r4, 0));}, TypeException);
-      b.addProcInstr(p, LDRInstr(r4, 1, r1));
       b.addProcInstr(p, LDRInstr(r4, 1, r2));
-      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 1));}, TypeException);
       b.addProcInstr(p, STRInstr(r2, r4, 1));
+      b.addProcInstr(p, LDRInstr(r4, 2, r3));
+      b.addProcInstr(p, STRInstr(r3, r4, 2));
+      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 3, r1));}, RangeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 3));}, RangeException);
+      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r2));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r2, r4, 0));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r3));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r3, r4, 0));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 1, r1));}, TypeException);
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 1));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 1, r3));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, STRInstr(r3, r4, 1));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 2, r1));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, STRInstr(r1, r4, 2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 2, r2));}, TypeException);
       ASSERT_THROW({b.addProcInstr(p, STRInstr(r2, r4, 2));}, TypeException);
-      b.addProcInstr(p, LDRInstr(r4, 2, r3));
-      b.addProcInstr(p, STRInstr(r3, r4, 2));
+      b.addProcInstr(p, PUSHRInstr(r5));
+      ASSERT_THROW({b.addProcInstr(p, LDRInstr(r4, 0, r5));}, TypeException)
+      ASSERT_THROW({b.addProcInstr(p, STRInstr(r5, r4, 0));}, TypeException);
     }
     catch(...) { passed = false; }
 

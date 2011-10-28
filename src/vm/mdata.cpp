@@ -420,17 +420,13 @@ namespace Ant {
 
     }
 
-    void freeHeapVariable(const VarSpec &vspec, Value *vptr,
-                          llvm::BasicBlock *block);
-    void releaseHeapVariable(const VarSpec &vspec, Value *vptr,
-                             llvm::BasicBlock *block);
-
+    //    extern "C" void 
 
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
       LLVMContext::Frame &frame = context.frames.back();
       if(frame.ref) {
-        Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
+        /*    Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
         Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
                                    vptr, CONST_INT(64, 0, false));
 
@@ -453,7 +449,7 @@ namespace Ant {
         BranchInst::Create(exitBlock, freeBlock, cond, rcldBlock);
 
         
-
+        */
       }
 
       Function *sr = Intrinsic::getDeclaration(llvmModule,

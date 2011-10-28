@@ -174,7 +174,8 @@ namespace Ant {
     void Instr::assertSafeRefCopy(const VarSpec &from, const VarSpec &to) {
       bool nfFrom = from.flags & VFLAG_NON_FIXED_REF;
       bool nfTo = to.flags & VFLAG_NON_FIXED_REF;
-      if(nfFrom ^ nfTo || from.count < to.count)
+      if(from.vtype != to.vtype || nfFrom != nfTo ||
+         (!nfFrom && from.count != to.count))
         throw TypeException();
     }
 
@@ -199,7 +200,7 @@ namespace Ant {
       mbuilder.varTypeById(vspec.vtype, vtype);
 
       if(vref >= vtype.vrefs.size())
-	throw TypeException();
+	throw RangeException();
 
       vspec = vtype.vrefs[vref];
     }
