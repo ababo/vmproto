@@ -23,6 +23,7 @@ namespace {
   using namespace Ant::VM;
 
   const char *THROW_FUNC_NAME = "throw";
+  const char *DESTROY_FUNC_NAME = "destroy";
 
   inline string funcName(ProcId proc) {
     ostringstream out;
@@ -272,8 +273,8 @@ namespace Ant {
       }
     }
 
-    Value *Runtime::ModuleData::specialPtr(LLVMContext &context, Value *vptr,
-                                           SpeField sfld, BasicBlock *block) {
+    Value *Runtime::ModuleData::specialPtr(Value *vptr, SpeField sfld,
+                                           BasicBlock *block) {
       vector<Value*> indexes;
       indexes.push_back(CONST_INT(2, sfld == SFLD_REF_COUNT ? -1 : -2, true));
 
@@ -420,36 +421,47 @@ namespace Ant {
 
     }
 
-    //    extern "C" void 
+    extern "C" void AntVMDestroyVariable(const vector<VarTypeData> &vtypes, 
+                                        const VarSpec &vspec, Variable *vptr) {
+
+    }
+
+    void Runtime::ModuleData::releaseVariable(LLVMContext &context,
+                                           const VarSpec &vspec, Value *vptr) {
+      Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
+                                 vptr, CONST_INT(64, 0, false));
+      BasicBlock *tblock = BasicBlock::Create(llvmModule->getContext(),
+                                              "", context.func, 0);
+      BasicBlock *fblock = BasicBlock::Create(llvmModule->getContext(),
+                                              "", context.func, 0);
+      BranchInst::Create(tblock, fblock, cond, context.currentBlock);
+      context.currentBlock = fblock;
+
+      Value *rcptr = specialPtr(vptr, SFLD_REF_COUNT, tblock);
+      Value *rcval = new LoadInst(rcptr, "", tblock);
+      rcval = BinaryOperator::Create(Instruction::Sub, rcval,
+                                     CONST_INT(64, 1, false), "", tblock);
+      new StoreInst(rcval, rcptr, tblock);
+      cond = new ICmpInst(*tblock, ICmpInst::ICMP_EQ, rcval,
+                          CONST_INT(64, 0, false));
+      fblock = BasicBlock::Create(llvmModule->getContext(), "",context.func,0);
+      BranchInst::Create(context.currentBlock, fblock, cond, tblock);
+
+      Function *ds = llvmModule->getFunction(DESTROY_FUNC_NAME);
+      vector<Value*> args;
+      args.push_back(CONST_INT(64, uint64_t(&vtypes), 64));
+      args.push_back(CONST_INT(64, uint64_t(&vspec), 64));
+      args.push_back(vptr);
+      CallInst::Create(ds, args.begin(), args.end(), "", fblock);
+      BranchInst::Create(context.currentBlock, fblock);      
+    }
 
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
       LLVMContext::Frame &frame = context.frames.back();
       if(frame.ref) {
-        /*    Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
-        Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                   vptr, CONST_INT(64, 0, false));
-
-        BasicBlock *rcldBlock = BasicBlock::Create(llvmModule->getContext(),
-                                                   "", context.func, 0);
-        BasicBlock *exitBlock = BasicBlock::Create(llvmModule->getContext(),
-                                                   "", context.func, 0);
-        BranchInst::Create(rcldBlock, exitBlock, cond, context.currentBlock);
-        context.currentBlock = exitBlock;
-
-        Value *rcptr = specialPtr(context, vptr, SFLD_REF_COUNT, rcldBlock);
-        Value *rcval = new LoadInst(rcptr, "", rcldBlock);
-        rcval = BinaryOperator::Create(Instruction::Sub, rcval,
-                                       CONST_INT(64, 1, false), "", rcldBlock);
-        new StoreInst(rcval, rcptr, rcldBlock);
-        cond = new ICmpInst(*rcldBlock, ICmpInst::ICMP_NE, rcval,
-                            CONST_INT(64, 0, false));
-        BasicBlock *freeBlock = BasicBlock::Create(llvmModule->getContext(),
-                                                   "", context.func, 0);
-        BranchInst::Create(exitBlock, freeBlock, cond, rcldBlock);
-
-        
-        */
+        Value *vptr = new LoadInst(frame.vptr, "", context.currentBlock);
+        releaseVariable(context, regs[frame.reg], vptr);
       }
 
       Function *sr = Intrinsic::getDeclaration(llvmModule,
@@ -655,8 +667,26 @@ namespace Ant {
       llvmFPM->run(*func);
     }
 
+    void Runtime::ModuleData::createDestroyFunc() {
+      const Type *vptrType = TYPE_PTR(TYPE_INT(8));
+      vector<const Type*> argTypes;
+      argTypes.push_back(vptrType);
+      argTypes.push_back(vptrType);
+      argTypes.push_back(vptrType);
+      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      FunctionType *ftype = FunctionType::get(retType, argTypes, false);
+
+      Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
+                                        DESTROY_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::C);
+
+      void *mem = reinterpret_cast<void*>(&AntVMDestroyVariable);
+      llvmEE->addGlobalMapping(func, mem);
+    }
+
     void Runtime::ModuleData::createLLVMFuncs() {
       createThrowFunc();
+      createDestroyFunc();
 
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;

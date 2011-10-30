@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "../farray.h"
 #include "utils.h"
 
 namespace Ant {
@@ -118,7 +119,20 @@ namespace Ant {
       std::vector<VMCodeByte> code;
     };
 
-    enum RegKind { RK_VOID, RK_REF, RK_NOREF, RK_NOVOID };
+    enum RegKind { RK_VOID, RK_REF, RK_NOREF, RK_NOVOID }; // for internal use
+
+    struct VarTypeData { // for internal use
+      size_t count;
+      size_t bytes;
+      FixedArray<VarSpec> vrefs;
+      FixedArray<ProcTypeId> prefs;
+    };
+
+    struct ProcData { // for internal use
+      uint32_t flags;
+      ProcTypeId ptype;
+      FixedArray<VMCodeByte> code;
+    };
 
     enum OpCode {
       OPCODE_ILL = 0, // ILLegal

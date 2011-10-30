@@ -285,7 +285,7 @@ namespace Ant {
       moduleData.prefs.reserve(psize);
 
       for(int i = 0; i < vtypes.size(); i++) {
-        Runtime::VarTypeData vtypeData;
+        VarTypeData vtypeData;
         const VarType &vtype = vtypes[i];
 
         vtypeData.bytes = vtype.bytes;
@@ -303,7 +303,7 @@ namespace Ant {
       moduleData.code.reserve(size);
 
       for(int i = 0; i < procs.size(); i++) {
-        Runtime::ProcData procData;
+        ProcData procData;
         const Proc &proc = procs[i];
 
         procData.flags = proc.flags;

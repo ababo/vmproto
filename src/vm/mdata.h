@@ -48,18 +48,21 @@ namespace Ant {
       void createLLVMPVars();
       void createLLVMFuncs();
       void createThrowFunc();
+      void createDestroyFunc();
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
       llvm::Value *regValue(LLVMContext &context, RegId reg,
                             bool dereferenceIfNeeded = true);
-      llvm::Value *specialPtr(LLVMContext &context, llvm::Value *vptr,
-                              SpeField sfld, llvm::BasicBlock *block);
+      llvm::Value *specialPtr(llvm::Value *vptr, SpeField sfld,
+                              llvm::BasicBlock *block);
       llvm::Value *elementPtr(LLVMContext &context, llvm::Value *vptr,
                           llvm::Value *elti = NULL, EltField efld = EFLD_BYTES,
                               uint32_t subi = 0);
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
+      void releaseVariable(LLVMContext &context, const VarSpec &vspec,
+                           llvm::Value *vptr);
       void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);

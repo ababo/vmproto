@@ -2,8 +2,8 @@
 #define __VM_RUNTIME_INCLUDED__
 
 #include <map>
+#include <stdint.h>
 
-#include "../farray.h"
 #include "../singleton.h"
 #include "../uuid.h"
 #include "vmdefs.h"
@@ -16,17 +16,6 @@ namespace Ant {
       friend class ModuleBuilder;
       friend class Module;
     protected:
-      struct VarTypeData {
-        size_t count;
-        size_t bytes;
-        FixedArray<VarSpec> vrefs;
-        FixedArray<ProcTypeId> prefs;
-      };
-      struct ProcData {
-        unsigned int flags;
-        ProcTypeId ptype;
-        FixedArray<VMCodeByte> code;
-      };
       struct ModuleData;
       typedef std::map<UUID, ModuleData*> ModuleDataMap;
       typedef ModuleDataMap::value_type ModuleDataPair;
