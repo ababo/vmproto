@@ -254,25 +254,6 @@ namespace Ant {
       context.currentBlock = tblock;
     }
 
-    Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
-                                         bool dereferenceIfNeeded) {
-      LLVMContext::Frame *frame = context.findFrame(reg);
-      if(frame)
-        if(frame->ref && dereferenceIfNeeded) {
-          Value *vptr = new LoadInst(frame->vptr, "", context.currentBlock);
-          Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                     vptr, CONST_INT(64, 0, false));
-          emitThrowIfNot(context, cond, VMECODE_NULL_DEREFERENCING);
-          return vptr;
-        }
-        else return frame->vptr;
-      else {
-        Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
-        return new BitCastInst(vptr, TYPE_PTR(getEltLLVMType(regs[reg].vtype)),
-                               "", context.currentBlock);
-      }
-    }
-
     Value *Runtime::ModuleData::specialPtr(Value *vptr, SpeField sfld,
                                            BasicBlock *block) {
       vector<Value*> indexes;
@@ -284,11 +265,35 @@ namespace Ant {
                                        "", block);
     }
 
-    Value *Runtime::ModuleData::elementPtr(LLVMContext &context, Value *vptr,
-                                           Value *elti, EltField efld,
-                                           uint32_t subi) {
+    Value *Runtime::ModuleData::elementPtr(LLVMContext &context, RegId reg,
+                                           bool ref, Value *vptr, size_t eltc,
+                                           Value *eltv) {
+      bool runtimeCheck = eltv ||
+        (ref && regs[reg].flags & VFLAG_NON_FIXED_REF);
+
+      if(!eltv)
+        eltv = CONST_INT(1, uint64_t(eltc), false);
+
+      if(runtimeCheck) {
+        Value *ecval;
+        if(regs[reg].flags & VFLAG_NON_FIXED_REF)
+          ecval = new LoadInst(specialPtr(vptr, SFLD_ELT_COUNT,
+                                          context.currentBlock),
+                               "", context.currentBlock);
+        else ecval = CONST_INT(64, uint64_t(regs[reg].count), false);
+
+        Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_ULT,
+                                   eltv, ecval);
+        emitThrowIfNot(context, cond, VMECODE_RANGE);
+      }
+
+      return GetElementPtrInst::Create(vptr, eltv, "", context.currentBlock);
+    }
+
+    Value *Runtime::ModuleData::fieldPtr(LLVMContext &context, Value *vptr,
+                                         EltField efld, uint32_t eltc) {
       vector<Value*> indexes;
-      indexes.push_back(elti ? elti : CONST_INT(1, 0, false));
+      indexes.push_back(CONST_INT(1, 0, false));
 
       uint64_t index;
       const StructType *st = static_cast<const StructType*>(vptr->getType());
@@ -300,10 +305,35 @@ namespace Ant {
       };
       indexes.push_back(CONST_INT(2, index, false));
 
-      indexes.push_back(CONST_INT(32, uint64_t(subi), false));
+      indexes.push_back(CONST_INT(32, uint64_t(eltc), false));
 
       return GetElementPtrInst::Create(vptr, indexes.begin(), indexes.end(),
                                        "", context.currentBlock);
+    }
+
+    Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
+                                         bool dereferenceIfNeeded, size_t eltc,
+                                         Value *eltv) {
+      LLVMContext::Frame *frame = context.findFrame(reg);
+      if(frame) {
+        Value *vptr = frame->vptr;
+        if(frame->ref) {
+          if(!dereferenceIfNeeded)
+            return vptr;
+
+          Value *vptr = new LoadInst(vptr, "", context.currentBlock);
+          Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
+                                     vptr, CONST_INT(64, 0, false));
+          emitThrowIfNot(context, cond, VMECODE_NULL_REFERENCE);
+        }
+        
+        return elementPtr(context, reg, frame->ref, vptr, eltc, eltv);
+      }
+      else {
+        Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
+        return new BitCastInst(vptr, TYPE_PTR(getEltLLVMType(regs[reg].vtype)),
+                               "", context.currentBlock);
+      }
     }
 
 #define BITCAST_PINT(bits, vptr) \
@@ -423,7 +453,7 @@ namespace Ant {
 
     extern "C" void AntVMDestroyVariable(const vector<VarTypeData> &vtypes, 
                                         const VarSpec &vspec, Variable *vptr) {
-
+      // to be done
     }
 
 #define CONST_PTR(type, ptr) \

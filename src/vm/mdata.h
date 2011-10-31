@@ -52,13 +52,16 @@ namespace Ant {
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
-      llvm::Value *regValue(LLVMContext &context, RegId reg,
-                            bool dereferenceIfNeeded = true);
       llvm::Value *specialPtr(llvm::Value *vptr, SpeField sfld,
                               llvm::BasicBlock *block);
-      llvm::Value *elementPtr(LLVMContext &context, llvm::Value *vptr,
-                          llvm::Value *elti = NULL, EltField efld = EFLD_BYTES,
-                              uint32_t subi = 0);
+      llvm::Value *elementPtr(LLVMContext &context, RegId reg, bool ref,
+                              llvm::Value *vptr, size_t eltc = 0,
+                              llvm::Value *eltv = NULL);
+      llvm::Value *fieldPtr(LLVMContext &context, llvm::Value *vptr,
+                            EltField efld, uint32_t eltc = 0);
+      llvm::Value *regValue(LLVMContext &context, RegId reg, 
+                            bool dereferenceIfNeeded = true, size_t eltc = 0,
+                            llvm::Value *eltv = NULL);
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
       void releaseVariable(LLVMContext &context, const VarSpec &vspec,

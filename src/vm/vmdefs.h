@@ -208,7 +208,8 @@ namespace Ant {
     class RETInstr;
 
     enum VMExceptionCode {
-      VMECODE_NULL_DEREFERENCING = -1,
+      VMECODE_NULL_REFERENCE = -1,
+      VMECODE_RANGE = -2,
     };
 
   }
