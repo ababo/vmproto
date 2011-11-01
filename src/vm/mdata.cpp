@@ -257,7 +257,7 @@ namespace Ant {
     Value *Runtime::ModuleData::specialPtr(Value *vptr, SpeField sfld,
                                            BasicBlock *block) {
       vector<Value*> indexes;
-      indexes.push_back(CONST_INT(2, sfld == SFLD_REF_COUNT ? -1 : -2, true));
+      indexes.push_back(CONST_INT(32, sfld == SFLD_REF_COUNT ? -1 : -2, true));
 
       Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
 
@@ -271,29 +271,31 @@ namespace Ant {
       bool runtimeCheck = eltv ||
         (ref && regs[reg].flags & VFLAG_NON_FIXED_REF);
 
-      if(!eltv)
-        eltv = CONST_INT(1, uint64_t(eltc), false);
+      if(runtimeCheck || eltc) { // just to remove redundancy
+        if(!eltv)
+          eltv = CONST_INT(64, uint64_t(eltc), false);
 
-      if(runtimeCheck) {
-        Value *ecval;
-        if(regs[reg].flags & VFLAG_NON_FIXED_REF)
-          ecval = new LoadInst(specialPtr(vptr, SFLD_ELT_COUNT,
-                                          context.currentBlock),
-                               "", context.currentBlock);
-        else ecval = CONST_INT(64, uint64_t(regs[reg].count), false);
+        if(runtimeCheck) {
+          Value *ecval;
+          if(regs[reg].flags & VFLAG_NON_FIXED_REF)
+            ecval = new LoadInst(specialPtr(vptr, SFLD_ELT_COUNT,
+                                            context.currentBlock),
+                                 "", context.currentBlock);
+          else ecval = CONST_INT(64, uint64_t(regs[reg].count), false);
 
-        Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_ULT,
-                                   eltv, ecval);
-        emitThrowIfNot(context, cond, VMECODE_RANGE);
+          Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_ULT,
+                                     eltv, ecval);
+          emitThrowIfNot(context, cond, VMECODE_RANGE);
+        }
+        return GetElementPtrInst::Create(vptr, eltv, "", context.currentBlock);
       }
-
-      return GetElementPtrInst::Create(vptr, eltv, "", context.currentBlock);
+      else return vptr;
     }
 
     Value *Runtime::ModuleData::fieldPtr(LLVMContext &context, Value *vptr,
                                          EltField efld, uint32_t eltc) {
       vector<Value*> indexes;
-      indexes.push_back(CONST_INT(1, 0, false));
+      indexes.push_back(CONST_INT(64, 0, false));
 
       uint64_t index;
       const StructType *st = static_cast<const StructType*>(vptr->getType());
@@ -303,7 +305,7 @@ namespace Ant {
           (st->getElementType(0))->getElementType()->isIntegerTy(); break;
         case EFLD_PREFS: index = st->getNumElements() - 1; break;
       };
-      indexes.push_back(CONST_INT(2, index, false));
+      indexes.push_back(CONST_INT(32, index, false));
 
       indexes.push_back(CONST_INT(32, uint64_t(eltc), false));
 
@@ -321,12 +323,14 @@ namespace Ant {
           if(!dereferenceIfNeeded)
             return vptr;
 
-          Value *vptr = new LoadInst(vptr, "", context.currentBlock);
+          vptr = new LoadInst(vptr, "", context.currentBlock);
+          Value *ptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
+                                         context.currentBlock);
           Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                     vptr, CONST_INT(64, 0, false));
+                                     ptri, CONST_INT(64, 0, false));
           emitThrowIfNot(context, cond, VMECODE_NULL_REFERENCE);
         }
-        
+
         return elementPtr(context, reg, frame->ref, vptr, eltc, eltv);
       }
       else {
@@ -532,12 +536,25 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeLDE(LLVMContext &context,
                                               const LDEInstr &instr) {
-
+      Value *eltptr = BITCAST_PINT(64, regValue(context, instr.elt()));
+      Value *eltval = new LoadInst(eltptr, "", context.currentBlock);
+      Value *from = regValue(context, instr.from(), true, 0, eltval);
+      Value *to = regValue(context, instr.to());
+      Value *val = new LoadInst(from, "", context.currentBlock);
+      new StoreInst(val, to, context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeLDB(LLVMContext &context,
                                               const LDBInstr &instr) {
-
+      RegId f = instr.from(), o = instr.offset(), t = instr.to();
+      uint32_t fbytes = vtypes[regs[f].vtype].bytes - o;
+      uint32_t tbytes = vtypes[regs[t].vtype].bytes;
+      uint32_t mbytes = fbytes < tbytes ? fbytes : tbytes;
+      Value *bptr = fieldPtr(context, regValue(context, f), EFLD_BYTES, o);
+      Value *from = BITCAST_PARR(mbytes, bptr);
+      Value *to = BITCAST_PARR(mbytes, regValue(context, t));
+      Value *val = new LoadInst(from, "", context.currentBlock);
+      new StoreInst(val, to, context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeLDR(LLVMContext &context,
@@ -547,12 +564,25 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeSTE(LLVMContext &context,
                                               const STEInstr &instr) {
-
+      Value *from = regValue(context, instr.from());
+      Value *eltptr = BITCAST_PINT(64, regValue(context, instr.elt()));
+      Value *eltval = new LoadInst(eltptr, "", context.currentBlock);
+      Value *to = regValue(context, instr.to(), true, 0, eltval);
+      Value *val = new LoadInst(from, "", context.currentBlock);
+      new StoreInst(val, to, context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeSTB(LLVMContext &context,
 					      const STBInstr &instr) {
-
+      RegId f = instr.from(), t = instr.to(), o = instr.offset();
+      uint32_t fbytes = vtypes[regs[f].vtype].bytes;
+      uint32_t tbytes = vtypes[regs[t].vtype].bytes - o;
+      uint32_t mbytes = fbytes < tbytes ? fbytes : tbytes;
+      Value *from = BITCAST_PARR(mbytes, regValue(context, f));
+      Value *bptr = fieldPtr(context, regValue(context, t), EFLD_BYTES, o);
+      Value *to = BITCAST_PARR(mbytes, bptr);
+      Value *val = new LoadInst(from, "", context.currentBlock);
+      new StoreInst(val, to, context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeSTR(LLVMContext &context,
