@@ -619,8 +619,10 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
-					      const CALLInstr &instr) {
-
+                                               const CALLInstr &instr) {
+      vector<Value*> args(1, context.frames.back().vptr);
+      CallInst::Create(llvmModule->getFunction(funcName(instr.proc())),
+                       args.begin(), args.end(), "", context.currentBlock);
     }
 
     void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
