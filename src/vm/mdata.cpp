@@ -77,11 +77,11 @@ namespace Ant {
       }
 
       ProcId proc;
-      llvm::Function *func;
+      Function *func;
       size_t instrIndex, blockIndex;
       std::vector<size_t> blockIndexes;
       std::vector<llvm::BasicBlock*> blocks;
-      llvm::BasicBlock *currentBlock; // sometimes != blocks[blockIndex]
+      BasicBlock *currentBlock; // sometimes != blocks[blockIndex]
       std::vector<Frame> frames;
     };
 
@@ -366,7 +366,7 @@ namespace Ant {
       new StoreInst(val3, result, context.currentBlock);
     }
 
-    template<uint8_t OP, llvm::ICmpInst::Predicate PR, uint64_t CO>
+    template<uint8_t OP, ICmpInst::Predicate PR, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUJ(LLVMContext &context,
                                                const UJInstrT<OP> &instr) {
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
@@ -379,7 +379,7 @@ namespace Ant {
       BranchInst::Create(tblock, fblock, cmp, context.currentBlock);
     }
 
-    template<uint8_t OP, llvm::ICmpInst::Predicate PR>
+    template<uint8_t OP, ICmpInst::Predicate PR>
       void Runtime::ModuleData::emitLLVMCodeBJ(LLVMContext &context,
                                                const BJInstrT<OP> &instr) {
       Value *operand1 = BITCAST_PINT(64, regValue(context, instr.operand1()));
@@ -425,6 +425,11 @@ namespace Ant {
       CallInst::Create(ms, args.begin(), args.end(), "", context.currentBlock);
     }
 
+#define CONST_PTR(type, ptr) \
+    ConstantExpr::getCast(Instruction::IntToPtr, \
+                          CONST_INT(64, uint64_t(ptr), false), \
+                          TYPE_PTR(type))
+
     template<uint8_t OP, bool REF>
       void Runtime::ModuleData::emitLLVMCodePUSH(LLVMContext &context,
                                             const PUSHInstrT<OP, REF> &instr) {
@@ -436,10 +441,10 @@ namespace Ant {
       const Type *type = getEltLLVMType(regs[reg].vtype);
 
       if(REF) {
-        type = TYPE_PTR(type);
-        vptr = new AllocaInst(type, "", context.currentBlock);
-        Constant *zeros = ConstantAggregateZero::get(type);
-        new StoreInst(zeros, vptr, context.currentBlock);
+        const PointerType *ptype = TYPE_PTR(type);
+        vptr = new AllocaInst(ptype, "", context.currentBlock);
+        Constant *null = ConstantPointerNull::get(ptype);
+        new StoreInst(null, vptr, context.currentBlock);
       }
       else {
         Value *count = CONST_INT(64, uint64_t(regs[reg].count), false);
@@ -459,11 +464,6 @@ namespace Ant {
                                         const VarSpec &vspec, Variable *vptr) {
       // to be done
     }
-
-#define CONST_PTR(type, ptr) \
-    ConstantExpr::getCast(Instruction::IntToPtr, \
-                          CONST_INT(64, uint64_t(ptr), false), \
-                          TYPE_PTR(type))
 
     void Runtime::ModuleData::incVariableRefCount(LLVMContext &context,
                                      Value *vptr, const VarSpec *vspecForDec) {
