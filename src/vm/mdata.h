@@ -64,8 +64,8 @@ namespace Ant {
                             llvm::Value *eltv = NULL);
       llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
                                 llvm::Value *count);
-      void releaseVariable(LLVMContext &context, const VarSpec &vspec,
-                           llvm::Value *vptr);
+      void incVariableRefCount(LLVMContext &context, llvm::Value *vptr,
+                               const VarSpec *vspecForDec = NULL);
       void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
