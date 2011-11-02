@@ -66,10 +66,10 @@ namespace Ant {
        SVPartElt<Bytes, VRefs, PRefs> elts[Count];
     };
 
-    template<bool RefCount> struct SVCPartRefCount { size_t refCount; };
+    template<bool RefCount> struct SVCPartRefCount { uint64_t refCount; };
     template<> struct SVCPartRefCount<false> {};
 
-    template<bool EltCount> struct SVCPartEltCount { size_t eltCount; };
+    template<bool EltCount> struct SVCPartEltCount { uint64_t eltCount; };
     template<> struct SVCPartEltCount<false> {};
 
     template<uint32_t Bytes, uint32_t VRefs, uint32_t PRefs, size_t Count = 1,

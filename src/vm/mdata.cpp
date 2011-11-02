@@ -257,13 +257,9 @@ namespace Ant {
 
     Value *Runtime::ModuleData::specialPtr(Value *vptr, SpeField sfld,
                                            BasicBlock *block) {
-      vector<Value*> indexes;
-      indexes.push_back(CONST_INT(32, sfld == SFLD_REF_COUNT ? -1 : -2, true));
-
       Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
-
-      return GetElementPtrInst::Create(iptr, indexes.begin(), indexes.end(),
-                                       "", block);
+      Value *index = CONST_INT(32, (sfld == SFLD_REF_COUNT) ? -1 : -2, true);
+      return GetElementPtrInst::Create(iptr, index, "", block);
     }
 
     Value *Runtime::ModuleData::elementPtr(LLVMContext &context, RegId reg,
@@ -299,7 +295,8 @@ namespace Ant {
       indexes.push_back(CONST_INT(64, 0, false));
 
       uint64_t index;
-      const StructType *st = static_cast<const StructType*>(vptr->getType());
+      const StructType *st = static_cast<const StructType*>
+        (static_cast<const PointerType*>(vptr->getType())->getElementType());
       switch(efld) {
         case EFLD_BYTES: index = 0; break;
         case EFLD_VREFS: index = static_cast<const ArrayType*>
@@ -483,8 +480,8 @@ namespace Ant {
 
       Value *rcptr = specialPtr(vptr, SFLD_REF_COUNT, incBlock);
       Value *rcval = new LoadInst(rcptr, "", incBlock);
-      Instruction::BinaryOps op =vspecForDec?Instruction::Sub:Instruction::Add;
-      rcval=BinaryOperator::Create(op,rcval,CONST_INT(64,1,false),"",incBlock);
+      Value *inc = CONST_INT(64, vspecForDec ? -1 : 1, true);
+      rcval = BinaryOperator::Create(Instruction::Add, rcval, inc,"",incBlock);
       new StoreInst(rcval, rcptr, incBlock);
 
       if(vspecForDec) {
@@ -492,13 +489,14 @@ namespace Ant {
                             CONST_INT(64, 0, false));
         BasicBlock *desBlock = BasicBlock::Create(llvmModule->getContext(), "",
                                                   context.func, 0);
-        BranchInst::Create(desBlock, endBlock, cond, incBlock);
+        BranchInst::Create(endBlock, desBlock, cond, incBlock);
 
+        vptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(8)), "", desBlock);
         Function *des = llvmModule->getFunction(DESTROY_FUNC_NAME);
         vector<Value*> args;
         args.push_back(CONST_PTR(TYPE_INT(8), &vtypes));
         args.push_back(CONST_PTR(TYPE_INT(8), vspecForDec));
-       args.push_back(new BitCastInst(vptr,TYPE_PTR(TYPE_INT(8)),"",desBlock));
+        args.push_back(vptr);
         CallInst::Create(des, args.begin(), args.end(), "", desBlock);
         BranchInst::Create(endBlock, desBlock);
       }
