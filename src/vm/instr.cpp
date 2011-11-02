@@ -1,9 +1,10 @@
 #include <sstream>
 
 #include "../exception.h"
+#include "../util.h"
 #include "instr.h"
 #include "mbuilder.h"
-#include "utils.h"
+#include "util.h"
 
 namespace Ant {
   namespace VM {
@@ -21,7 +22,8 @@ namespace Ant {
     }
 
 #define VIRTUAL_CASE(op, left, mod, call) \
-    case OPCODE_##op: left static_cast<mod op##Instr&>(*this).call; break;
+    case OPCODE_##op: { const char *opcode = STRZ(op); \
+      left static_cast<mod op##Instr&>(*this).call; } break;
 
 #define VIRTUAL_CALL(left, mod, call, def) \
     switch(op) { \
@@ -239,6 +241,10 @@ namespace Ant {
 
     size_t Instr::branchIndex(size_t index) const {
       VIRTUAL_CALL(return, const, branchIndex(index), 0);
+    }
+
+    const char *Instr::mnemonic() const {
+      VIRTUAL_CALL(return, const, dummy(opcode), "ILL");
     }
 
   }

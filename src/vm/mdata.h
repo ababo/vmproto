@@ -49,8 +49,10 @@ namespace Ant {
       void createLLVMFuncs();
       void createThrowFunc();
       void createDestroyFunc();
+      void createTraceFunc();
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
+      void emitTraceInstr(LLVMContext &context, size_t index, OpCode op);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
       llvm::Value *specialPtr(llvm::Value *vptr, SpeField sfld,
                               llvm::BasicBlock *block);

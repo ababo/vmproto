@@ -122,9 +122,9 @@ namespace Ant {
         builder.addProcInstr(qsort, LDBInstr(io, 8, h));
         builder.addProcInstr(qsort, JGInstr(h, l, 2));
         builder.addProcInstr(qsort, RETInstr());
-        RegId cio = builder.addReg(0, ioType);
         builder.addProcInstr(qsort, PUSHRInstr(a));
         builder.addProcInstr(qsort, LDRInstr(io, 0, a));
+        RegId cio = builder.addReg(0, ioType);
         builder.addProcInstr(qsort, PUSHInstr(cio));
         builder.addProcInstr(qsort, CPBInstr(l, cio));
         builder.addProcInstr(qsort, STBInstr(h, cio, 8));

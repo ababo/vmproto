@@ -2,7 +2,7 @@
 #include <set>
 #include <sstream>
 
-#include "../assert.h"
+#include "../util.h"
 #include "../exception.h"
 #include "instr.h"
 #include "llvm/Analysis/Passes.h"
@@ -24,6 +24,7 @@ namespace {
 
   const char *THROW_FUNC_NAME = "throw";
   const char *DESTROY_FUNC_NAME = "destroy";
+  const char *TRACE_INSTR_FUNC_NAME = "trace";
 
   inline string funcName(ProcId proc) {
     ostringstream out;
@@ -635,6 +636,39 @@ namespace Ant {
       ReturnInst::Create(llvmModule->getContext(), context.currentBlock);
     }
 
+#ifdef CONFIG_DEBUG
+    extern "C" void AntVMTraceInstr(uint64_t index, uint8_t op) {
+      cerr << "Trace hit: " << index << " "
+           << Instr::opcodeMnemonic(OpCode(op))
+           << endl;
+    }
+
+    void Runtime::ModuleData::createTraceFunc() {
+      vector<const Type*> argTypes;
+      argTypes.push_back(TYPE_INT(64));
+      argTypes.push_back(TYPE_INT(8));
+      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      FunctionType *ftype = FunctionType::get(retType, argTypes, false);
+
+      Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
+                                        TRACE_INSTR_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::C);
+
+      void *mem = reinterpret_cast<void*>(&AntVMTraceInstr);
+      llvmEE->addGlobalMapping(func, mem);
+    }
+
+    void Runtime::ModuleData::emitTraceInstr(LLVMContext &context,
+                                             size_t index, OpCode op) {
+      Function *trc = llvmModule->getFunction(TRACE_INSTR_FUNC_NAME);
+      vector<Value*> args;
+      args.push_back(CONST_INT(64, uint64_t(index), false));
+      args.push_back(CONST_INT(8, uint64_t(op), false));
+      CallInst::Create(trc, args.begin(), args.end(), "",
+                       context.currentBlock);
+    }
+#endif
+
 #define UOINSTR_CASE(op, iop, co) \
     case OPCODE_##op: \
       emitLLVMCodeUO<OPCODE_##op, Instruction::iop, co>( \
@@ -671,10 +705,13 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
       Instr instr;
-      for(size_t i = 0; i < procs[context.proc].code.size();
-          i += instr.size()) {
+      for(size_t i = 0, j = 0; i < procs[context.proc].code.size();
+          i += instr.size(), ++j) {
         instr.set(&procs[context.proc].code[i]);
 
+#ifdef CONFIG_DEBUG
+        emitTraceInstr(context, j, instr.opcode());
+#endif
         switch(instr.opcode()) {
           UOINSTR_CASE(INC, Add, 1);
           UOINSTR_CASE(DEC, Sub, 1);
@@ -785,6 +822,9 @@ namespace Ant {
     void Runtime::ModuleData::createLLVMFuncs() {
       createThrowFunc();
       createDestroyFunc();
+#ifdef CONFIG_DEBUG
+      createTraceFunc();
+#endif
 
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;

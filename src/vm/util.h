@@ -1,5 +1,5 @@
-#ifndef __VM_UTILS_INCLUDED__
-#define __VM_UTILS_INCLUDED__
+#ifndef __VM_UTIL_INCLUDED__
+#define __VM_UTIL_INCLUDED__
 
 #include <cstddef>
 #include <istream>
@@ -23,4 +23,4 @@ namespace Ant {
   }
 }
 
-#endif // __VM_UTILS_INCLUDED__
+#endif // __VM_UTIL_INCLUDED__

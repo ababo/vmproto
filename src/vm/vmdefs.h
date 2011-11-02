@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "../farray.h"
-#include "utils.h"
+#include "util.h"
 
 namespace Ant {
   namespace VM {

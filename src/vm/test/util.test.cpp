@@ -2,7 +2,7 @@
 
 #include "../../string.h"
 #include "../../test/test.h"
-#include "../utils.h"
+#include "../util.h"
 
 namespace {
 
@@ -11,7 +11,7 @@ namespace {
   using namespace Ant::VM;
   using namespace Ant::Test;
 
-  const String subj = "Ant::VM::{Utils}";
+  const String subj = "Ant::VM::{Util}";
 
   bool testMBUInts() {
     stringstream io;
@@ -82,7 +82,7 @@ namespace Ant {
   namespace VM {
     namespace Test {
 
-      bool testUtils() {
+      bool testUtil() {
         bool passed;
 
         passed = testMBUInts();

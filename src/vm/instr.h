@@ -17,6 +17,7 @@ namespace Ant {
       friend class ModuleBuilder;
     public:
       Instr() : op(OPCODE_ILL) {}
+      Instr(OpCode op) : op(op) {}
       Instr(VMCode code) { set(code); }
 
       void set(VMCode code);
@@ -27,6 +28,11 @@ namespace Ant {
       size_t size() const;
       bool branches() const;
       size_t branchIndex(size_t index) const;
+
+      const char *mnemonic() const;
+      static const char *opcodeMnemonic(OpCode op) {
+        return Instr(op).mnemonic();
+      }
 
     protected:
       void setParam(uint64_t p);
@@ -63,6 +69,8 @@ namespace Ant {
       static void applyDefault(ModuleBuilder &mbuilder, ProcId proc);
 
       void assertConsistency(ModuleBuilder &mbuilder, ProcId proc) const;
+
+      const char *dummy(const char *str) const { return str; }
 
       uint8_t op;
       uint8_t dat[MAX_INSTR_SIZE - 1];

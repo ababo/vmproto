@@ -1,5 +1,5 @@
-#ifndef __ASSERT_INCLUDED__
-#define __ASSERT_INCLUDED__
+#ifndef __UTIL_INCLUDED__
+#define __UTIL_INCLUDED__
 
 #include <iostream>
 
@@ -16,4 +16,6 @@
 #define ASSERT(val)
 #endif
 
-#endif // __ASSERT_INCLUDED__
+#define STRZ(arg) #arg
+
+#endif // __UTIL_INCLUDED__

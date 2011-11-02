@@ -11,7 +11,7 @@ namespace Ant {
       void createQSortModule(Module &module);
       void createEHTestModule(Module &module);
 
-      bool testUtils();
+      bool testUtil();
       bool testModuleBuilder();
       bool testModuleData();
 
