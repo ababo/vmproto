@@ -74,8 +74,8 @@ namespace {
 
       SVariable<16, 1, 0> io;
       SVContainer<8, 0, 0, QSORT_ARR_COUNT, true, true> a;
-      *reinterpret_cast<uint64_t*>(io.elts[0].bytes) = 0;
-      *reinterpret_cast<uint64_t*>(io.elts[8].bytes) = QSORT_ARR_COUNT - 1;
+      *reinterpret_cast<uint64_t*>(&io.elts[0].bytes[0]) = 0;
+      *reinterpret_cast<uint64_t*>(&io.elts[0].bytes[8]) = QSORT_ARR_COUNT - 1;
       a.refCount = 1, a.eltCount = QSORT_ARR_COUNT;
       io.elts[0].vrefs[0] = &a.var;
 
