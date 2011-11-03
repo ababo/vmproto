@@ -325,10 +325,11 @@ namespace Ant {
             return vptr;
 
           vptr = new LoadInst(vptr, "", context.currentBlock);
-          Value *ptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
-                                         context.currentBlock);
+          const PointerType *ptype =
+            static_cast<const PointerType*>(vptr->getType());
+          Constant *null = ConstantPointerNull::get(ptype);
           Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                     ptri, CONST_INT(64, 0, false));
+                                     vptr, null);
           emitThrowIfNot(context, cond, VMECODE_NULL_REFERENCE);
         }
 
@@ -468,10 +469,11 @@ namespace Ant {
 
     void Runtime::ModuleData::incVariableRefCount(LLVMContext &context,
                                      Value *vptr, const VarSpec *vspecForDec) {
-      Value *ptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
-                                     context.currentBlock);
+      const PointerType *ptype =
+        static_cast<const PointerType*>(vptr->getType());
+      Constant *null = ConstantPointerNull::get(ptype);
       Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
-                                 ptri, CONST_INT(64, 0, false));
+                                 vptr, null);
       BasicBlock *incBlock = BasicBlock::Create(llvmModule->getContext(),
                                                 "", context.func, 0);
       BasicBlock *endBlock = BasicBlock::Create(llvmModule->getContext(),
@@ -544,8 +546,8 @@ namespace Ant {
       Value *eltptr = BITCAST_PINT(64, regValue(context, instr.elt()));
       Value *eltval = new LoadInst(eltptr, "", context.currentBlock);
       Value *from = regValue(context, instr.from(), true, 0, eltval);
-      Value *to = regValue(context, instr.to());
       Value *val = new LoadInst(from, "", context.currentBlock);
+      Value *to = regValue(context, instr.to());
       new StoreInst(val, to, context.currentBlock);
     }
 
