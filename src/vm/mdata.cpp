@@ -24,7 +24,7 @@ namespace {
 
   const char *THROW_FUNC_NAME = "throw";
   const char *DESTROY_FUNC_NAME = "destroy";
-  const char *TRACE_INSTR_FUNC_NAME = "trace";
+  const char *TRACE_FUNC_NAME = "trace";
 
   inline string funcName(ProcId proc) {
     ostringstream out;
@@ -239,6 +239,9 @@ namespace Ant {
 
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
+#define CALL_FUNC(block, func, args) \
+    CallInst::Create(func, args.begin(), args.end(), "", block) \
+      ->setCallingConv(func->getCallingConv());
 
     void Runtime::ModuleData::emitThrowIfNot(LLVMContext &context, Value *cond,
                                              int64_t edValue) {
@@ -246,7 +249,7 @@ namespace Ant {
                                               "", context.func, 0);
       Function *func = llvmModule->getFunction(THROW_FUNC_NAME);
       vector<Value*> args(1, CONST_INT(64, edValue, true));
-      CallInst::Create(func, args.begin(), args.end(), "", fblock);
+      CALL_FUNC(fblock, func, args);
       new UnreachableInst(llvmModule->getContext(), fblock);
 
       BasicBlock *tblock = BasicBlock::Create(llvmModule->getContext(),
@@ -255,8 +258,8 @@ namespace Ant {
       context.currentBlock = tblock;
     }
 
-    Value *Runtime::ModuleData::specialPtr(Value *vptr, SpeField sfld,
-                                           BasicBlock *block) {
+    Value *Runtime::ModuleData::specialPtr(BasicBlock *block, Value *vptr,
+                                           SpeField sfld) {
       Value *iptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
       Value *index = CONST_INT(32, (sfld == SFLD_REF_COUNT) ? -1 : -2, true);
       return GetElementPtrInst::Create(iptr, index, "", block);
@@ -275,8 +278,8 @@ namespace Ant {
         if(runtimeCheck) {
           Value *ecval;
           if(regs[reg].flags & VFLAG_NON_FIXED_REF)
-            ecval = new LoadInst(specialPtr(vptr, SFLD_ELT_COUNT,
-                                            context.currentBlock),
+            ecval = new LoadInst(specialPtr(context.currentBlock, vptr,
+                                            SFLD_ELT_COUNT),
                                  "", context.currentBlock);
           else ecval = CONST_INT(64, uint64_t(regs[reg].count), false);
 
@@ -421,7 +424,7 @@ namespace Ant {
       args.push_back(len);
       args.push_back(CONST_INT(32, 0, false));
       args.push_back(CONST_INT(1, 0, false));
-      CallInst::Create(ms, args.begin(), args.end(), "", context.currentBlock);
+      CALL_FUNC(context.currentBlock, ms, args);
     }
 
 #define CONST_PTR(type, ptr) \
@@ -478,7 +481,7 @@ namespace Ant {
       BranchInst::Create(incBlock, endBlock, cond, context.currentBlock);
       context.currentBlock = endBlock;
 
-      Value *rcptr = specialPtr(vptr, SFLD_REF_COUNT, incBlock);
+      Value *rcptr = specialPtr(incBlock, vptr, SFLD_REF_COUNT);
       Value *rcval = new LoadInst(rcptr, "", incBlock);
       Value *inc = CONST_INT(64, vspecForDec ? -1 : 1, true);
       rcval = BinaryOperator::Create(Instruction::Add, rcval, inc,"",incBlock);
@@ -497,7 +500,7 @@ namespace Ant {
         args.push_back(CONST_PTR(TYPE_INT(8), &vtypes));
         args.push_back(CONST_PTR(TYPE_INT(8), vspecForDec));
         args.push_back(vptr);
-        CallInst::Create(des, args.begin(), args.end(), "", desBlock);
+        CALL_FUNC(desBlock, des, args);
         BranchInst::Create(endBlock, desBlock);
       }
       else BranchInst::Create(endBlock, incBlock);
@@ -514,7 +517,7 @@ namespace Ant {
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.frames.back().sptr);
-      CallInst::Create(sr, args.begin(), args.end(), "", context.currentBlock);
+      CALL_FUNC(context.currentBlock, sr, args);
       context.popFrame();
     }
 
@@ -621,9 +624,9 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
                                                const CALLInstr &instr) {
+      Function *func = llvmModule->getFunction(funcName(instr.proc()));
       vector<Value*> args(1, context.frames.back().vptr);
-      CallInst::Create(llvmModule->getFunction(funcName(instr.proc())),
-                       args.begin(), args.end(), "", context.currentBlock);
+      CALL_FUNC(context.currentBlock, func, args);
     }
 
     void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
@@ -637,35 +640,43 @@ namespace Ant {
     }
 
 #ifdef CONFIG_DEBUG
-    extern "C" void AntVMTraceInstr(uint64_t index, uint8_t op) {
-      cerr << "Trace hit: " << index << " "
-           << Instr::opcodeMnemonic(OpCode(op))
-           << endl;
+    extern "C" void AntVMTrace(uint64_t index, uint8_t op, void *ptr) {
+      cerr << "Trace hit: "<< index << " "
+           << Instr::opcodeMnemonic(OpCode(op));
+      if(ptr)
+        cerr << " " << ptr;
+      cerr << endl;
     }
 
     void Runtime::ModuleData::createTraceFunc() {
       vector<const Type*> argTypes;
       argTypes.push_back(TYPE_INT(64));
       argTypes.push_back(TYPE_INT(8));
+      argTypes.push_back(TYPE_PTR(TYPE_INT(8)));
       const Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
-                                        TRACE_INSTR_FUNC_NAME, llvmModule);
+                                        TRACE_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
 
-      void *mem = reinterpret_cast<void*>(&AntVMTraceInstr);
+      void *mem = reinterpret_cast<void*>(&AntVMTrace);
       llvmEE->addGlobalMapping(func, mem);
     }
 
-    void Runtime::ModuleData::emitTraceInstr(LLVMContext &context,
-                                             size_t index, OpCode op) {
-      Function *trc = llvmModule->getFunction(TRACE_INSTR_FUNC_NAME);
+    void Runtime::ModuleData::emitTrace(BasicBlock *block, size_t index,
+                                        OpCode op, Value *ptr) {
+      const PointerType *ptype = TYPE_PTR(TYPE_INT(8));
+      if(ptr)
+        ptr = new BitCastInst(ptr, ptype, "", block);
+      else ptr = ConstantPointerNull::get(ptype);
+
+      Function *trc = llvmModule->getFunction(TRACE_FUNC_NAME);
       vector<Value*> args;
       args.push_back(CONST_INT(64, uint64_t(index), false));
       args.push_back(CONST_INT(8, uint64_t(op), false));
-      CallInst::Create(trc, args.begin(), args.end(), "",
-                       context.currentBlock);
+      args.push_back(ptr);
+      CALL_FUNC(block, trc, args);
     }
 #endif
 
@@ -710,7 +721,7 @@ namespace Ant {
         instr.set(&procs[context.proc].code[i]);
 
 #ifdef CONFIG_DEBUG
-        emitTraceInstr(context, j, instr.opcode());
+        emitTrace(context.currentBlock, j, instr.opcode());
 #endif
         switch(instr.opcode()) {
           UOINSTR_CASE(INC, Add, 1);
@@ -840,6 +851,10 @@ namespace Ant {
         Function *func = Function::Create(ftype, link, funcName(proc),
                                           llvmModule);
         func->setCallingConv(external ? CallingConv::C : CallingConv::Fast);
+      }
+
+      for(ProcId proc = 0; proc < procs.size(); proc++) {
+        Function *func = llvmModule->getFunction(funcName(proc));
 
         LLVMContext context = { proc, func, 0, 0 };
         prepareLLVMContext(context);

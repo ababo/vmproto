@@ -52,10 +52,11 @@ namespace Ant {
       void createTraceFunc();
       void prepareLLVMContext(LLVMContext &context);
       void emitLLVMCode(LLVMContext &context);
-      void emitTraceInstr(LLVMContext &context, size_t index, OpCode op);
+      void emitTrace(llvm::BasicBlock *block, size_t index, OpCode op,
+                     llvm::Value *ptr = NULL);
       const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
-      llvm::Value *specialPtr(llvm::Value *vptr, SpeField sfld,
-                              llvm::BasicBlock *block);
+      llvm::Value *specialPtr(llvm::BasicBlock *block, llvm::Value *vptr,
+                              SpeField sfld);
       llvm::Value *elementPtr(LLVMContext &context, RegId reg, bool ref,
                               llvm::Value *vptr, size_t eltc = 0,
                               llvm::Value *eltv = NULL);
