@@ -13,6 +13,7 @@
 #include "llvm/DerivedTypes.h"
 #include "llvm/Intrinsics.h"
 #include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
 #include "mdata.h"
@@ -22,7 +23,9 @@ namespace {
   using namespace std;
   using namespace Ant::VM;
 
+  const char *ZTI_VAR_NAME = "_ZTIl";
   const char *THROW_FUNC_NAME = "throw";
+  const char *CXA_THROW_FUNC_NAME = "__cxa_throw";
   const char *DESTROY_FUNC_NAME = "destroy";
   const char *TRACE_FUNC_NAME = "trace";
 
@@ -88,7 +91,8 @@ namespace Ant {
 
     Runtime::ModuleData::ModuleData(const UUID &id)
       : id(id), dropped(false), llvmModule(NULL), llvmFPM(NULL), llvmEE(NULL) {
-      llvm::InitializeNativeTarget();
+      InitializeNativeTarget();
+      JITExceptionHandling = true;
     }
 
     void Runtime::ModuleData::assertNotDropped() const {
@@ -348,6 +352,8 @@ namespace Ant {
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
                                                const UOInstrT<OP> &instr) {
+      emitThrowIfNot(context, CONST_INT(1, 0, false), -1);
+
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
       Value *val = new LoadInst(it, "", context.currentBlock);
       Value *co = CONST_INT(64, CO, false);
@@ -769,7 +775,14 @@ namespace Ant {
         ReturnInst::Create(llvmModule->getContext(), context.blocks.back());
     }
 
+    void Runtime::ModuleData::createZTIVar() {
+      new GlobalVariable(*llvmModule, TYPE_PTR(TYPE_INT(8)), true,
+                         GlobalValue::ExternalLinkage, 0, ZTI_VAR_NAME);
+    }
+
     void Runtime::ModuleData::createLLVMPVars() {
+      createZTIVar();
+
       for(RegId reg = 0; reg < regs.size(); reg++)
         if(regs[reg].flags & VFLAG_PERSISTENT) {
           const Type *type = getEltLLVMType(regs[reg].vtype);
@@ -791,6 +804,16 @@ namespace Ant {
         }
     }
 
+    void Runtime::ModuleData::createCXAThrowFunc() {
+      vector<const Type*> argTypes(3, TYPE_PTR(TYPE_INT(8)));
+      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      FunctionType *ftype = FunctionType::get(retType, argTypes, false);
+
+      Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
+                                        CXA_THROW_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::C);
+    }
+
     void Runtime::ModuleData::createThrowFunc() {
       vector<const Type*> argTypes;
       argTypes.push_back(TYPE_INT(64));
@@ -808,7 +831,20 @@ namespace Ant {
       vptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
       new StoreInst(func->arg_begin(), vptr, block);
 
-      new UnwindInst(llvmModule->getContext(), block);
+      const PointerType *vptrType = TYPE_PTR(TYPE_INT(8));
+      vptr = new BitCastInst(vptr, vptrType, "", block);
+      Value *zti = llvmModule->getGlobalVariable(ZTI_VAR_NAME);
+      zti = new BitCastInst(zti, vptrType, "", block);
+      ConstantPointerNull *null = ConstantPointerNull::get(vptrType);
+
+      Function *cxa_throw = llvmModule->getFunction(CXA_THROW_FUNC_NAME);
+      vector<Value*> args;
+      args.push_back(vptr);
+      args.push_back(zti);
+      args.push_back(null);
+      CALL_FUNC(block, cxa_throw, args);
+
+      new UnreachableInst(llvmModule->getContext(), block);
 
       llvmFPM->run(*func);
     }
@@ -831,6 +867,7 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::createLLVMFuncs() {
+      createCXAThrowFunc();
       createThrowFunc();
       createDestroyFunc();
 #ifdef CONFIG_DEBUG
@@ -925,7 +962,9 @@ namespace Ant {
 
       void *vPtr = llvmEE->getPointerToFunction(func);
       uintptr_t uPtr = reinterpret_cast<uintptr_t>(vPtr);
-      reinterpret_cast<void (*)(Variable&)>(uPtr)(io);
+
+      try { reinterpret_cast<void (*)(Variable&)>(uPtr)(io); }
+      catch(uint64_t) { throw RuntimeException(); }
     }
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {

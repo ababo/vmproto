@@ -46,7 +46,9 @@ namespace Ant {
 
       void prepareLLVMFPM();
       void createLLVMPVars();
+      void createZTIVar();
       void createLLVMFuncs();
+      void createCXAThrowFunc();
       void createThrowFunc();
       void createDestroyFunc();
       void createTraceFunc();
