@@ -197,7 +197,7 @@ namespace Ant {
         builder.addProcInstr(func2, PUSHInstr(cio));
         builder.addProcInstr(func2, CPBInstr(io, cio));
         builder.addProcInstr(func2, CALLInstr(func1));
-        builder.addProcInstr(func2, CPI8Instr(-1, io));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-1), io));
         builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, JMPInstr(8));
         builder.addProcInstr(func2, PUSHInstr(cio));
@@ -205,11 +205,11 @@ namespace Ant {
         builder.addProcInstr(func2, CPBInstr(io, ed));
         builder.addProcInstr(func2, MULInstr(ed, ed, ed));
         builder.addProcInstr(func2, CALLInstr(func1));
-        builder.addProcInstr(func2, CPI8Instr(-2, io));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-2), io));
         builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, JMPInstr(3));
-        builder.addProcInstr(func2, CPI8Instr(-3, ed));
+        builder.addProcInstr(func2, CPI8Instr(uint64_t(-3), ed));
         builder.addProcInstr(func2, THROWInstr());
         builder.addProcInstr(func2, POPInstr());
         builder.addProcInstr(func2, RETInstr());

@@ -352,7 +352,7 @@ namespace Ant {
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
                                                const UOInstrT<OP> &instr) {
-      emitThrowIfNot(context, CONST_INT(1, 0, false), -1);
+      //      emitThrowIfNot(context, CONST_INT(1, 0, false), -1);
 
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
       Value *val = new LoadInst(it, "", context.currentBlock);
@@ -468,6 +468,9 @@ namespace Ant {
 
     }
 
+    typedef void (*AntVMDestroyVariablePtr)(const vector<VarTypeData>&,
+					    const VarSpec&, Variable*);
+
     extern "C" void AntVMDestroyVariable(const vector<VarTypeData> &vtypes, 
                                         const VarSpec &vspec, Variable *vptr) {
       // to be done
@@ -503,8 +506,8 @@ namespace Ant {
         vptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(8)), "", desBlock);
         Function *des = llvmModule->getFunction(DESTROY_FUNC_NAME);
         vector<Value*> args;
-        args.push_back(CONST_PTR(TYPE_INT(8), &vtypes));
-        args.push_back(CONST_PTR(TYPE_INT(8), vspecForDec));
+        args.push_back(CONST_PTR(TYPE_INT(8), intptr_t(&vtypes)));
+        args.push_back(CONST_PTR(TYPE_INT(8), intptr_t(vspecForDec)));
         args.push_back(vptr);
         CALL_FUNC(desBlock, des, args);
         BranchInst::Create(endBlock, desBlock);
@@ -666,8 +669,7 @@ namespace Ant {
                                         TRACE_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
 
-      void *mem = reinterpret_cast<void*>(&AntVMTrace);
-      llvmEE->addGlobalMapping(func, mem);
+      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&AntVMTrace));
     }
 
     void Runtime::ModuleData::emitTrace(BasicBlock *block, size_t index,
@@ -862,8 +864,7 @@ namespace Ant {
                                         DESTROY_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
 
-      void *mem = reinterpret_cast<void*>(&AntVMDestroyVariable);
-      llvmEE->addGlobalMapping(func, mem);
+      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&AntVMDestroyVariable));
     }
 
     void Runtime::ModuleData::createLLVMFuncs() {

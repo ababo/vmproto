@@ -67,9 +67,9 @@ namespace {
     Module module;
 
     try {
-      const uint64_t in[QSORT_ARR_COUNT] = {
+      const int64_t in[QSORT_ARR_COUNT] = {
 	123, 34, -23, 0, 876, 34, 268, 994, -74, -222, 43, 13, -1, 6, 78, 56 };
-      const uint64_t out[QSORT_ARR_COUNT] = {
+      const int64_t out[QSORT_ARR_COUNT] = {
 	-222, -74, -23, -1, 0, 6, 13, 34, 34, 43, 56, 78, 123, 268, 876, 994 };
 
       SVariable<16, 1, 0> io;

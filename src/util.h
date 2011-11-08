@@ -2,6 +2,7 @@
 #define __UTIL_INCLUDED__
 
 #include <iostream>
+#include <stdint.h>
 
 #include "exception.h"
 
@@ -17,5 +18,16 @@
 #endif
 
 #define STRZ(arg) #arg
+
+namespace Ant {
+
+  template <typename FPTR>
+    void *funcPtrToVoidPtr(FPTR fptr) { // for old compilers (e.g. GCC 3.4)
+    void(*nfptr)() = reinterpret_cast<void(*)()>(fptr);
+    intptr_t iptr = *reinterpret_cast<intptr_t*>(&nfptr);
+    return reinterpret_cast<void*>(iptr);
+  }
+
+}
 
 #endif // __UTIL_INCLUDED__

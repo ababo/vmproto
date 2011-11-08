@@ -10,7 +10,7 @@ INC = -I$(PPATH)/depend/utf8/source
 CONF = -g -DCONFIG_DEBUG -DSHORT_PTR
 CFLLVM = `llvm-config --cppflags`
 CFLAGS = $(INC) $(CONF) -D$(PLATFORM) $(CFLLVM)
-TGFLAGS = --declarations
+TGFLAGS =
 
 LFLLVM = `llvm-config --ldflags --libs core jit native`
 LFLAGS = $(LFLLVM)
