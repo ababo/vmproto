@@ -353,8 +353,6 @@ namespace Ant {
     template<uint8_t OP, Instruction::BinaryOps IOP, uint64_t CO>
       void Runtime::ModuleData::emitLLVMCodeUO(LLVMContext &context,
                                                const UOInstrT<OP> &instr) {
-      //      emitThrowIfNot(context, CONST_INT(1, 0, false), -1);
-
       Value *it = BITCAST_PINT(64, regValue(context, instr.it()));
       Value *val = new LoadInst(it, "", context.currentBlock);
       Value *co = CONST_INT(64, CO, false);
@@ -790,7 +788,8 @@ namespace Ant {
         if(regs[reg].flags & VFLAG_PERSISTENT) {
           const Type *type = getEltLLVMType(regs[reg].vtype);
           type = ArrayType::get(type, regs[reg].count);
-          bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL;
+          // bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL;
+          bool threadLocal = false; // BUG in LLVM JIT
 
           GlobalVariable *gvar =
             new GlobalVariable(*llvmModule, type, false,
@@ -886,13 +885,13 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::createLLVMFuncs() {
-      createCXAAllocateException();      
-      createCXAThrowFunc();
-      createThrowFunc();
-      createDestroyFunc();
 #ifdef CONFIG_DEBUG
       createTraceFunc();
 #endif
+      createCXAAllocateException();  
+      createCXAThrowFunc();
+      createThrowFunc();
+      createDestroyFunc();
 
       for(ProcId proc = 0; proc < procs.size(); proc++) {
         vector<const Type*> argTypes;
