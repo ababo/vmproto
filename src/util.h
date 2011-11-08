@@ -21,8 +21,8 @@
 
 namespace Ant {
 
-  template <typename FPTR>
-    void *funcPtrToVoidPtr(FPTR fptr) { // for old compilers (e.g. GCC 3.4)
+  // for old compilers (e.g. GCC 3.4)
+  template <typename FPTR> void *funcPtrToVoidPtr(FPTR fptr) {
     void(*nfptr)() = reinterpret_cast<void(*)()>(fptr);
     intptr_t iptr = *reinterpret_cast<intptr_t*>(&nfptr);
     return reinterpret_cast<void*>(iptr);

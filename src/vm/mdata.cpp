@@ -23,11 +23,12 @@ namespace {
   using namespace std;
   using namespace Ant::VM;
 
-  const char *ZTI_VAR_NAME = "_ZTIl";
+  const char *ZTI_VAR_NAME = "_ZTIx";
   const char *THROW_FUNC_NAME = "throw";
+  const char *CXA_EALLOC_FUNC_NAME = "__cxa_allocate_exception";
   const char *CXA_THROW_FUNC_NAME = "__cxa_throw";
-  const char *DESTROY_FUNC_NAME = "destroy";
-  const char *TRACE_FUNC_NAME = "trace";
+  const char *DESTROY_FUNC_NAME = "ant_vm_destroy_variable";
+  const char *TRACE_FUNC_NAME = "ant_vm_trace";
 
   inline string funcName(ProcId proc) {
     ostringstream out;
@@ -243,9 +244,9 @@ namespace Ant {
 
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
-#define CALL_FUNC(block, func, args) \
-    CallInst::Create(func, args.begin(), args.end(), "", block) \
-      ->setCallingConv(func->getCallingConv());
+#define CALL_FUNC(block, var, func, args) \
+    CallInst *var = CallInst::Create(func, args.begin(),args.end(),"",block); \
+    var->setCallingConv(func->getCallingConv());
 
     void Runtime::ModuleData::emitThrowIfNot(LLVMContext &context, Value *cond,
                                              int64_t edValue) {
@@ -253,7 +254,7 @@ namespace Ant {
                                               "", context.func, 0);
       Function *func = llvmModule->getFunction(THROW_FUNC_NAME);
       vector<Value*> args(1, CONST_INT(64, edValue, true));
-      CALL_FUNC(fblock, func, args);
+      CALL_FUNC(fblock, call, func, args);
       new UnreachableInst(llvmModule->getContext(), fblock);
 
       BasicBlock *tblock = BasicBlock::Create(llvmModule->getContext(),
@@ -430,7 +431,7 @@ namespace Ant {
       args.push_back(len);
       args.push_back(CONST_INT(32, 0, false));
       args.push_back(CONST_INT(1, 0, false));
-      CALL_FUNC(context.currentBlock, ms, args);
+      CALL_FUNC(context.currentBlock, call, ms, args);
     }
 
 #define CONST_PTR(type, ptr) \
@@ -471,7 +472,7 @@ namespace Ant {
     typedef void (*AntVMDestroyVariablePtr)(const vector<VarTypeData>&,
 					    const VarSpec&, Variable*);
 
-    extern "C" void AntVMDestroyVariable(const vector<VarTypeData> &vtypes, 
+    extern "C" void ant_vm_destroy_variable(const vector<VarTypeData> &vtypes, 
                                         const VarSpec &vspec, Variable *vptr) {
       // to be done
     }
@@ -509,7 +510,7 @@ namespace Ant {
         args.push_back(CONST_PTR(TYPE_INT(8), intptr_t(&vtypes)));
         args.push_back(CONST_PTR(TYPE_INT(8), intptr_t(vspecForDec)));
         args.push_back(vptr);
-        CALL_FUNC(desBlock, des, args);
+        CALL_FUNC(desBlock, call, des, args);
         BranchInst::Create(endBlock, desBlock);
       }
       else BranchInst::Create(endBlock, incBlock);
@@ -526,7 +527,7 @@ namespace Ant {
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
       vector<Value*> args(1, context.frames.back().sptr);
-      CALL_FUNC(context.currentBlock, sr, args);
+      CALL_FUNC(context.currentBlock, call, sr, args);
       context.popFrame();
     }
 
@@ -635,7 +636,7 @@ namespace Ant {
                                                const CALLInstr &instr) {
       Function *func = llvmModule->getFunction(funcName(instr.proc()));
       vector<Value*> args(1, context.frames.back().vptr);
-      CALL_FUNC(context.currentBlock, func, args);
+      CALL_FUNC(context.currentBlock, call, func, args);
     }
 
     void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
@@ -649,7 +650,7 @@ namespace Ant {
     }
 
 #ifdef CONFIG_DEBUG
-    extern "C" void AntVMTrace(uint64_t index, uint8_t op, void *ptr) {
+    extern "C" void ant_vm_trace(uint64_t index, uint8_t op, void *ptr) {
       cerr << "Trace hit: "<< index << " "
            << Instr::opcodeMnemonic(OpCode(op));
       if(ptr)
@@ -669,7 +670,7 @@ namespace Ant {
                                         TRACE_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
 
-      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&AntVMTrace));
+      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&ant_vm_trace));
     }
 
     void Runtime::ModuleData::emitTrace(BasicBlock *block, size_t index,
@@ -684,7 +685,7 @@ namespace Ant {
       args.push_back(CONST_INT(64, uint64_t(index), false));
       args.push_back(CONST_INT(8, uint64_t(op), false));
       args.push_back(ptr);
-      CALL_FUNC(block, trc, args);
+      CALL_FUNC(block, call, trc, args);
     }
 #endif
 
@@ -806,6 +807,16 @@ namespace Ant {
         }
     }
 
+    void Runtime::ModuleData::createCXAAllocateException() {
+      vector<const Type*> argTypes(1, TYPE_INT(64));
+      const Type *retType = TYPE_PTR(TYPE_INT(8));
+      FunctionType *ftype = FunctionType::get(retType, argTypes, false);
+
+      Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
+                                        CXA_EALLOC_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::C);
+    }
+
     void Runtime::ModuleData::createCXAThrowFunc() {
       vector<const Type*> argTypes(3, TYPE_PTR(TYPE_INT(8)));
       const Type *retType = Type::getVoidTy(llvmModule->getContext());
@@ -829,22 +840,28 @@ namespace Ant {
       BasicBlock *block = BasicBlock::Create(llvmModule->getContext(), "",
                                              func, 0);
 
-      Value *vptr = llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
-      vptr = new BitCastInst(vptr, TYPE_PTR(TYPE_INT(64)), "", block);
-      new StoreInst(func->arg_begin(), vptr, block);
+      Value *edptr =llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
+      edptr = new BitCastInst(edptr, TYPE_PTR(TYPE_INT(64)), "", block);
+      new StoreInst(func->arg_begin(), edptr, block);
+
+      Function *cxa_ealloc = llvmModule->getFunction(CXA_EALLOC_FUNC_NAME);
+      vector<Value*> args(1, CONST_INT(64, 8, false));
+      CALL_FUNC(block, evptr, cxa_ealloc, args);
+
+      Value *eptr = new BitCastInst(evptr, TYPE_PTR(TYPE_INT(64)), "", block);
+      new StoreInst(func->arg_begin(), eptr, block);
 
       const PointerType *vptrType = TYPE_PTR(TYPE_INT(8));
-      vptr = new BitCastInst(vptr, vptrType, "", block);
       Value *zti = llvmModule->getGlobalVariable(ZTI_VAR_NAME);
       zti = new BitCastInst(zti, vptrType, "", block);
       ConstantPointerNull *null = ConstantPointerNull::get(vptrType);
 
       Function *cxa_throw = llvmModule->getFunction(CXA_THROW_FUNC_NAME);
-      vector<Value*> args;
-      args.push_back(vptr);
+      args.clear();
+      args.push_back(evptr);
       args.push_back(zti);
       args.push_back(null);
-      CALL_FUNC(block, cxa_throw, args);
+      CALL_FUNC(block, call, cxa_throw, args);
 
       new UnreachableInst(llvmModule->getContext(), block);
 
@@ -864,10 +881,12 @@ namespace Ant {
                                         DESTROY_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
 
-      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&AntVMDestroyVariable));
+      llvmEE->addGlobalMapping(func,
+                               funcPtrToVoidPtr(&ant_vm_destroy_variable));
     }
 
     void Runtime::ModuleData::createLLVMFuncs() {
+      createCXAAllocateException();      
       createCXAThrowFunc();
       createThrowFunc();
       createDestroyFunc();
@@ -965,7 +984,7 @@ namespace Ant {
       uintptr_t uPtr = reinterpret_cast<uintptr_t>(vPtr);
 
       try { reinterpret_cast<void (*)(Variable&)>(uPtr)(io); }
-      catch(uint64_t) { throw RuntimeException(); }
+      catch(int64_t) { throw RuntimeException(); }
     }
 
     void Runtime::ModuleData::take(ModuleData& moduleData) {

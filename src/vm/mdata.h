@@ -48,6 +48,7 @@ namespace Ant {
       void createLLVMPVars();
       void createZTIVar();
       void createLLVMFuncs();
+      void createCXAAllocateException();
       void createCXAThrowFunc();
       void createThrowFunc();
       void createDestroyFunc();
