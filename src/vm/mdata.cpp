@@ -514,13 +514,29 @@ namespace Ant {
       else BranchInst::Create(endBlock, incBlock);
     }
 
-    void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
-                                              const POPInstr &instr) {
-      LLVMContext::Frame &frame = context.frames.back();
+    void Runtime::ModuleData::cleanupFrame(LLVMContext &context,
+                                           int frameIndex) {
+      const LLVMContext::Frame &frame = context.frames[frameIndex];
       if(frame.ref) {
         Value *vptr = new LoadInst(frame.vptr, "", context.currentBlock);
         incVariableRefCount(context, vptr, &regs[frame.reg]);
       }
+      else for(size_t elt = 0; elt < regs[frame.reg].count; elt++) {
+          FixedArray<VarSpec> &vrefs = vtypes[regs[frame.reg].vtype].vrefs;
+          for(uint32_t vref = 0; vref < vrefs.size(); vref++) {
+            Value *vptr = elementPtr(context, frame.reg, false,frame.vptr,elt);
+            vptr = fieldPtr(context, vptr, EFLD_VREFS, vref);            
+            Type *ty = TYPE_PTR(TYPE_PTR(getEltLLVMType(vrefs[vref].vtype)));
+            vptr = new BitCastInst(vptr, ty, "", context.currentBlock);
+            vptr = new LoadInst(vptr, "", context.currentBlock);
+            incVariableRefCount(context, vptr, &vrefs[vref]);
+          }
+        }
+    }
+
+    void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
+                                              const POPInstr &instr) {
+      cleanupFrame(context, context.frames.size() - 1);
 
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);

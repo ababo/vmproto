@@ -72,6 +72,7 @@ namespace Ant {
                                 llvm::Value *count);
       void incVariableRefCount(LLVMContext &context, llvm::Value *vptr,
                                const VarSpec *vspecForDec = NULL);
+      void cleanupFrame(LLVMContext &context, int frameIndex);
       void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
