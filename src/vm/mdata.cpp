@@ -723,12 +723,12 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCode(LLVMContext &context) {
       Instr instr;
-      for(size_t i = 0, j = 0; i < procs[context.proc].code.size();
-          i += instr.size(), ++j) {
+      for(size_t i = 0; i < procs[context.proc].code.size();
+          i += instr.size()) {
         instr.set(&procs[context.proc].code[i]);
 
 #ifdef CONFIG_DEBUG
-        emitTrace(context.currentBlock, j, instr.opcode());
+        emitTrace(context.currentBlock, context.instrIndex, instr.opcode());
 #endif
         switch(instr.opcode()) {
           UOINSTR_CASE(INC, Add, 1);
