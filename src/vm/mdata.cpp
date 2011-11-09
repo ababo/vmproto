@@ -776,9 +776,13 @@ namespace Ant {
         ReturnInst::Create(llvmModule->getContext(), context.blocks.back());
     }
 
+    extern "C" void *_ZTIx;
+
     void Runtime::ModuleData::createZTIVar() {
-      new GlobalVariable(*llvmModule, TYPE_PTR(TYPE_INT(8)), true,
-                         GlobalValue::ExternalLinkage, 0, ZTI_VAR_NAME);
+      GlobalValue *zti = new GlobalVariable(*llvmModule, TYPE_PTR(TYPE_INT(8)),
+					    true, GlobalValue::ExternalLinkage,
+					    0, ZTI_VAR_NAME);
+      llvmEE->addGlobalMapping(zti, &_ZTIx);
     }
 
     void Runtime::ModuleData::createLLVMPVars() {
@@ -806,6 +810,8 @@ namespace Ant {
         }
     }
 
+    extern "C" void *__cxa_allocate_exception(uint64_t);
+
     void Runtime::ModuleData::createCXAAllocateException() {
       vector<const Type*> argTypes(1, TYPE_INT(64));
       const Type *retType = TYPE_PTR(TYPE_INT(8));
@@ -814,7 +820,12 @@ namespace Ant {
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
                                         CXA_EALLOC_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
+
+      llvmEE->addGlobalMapping(func,
+                               funcPtrToVoidPtr(&__cxa_allocate_exception));
     }
+
+    extern "C" void __cxa_throw(void*, void*, void*);
 
     void Runtime::ModuleData::createCXAThrowFunc() {
       vector<const Type*> argTypes(3, TYPE_PTR(TYPE_INT(8)));
@@ -824,6 +835,8 @@ namespace Ant {
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
                                         CXA_THROW_FUNC_NAME, llvmModule);
       func->setCallingConv(CallingConv::C);
+
+      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&__cxa_throw));
     }
 
     void Runtime::ModuleData::createThrowFunc() {
