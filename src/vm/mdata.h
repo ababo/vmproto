@@ -57,7 +57,7 @@ namespace Ant {
       void emitLLVMCode(LLVMContext &context);
       void emitTrace(llvm::BasicBlock *block, size_t index, OpCode op,
                      llvm::Value *ptr = NULL);
-      const llvm::Type *getEltLLVMType(VarTypeId vtype) const;
+      llvm::Type *getEltLLVMType(VarTypeId vtype) const;
       llvm::Value *specialPtr(llvm::BasicBlock *block, llvm::Value *vptr,
                               SpeField sfld);
       llvm::Value *elementPtr(LLVMContext &context, RegId reg, bool ref,

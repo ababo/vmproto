@@ -14,7 +14,7 @@
 #include "llvm/Intrinsics.h"
 #include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetSelect.h"
+#include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
 #include "mdata.h"
 
@@ -198,8 +198,8 @@ namespace Ant {
 #define TYPE_BARR(len) ArrayType::get(TYPE_INT(8), len)
 #define TYPE_PBARR(len) ArrayType::get(TYPE_PTR(TYPE_INT(8)), len)
 
-    const Type *Runtime::ModuleData::getEltLLVMType(VarTypeId vtype) const {
-      vector<const Type*> fields;
+    Type *Runtime::ModuleData::getEltLLVMType(VarTypeId vtype) const {
+      vector<Type*> fields;
       if(vtypes[vtype].bytes)
         fields.push_back(TYPE_BARR(vtypes[vtype].bytes));
       if(vtypes[vtype].vrefs.size())
@@ -245,7 +245,7 @@ namespace Ant {
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
 #define CALL_FUNC(block, var, func, args) \
-    CallInst *var = CallInst::Create(func, args.begin(),args.end(),"",block); \
+    CallInst *var = CallInst::Create(func, args, "", block); \
     var->setCallingConv(func->getCallingConv());
 
     void Runtime::ModuleData::emitThrowIfNot(LLVMContext &context, Value *cond,
@@ -315,8 +315,7 @@ namespace Ant {
 
       indexes.push_back(CONST_INT(32, uint64_t(eltc), false));
 
-      return GetElementPtrInst::Create(vptr, indexes.begin(), indexes.end(),
-                                       "", context.currentBlock);
+      return GetElementPtrInst::Create(vptr, indexes, "",context.currentBlock);
     }
 
     Value *Runtime::ModuleData::regValue(LLVMContext &context, RegId reg,
@@ -330,8 +329,7 @@ namespace Ant {
             return vptr;
 
           vptr = new LoadInst(vptr, "", context.currentBlock);
-          const PointerType *ptype =
-            static_cast<const PointerType*>(vptr->getType());
+          PointerType *ptype = static_cast<PointerType*>(vptr->getType());
           Constant *null = ConstantPointerNull::get(ptype);
           Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
                                      vptr, null);
@@ -411,8 +409,8 @@ namespace Ant {
     Value *Runtime::ModuleData::zeroVariable(LLVMContext &context, Value *vptr,
                                              Value *count) {
       vector<Value*> args(1, count);
-      Value *eptr = GetElementPtrInst::Create(vptr, args.begin(), args.end(),
-                                              "", context.currentBlock);
+      Value *eptr = GetElementPtrInst::Create(vptr, args, "",
+                                              context.currentBlock);
       Value *vptri = new PtrToIntInst(vptr, TYPE_INT(64), "",
                                       context.currentBlock);
       Value *eptri = new PtrToIntInst(eptr, TYPE_INT(64), "",
@@ -420,9 +418,11 @@ namespace Ant {
       Value *len = BinaryOperator::Create(Instruction::Sub, eptri, vptri, "",
                                           context.currentBlock);
       
-      const Type *types[] = { TYPE_PTR(TYPE_INT(8)), TYPE_INT(64) };
+      vector<Type*> types;
+      types.push_back(TYPE_PTR(TYPE_INT(8)));
+      types.push_back(TYPE_INT(64));
       Function *ms = Intrinsic::getDeclaration(llvmModule,
-                                               Intrinsic::memset, types, 2);
+                                               Intrinsic::memset, types);
       args.clear();
       args.push_back(BITCAST_PINT(8, vptr));
       args.push_back(CONST_INT(8, 0, false));
@@ -445,10 +445,10 @@ namespace Ant {
       Value *sptr = CallInst::Create(ss, "", context.currentBlock), *vptr;
 
       RegId reg = instr.reg();
-      const Type *type = getEltLLVMType(regs[reg].vtype);
+      Type *type = getEltLLVMType(regs[reg].vtype);
 
       if(REF) {
-        const PointerType *ptype = TYPE_PTR(type);
+        PointerType *ptype = TYPE_PTR(type);
         vptr = new AllocaInst(ptype, "", context.currentBlock);
         Constant *null = ConstantPointerNull::get(ptype);
         new StoreInst(null, vptr, context.currentBlock);
@@ -477,8 +477,7 @@ namespace Ant {
 
     void Runtime::ModuleData::incVariableRefCount(LLVMContext &context,
                                      Value *vptr, const VarSpec *vspecForDec) {
-      const PointerType *ptype =
-        static_cast<const PointerType*>(vptr->getType());
+      PointerType *ptype = static_cast<PointerType*>(vptr->getType());
       Constant *null = ConstantPointerNull::get(ptype);
       Value *cond = new ICmpInst(*context.currentBlock, ICmpInst::ICMP_NE,
                                  vptr, null);
@@ -673,11 +672,11 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::createTraceFunc() {
-      vector<const Type*> argTypes;
+      vector<Type*> argTypes;
       argTypes.push_back(TYPE_INT(64));
       argTypes.push_back(TYPE_INT(8));
       argTypes.push_back(TYPE_PTR(TYPE_INT(8)));
-      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
@@ -689,7 +688,7 @@ namespace Ant {
 
     void Runtime::ModuleData::emitTrace(BasicBlock *block, size_t index,
                                         OpCode op, Value *ptr) {
-      const PointerType *ptype = TYPE_PTR(TYPE_INT(8));
+      PointerType *ptype = TYPE_PTR(TYPE_INT(8));
       if(ptr)
         ptr = new BitCastInst(ptr, ptype, "", block);
       else ptr = ConstantPointerNull::get(ptype);
@@ -806,7 +805,7 @@ namespace Ant {
 
       for(RegId reg = 0; reg < regs.size(); reg++)
         if(regs[reg].flags & VFLAG_PERSISTENT) {
-          const Type *type = getEltLLVMType(regs[reg].vtype);
+          Type *type = getEltLLVMType(regs[reg].vtype);
           type = ArrayType::get(type, regs[reg].count);
           // bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL;
           bool threadLocal = false; // BUG in LLVM JIT
@@ -829,8 +828,8 @@ namespace Ant {
     extern "C" void *__cxa_allocate_exception(uint64_t);
 
     void Runtime::ModuleData::createCXAAllocateException() {
-      vector<const Type*> argTypes(1, TYPE_INT(64));
-      const Type *retType = TYPE_PTR(TYPE_INT(8));
+      vector<Type*> argTypes(1, TYPE_INT(64));
+      Type *retType = TYPE_PTR(TYPE_INT(8));
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
@@ -844,8 +843,8 @@ namespace Ant {
     extern "C" void __cxa_throw(void*, void*, void*);
 
     void Runtime::ModuleData::createCXAThrowFunc() {
-      vector<const Type*> argTypes(3, TYPE_PTR(TYPE_INT(8)));
-      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      vector<Type*> argTypes(3, TYPE_PTR(TYPE_INT(8)));
+      Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
@@ -856,9 +855,9 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::createThrowFunc() {
-      vector<const Type*> argTypes;
+      vector<Type*> argTypes;
       argTypes.push_back(TYPE_INT(64));
-      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function *func = Function::Create(ftype, GlobalValue::InternalLinkage,
@@ -879,7 +878,7 @@ namespace Ant {
       Value *eptr = new BitCastInst(evptr, TYPE_PTR(TYPE_INT(64)), "", block);
       new StoreInst(func->arg_begin(), eptr, block);
 
-      const PointerType *vptrType = TYPE_PTR(TYPE_INT(8));
+      PointerType *vptrType = TYPE_PTR(TYPE_INT(8));
       Value *zti = llvmModule->getGlobalVariable(ZTI_VAR_NAME);
       zti = new BitCastInst(zti, vptrType, "", block);
       ConstantPointerNull *null = ConstantPointerNull::get(vptrType);
@@ -897,12 +896,12 @@ namespace Ant {
     }
 
     void Runtime::ModuleData::createDestroyFunc() {
-      const Type *vptrType = TYPE_PTR(TYPE_INT(8));
-      vector<const Type*> argTypes;
+      Type *vptrType = TYPE_PTR(TYPE_INT(8));
+      vector<Type*> argTypes;
       argTypes.push_back(vptrType);
       argTypes.push_back(vptrType);
       argTypes.push_back(vptrType);
-      const Type *retType = Type::getVoidTy(llvmModule->getContext());
+      Type *retType = Type::getVoidTy(llvmModule->getContext());
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
 
       Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
@@ -923,10 +922,10 @@ namespace Ant {
       createDestroyFunc();
 
       for(ProcId proc = 0; proc < procs.size(); proc++) {
-        vector<const Type*> argTypes;
+        vector<Type*> argTypes;
 	RegId io = ptypes[procs[proc].ptype].io;
         argTypes.push_back(TYPE_PTR(getEltLLVMType(regs[io].vtype)));
-        const Type *voidType = Type::getVoidTy(llvmModule->getContext());
+        Type *voidType = Type::getVoidTy(llvmModule->getContext());
         FunctionType *ftype = FunctionType::get(voidType, argTypes, false);
 
         bool external = procs[proc].flags & PFLAG_EXTERNAL;
