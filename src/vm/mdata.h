@@ -57,23 +57,25 @@ namespace Ant {
       void emitLLVMCode(LLVMContext &context);
       void emitTrace(llvm::BasicBlock *block, size_t index, OpCode op,
                      llvm::Value *ptr = NULL);
-      llvm::Type *getEltLLVMType(VarTypeId vtype) const;
-      llvm::Value *specialPtr(llvm::BasicBlock *block, llvm::Value *vptr,
-                              SpeField sfld);
-      llvm::Value *elementPtr(LLVMContext &context, RegId reg, bool ref,
-                              llvm::Value *vptr, size_t eltc = 0,
-                              llvm::Value *eltv = NULL);
-      llvm::Value *fieldPtr(LLVMContext &context, llvm::Value *vptr,
-                            EltField efld, uint32_t eltc = 0);
-      llvm::Value *regValue(LLVMContext &context, RegId reg, 
-                            bool dereferenceIfNeeded = true, size_t eltc = 0,
-                            llvm::Value *eltv = NULL);
-      llvm::Value *zeroVariable(LLVMContext &context, llvm::Value *vptr,
-                                llvm::Value *count);
-      void incVariableRefCount(LLVMContext &context, llvm::Value *vptr,
-                               const VarSpec *vspecForDec = NULL);
-      void cleanupFrame(LLVMContext &context, int frameIndex);
-      void emitThrowIfNot(LLVMContext &context, llvm::Value *cond, int64_t ed);
+      void emitThrowIfNot(llvm::Function *func, llvm::BasicBlock *&block,
+                          llvm::Value *cond, int64_t edValue);
+      void emitIncVarRefCount(llvm::Function *func, llvm::BasicBlock *&block,
+                         llvm::Value *vptr, const VarSpec *vspecForDec = NULL);
+      void emitCleanupRegFrame(llvm::Function *func, llvm::BasicBlock *&block,
+                               RegId reg, bool ref, llvm::Value *vptr);
+      llvm::Value *emitFieldPtr(llvm::BasicBlock *block, llvm::Value *vptr,
+                                EltField efld, uint32_t eltc = 0);
+      llvm::Value *emitSpecialPtr(llvm::BasicBlock *block, llvm::Value *vptr,
+                                  SpeField sfld);
+      llvm::Value *emitElementPtr(llvm::Function *func,
+                                  llvm::BasicBlock *&block, RegId reg,
+                                  bool ref, llvm::Value *vptr, size_t eltc = 0,
+                                  llvm::Value *eltv = NULL);
+      llvm::Value *emitRegValue(LLVMContext &context, RegId reg,
+                                bool dereferenceIfNeeded = true,
+                                size_t eltc = 0, llvm::Value *eltv = NULL);
+      llvm::Value *emitZeroVariable(llvm::BasicBlock *block,
+                                    llvm::Value *vptr, llvm::Value *count);
       template<uint8_t OP, llvm::Instruction::BinaryOps, uint64_t>
         void emitLLVMCodeUO(LLVMContext &context, const UOInstrT<OP> &instr);
       template<uint8_t OP, llvm::Instruction::BinaryOps>
@@ -101,6 +103,7 @@ namespace Ant {
       void emitLLVMCodeCALL(LLVMContext &context, const CALLInstr &instr);
       void emitLLVMCodeTHROW(LLVMContext &context, const THROWInstr &instr);
       void emitLLVMCodeRET(LLVMContext &context, const RETInstr &instr);
+      llvm::Type *getEltLLVMType(VarTypeId vtype) const;
 
       const UUID &id;
       bool dropped;
