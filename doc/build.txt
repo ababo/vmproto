@@ -1,0 +1,9 @@
+AntOS is known to work in linux x86 (gcc 4.4.5) and cygwin (gcc 3.4.4).
+
+1. Download the AntOS source code;
+2. Make sure you have gcc, g++ and make installed;
+3. Make sure you have gdb if you want to debug;
+4. Install LLVM 3.0 or higher;
+5. mkdir AntOS/depend;
+6. Download UTF-8 C++ library and place it into depend/utf8;
+7. cd to AntOS/src and do make.
