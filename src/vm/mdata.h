@@ -63,6 +63,8 @@ namespace Ant {
                          llvm::Value *vptr, const VarSpec *vspecForDec = NULL);
       void emitCleanupRegFrame(llvm::Function *func, llvm::BasicBlock *&block,
                                RegId reg, bool ref, llvm::Value *vptr);
+      void emitFuncCall(LLVMContext &context, llvm::Function *func,
+                        llvm::Value *arg);
       llvm::Value *emitFieldPtr(llvm::BasicBlock *block, llvm::Value *vptr,
                                 EltField efld, uint32_t eltc = 0);
       llvm::Value *emitSpecialPtr(llvm::BasicBlock *block, llvm::Value *vptr,

@@ -150,14 +150,14 @@ namespace Ant {
     }
 
     void Instr::assertRegAllocated(const ModuleBuilder &mbuilder, ProcId proc,
-                                   RegKind kind, RegId reg) {
+                                   FrameType ftype, RegId reg) {
       mbuilder.assertRegExists(reg);
-      mbuilder.assertRegAllocated(proc, kind, reg);
+      mbuilder.assertRegAllocated(proc, ftype, reg);
     }
 
     void Instr::assertRegHasBytes(const ModuleBuilder &mbuilder, ProcId proc,
                                   RegId reg, uint32_t bytes) {
-      assertRegAllocated(mbuilder, proc, RK_NOVOID, reg);
+      assertRegAllocated(mbuilder, proc, FT_REG, reg);
 
       VarSpec vspec;
       mbuilder.regById(reg, vspec);
@@ -188,14 +188,14 @@ namespace Ant {
     }
 
     void Instr::regSpec(const ModuleBuilder &mbuilder, ProcId proc,
-			RegKind kind, RegId reg, VarSpec &vspec) {
-      assertRegAllocated(mbuilder, proc, kind, reg);
+			FrameType ftype, RegId reg, VarSpec &vspec) {
+      assertRegAllocated(mbuilder, proc, ftype, reg);
       mbuilder.regById(reg, vspec);
     }
 
     void Instr::vrefSpec(const ModuleBuilder &mbuilder, ProcId proc, RegId reg,
 			 uint32_t vref, VarSpec &vspec) {
-      assertRegAllocated(mbuilder, proc, RK_NOVOID, reg);
+      assertRegAllocated(mbuilder, proc, FT_REG, reg);
       mbuilder.regById(reg, vspec);
 
       VarType vtype;
@@ -208,9 +208,9 @@ namespace Ant {
     }
 
     void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,
-                                RegKind kind, RegId reg) {
+                                FrameType ftype, RegId reg) {
       mbuilder.assertRegExists(reg);
-      mbuilder.applyBeginFrame(proc, kind, reg);
+      mbuilder.applyBeginFrame(proc, ftype, reg);
     }
 
     void Instr::applyBeginFrame(ModuleBuilder &mbuilder, ProcId proc,

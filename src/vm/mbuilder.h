@@ -52,7 +52,7 @@ namespace Ant {
       struct Frame {
 	size_t firstInstr;
 	std::vector<size_t> jumps;
-	RegKind kind; // can't be RK_NOVOID
+	FrameType ftype; // can't be FT_REG
 	RegId reg;
       };
       struct ProcCon {
@@ -64,13 +64,13 @@ namespace Ant {
       VarTypeId assertProcTypeExists(VarTypeId id) const;
       RegId assertRegExists(RegId id) const;
       ProcId assertProcExists(ProcId id) const;
-      RegId assertRegAllocated(ProcId proc, RegKind kind, RegId reg) const;
+      RegId assertRegAllocated(ProcId proc, FrameType ftype, RegId reg) const;
       ProcId assertProcCallable(ProcId proc, ProcId targetProc) const;
 
       void fillVarTypes(Runtime::ModuleData &moduleData) const;
       void fillProcs(Runtime::ModuleData &moduleData) const;
 
-      void applyBeginFrame(ProcId proc, RegKind kind, RegId reg);
+      void applyBeginFrame(ProcId proc, FrameType ftype, RegId reg);
       void applyBeginFrame(ProcId proc, ptrdiff_t offset);
       void applyEndFrame(ProcId proc);
       void applyInstrOffset(ProcId proc, ptrdiff_t offset);

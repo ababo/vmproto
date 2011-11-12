@@ -47,7 +47,7 @@ namespace Ant {
       return id;
     }
 
-    RegId ModuleBuilder::assertRegAllocated(ProcId proc, RegKind kind,
+    RegId ModuleBuilder::assertRegAllocated(ProcId proc, FrameType ftype,
 					    RegId reg) const {
       if(regs[reg].flags & VFLAG_PERSISTENT)
         return reg;
@@ -55,8 +55,8 @@ namespace Ant {
       const ProcCon &con = procCons[proc];
       for(int i = con.frames.size() - 1; i >= 0; i--)
         if(con.frames[i].reg == reg)
-	  if((kind == RK_NOVOID && con.frames[i].kind != RK_VOID) ||
-	     kind == con.frames[i].kind)
+	  if((ftype == FT_REG && con.frames[i].ftype != FT_HAND) ||
+	     ftype == con.frames[i].ftype)
 	    return reg;
 	  else break;
 
@@ -67,7 +67,7 @@ namespace Ant {
                                              ProcId targetProc) const {
       const Frame &frame = procCons[proc].frames.back();
 
-      if(frame.kind != RK_NOREF)
+      if(frame.ftype != FT_REGNR)
         throw OperationException();
 
       const VarSpec &svspec = regs[frame.reg];
@@ -158,14 +158,15 @@ namespace Ant {
       con.instrCount = 0;
       con.frames.resize(1);
       con.frames.back().firstInstr = 0;
-      con.frames.back().kind = RK_NOREF;
+      con.frames.back().ftype = FT_REGNR;
       con.frames.back().reg = ptypes[ptype].io;
       procCons.push_back(con);
 
       return ProcId(procs.size() - 1);
     }
 
-    void ModuleBuilder::applyBeginFrame(ProcId proc, RegKind kind, RegId reg) {
+    void ModuleBuilder::applyBeginFrame(ProcId proc, FrameType ftype,
+                                        RegId reg) {
       ProcCon &con = procCons[proc];
 
       for(int i = 0; i < con.frames.size(); i++)
@@ -175,12 +176,12 @@ namespace Ant {
 
       con.frames.resize(con.frames.size() + 1);
       con.frames.back().firstInstr = con.instrCount + 1;
-      con.frames.back().kind = kind;
+      con.frames.back().ftype = ftype;
       con.frames.back().reg = reg;
     }
 
     void ModuleBuilder::applyBeginFrame(ProcId proc, ptrdiff_t offset) {
-      applyBeginFrame(proc, RK_VOID, 0);      
+      applyBeginFrame(proc, FT_HAND, 0);      
       try { applyInstrOffset(proc, offset); }
       catch(...) { procCons[proc].frames.pop_back(); throw; }
     }

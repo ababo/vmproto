@@ -119,7 +119,7 @@ namespace Ant {
       std::vector<VMCodeByte> code;
     };
 
-    enum RegKind { RK_VOID, RK_REF, RK_NOREF, RK_NOVOID }; // for internal use
+    enum FrameType { FT_HAND, FT_REGNR, FT_REGR, FT_REG }; // for internal use
 
     struct VarTypeData { // for internal use
       size_t count;

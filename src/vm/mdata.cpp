@@ -52,10 +52,11 @@ namespace Ant {
 
     struct Runtime::ModuleData::LLVMContext {
       struct Frame {
-        bool ref;
+        FrameType ftype;
         RegId reg;
         Value *sptr;
         Value *vptr;
+        BasicBlock *cleanup;
       };
 
       Frame *findFrame(RegId reg) {
@@ -64,12 +65,13 @@ namespace Ant {
             return &frames[i];
         return NULL;
       }
-      void pushFrame(bool ref, RegId reg, Value *sptr, Value *vptr) {
+      void pushFrame(FrameType ftype, RegId reg, Value *sptr, Value *vptr) {
         frames.push_back(Frame());
-        frames.back().ref = ref;
+        frames.back().ftype = ftype;
         frames.back().reg = reg;
         frames.back().sptr = sptr;
         frames.back().vptr = vptr;
+        frames.back().cleanup = NULL;
       }
       void popFrame() { frames.pop_back(); }
 
@@ -241,7 +243,7 @@ namespace Ant {
                                                     "", CF, 0));
       CB = context.blocks[0];
 
-      context.pushFrame(false, ptypes[procs[context.proc].ptype].io, NULL,
+      context.pushFrame(FT_REGNR, ptypes[procs[context.proc].ptype].io, NULL,
                         CF->arg_begin());
     }
 
@@ -329,7 +331,7 @@ namespace Ant {
       LLVMContext::Frame *frame = context.findFrame(reg);
       if(frame) {
         Value *vptr = frame->vptr;
-        if(frame->ref) {
+        if(frame->ftype == FT_REGR) {
           if(!dereferenceIfNeeded)
             return vptr;
 
@@ -340,7 +342,8 @@ namespace Ant {
           emitThrowIfNot(CF, CB, cond, VMECODE_NULL_REFERENCE);
         }
 
-        return emitElementPtr(CF, CB, reg, frame->ref, vptr, eltc, eltv);
+        return emitElementPtr(CF, CB, reg, frame->ftype == FT_REGR, vptr, eltc,
+                              eltv);
       }
       else {
         Value *vptr = llvmModule->getGlobalVariable(varName(reg), true);
@@ -459,7 +462,7 @@ namespace Ant {
         emitZeroVariable(CB, vptr, count);
       }
 
-      context.pushFrame(REF, reg, sptr, vptr);
+      context.pushFrame(REF ? FT_REGR : FT_REGNR, reg, sptr, vptr);
     }
 
     void Runtime::ModuleData::emitLLVMCodePUSHH(LLVMContext &context,
@@ -536,7 +539,7 @@ namespace Ant {
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
       LLVMContext::Frame &frame = context.frames.back();
-      emitCleanupRegFrame(CF, CB, frame.reg, frame.ref, frame.vptr);
+      emitCleanupRegFrame(CF, CB, frame.reg, frame.ftype==FT_REGR, frame.vptr);
 
       Function *sr = Intrinsic::getDeclaration(llvmModule,
                                                Intrinsic::stackrestore);
@@ -644,6 +647,25 @@ namespace Ant {
       Value *tval = new LoadInst(to, "", CB);
       emitIncVarRefCount(CF, CB, tval, &rvs);
       new StoreInst(fval, to, CB);
+    }
+
+    void Runtime::ModuleData::emitFuncCall(LLVMContext &context,
+                                           Function *func, Value *arg) {
+      vector<Value*> args(1, arg);
+
+      if(context.frames.size() > 1 && context.frames.back().ftype != FT_HAND) {
+        BasicBlock *&cleanup = context.frames.back().cleanup;
+        if(!cleanup) {
+          cleanup = BasicBlock::Create(llvmModule->getContext(), "", CF, 0);
+
+        }
+
+        BasicBlock *normal = BasicBlock::Create(llvmModule->getContext(), "",
+                                                CF, 0);
+        InvokeInst::Create(func, normal, cleanup, args, "", CB);
+        CB = normal;
+      }
+      else { CALL_FUNC(CB, call, func, args); }
     }
 
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
