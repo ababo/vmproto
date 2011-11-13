@@ -27,6 +27,7 @@ namespace {
   const char *THROW_FUNC_NAME = "throw";
   const char *CXA_EALLOC_FUNC_NAME = "__cxa_allocate_exception";
   const char *CXA_THROW_FUNC_NAME = "__cxa_throw";
+  const char *GXX_PERS_FUNC_NAME = "__gxx_personality_v0";
   const char *DESTROY_FUNC_NAME = "ant_vm_destroy_variable";
   const char *TRACE_FUNC_NAME = "ant_vm_trace";
 
@@ -649,6 +650,8 @@ namespace Ant {
       new StoreInst(fval, to, CB);
     }
 
+#define TYPE_LPI StructType::get(TYPE_PTR(TYPE_INT(8)), TYPE_INT(32), NULL)
+
     void Runtime::ModuleData::emitFuncCall(LLVMContext &context,
                                            Function *func, Value *arg) {
       vector<Value*> args(1, arg);
@@ -656,8 +659,24 @@ namespace Ant {
       if(context.frames.size() > 1 && context.frames.back().ftype != FT_HAND) {
         BasicBlock *&cleanup = context.frames.back().cleanup;
         if(!cleanup) {
-          cleanup = BasicBlock::Create(llvmModule->getContext(), "", CF, 0);
+          BasicBlock *cblock = BasicBlock::Create(llvmModule->getContext(), "",
+                                                  CF, 0);
+          Function *pers = llvmModule->getFunction(GXX_PERS_FUNC_NAME);
+          LandingPadInst *lp = LandingPadInst::Create(TYPE_LPI, pers, 1, "",
+                                                      cblock);
+          lp->setCleanup(true);
+          cleanup = cblock;
 
+          for(int i = context.frames.size() - 1; i > 0; i--) {
+            LLVMContext::Frame &frame = context.frames[i];
+            if(frame.ftype == FT_HAND)
+              break;
+
+            emitCleanupRegFrame(CF, cblock, frame.reg, frame.ftype == FT_REGR,
+                                frame.vptr);
+          }
+
+          ResumeInst::Create(lp, cblock);
         }
 
         BasicBlock *normal = BasicBlock::Create(llvmModule->getContext(), "",
@@ -671,8 +690,7 @@ namespace Ant {
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
                                                const CALLInstr &instr) {
       Function *func = llvmModule->getFunction(funcName(instr.proc()));
-      vector<Value*> args(1, context.frames.back().vptr);
-      CALL_FUNC(CB, call, func, args);
+      emitFuncCall(context, func, context.frames.back().vptr);
     }
 
     void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
@@ -849,7 +867,7 @@ namespace Ant {
 
     extern "C" void *__cxa_allocate_exception(uint64_t);
 
-    void Runtime::ModuleData::createCXAAllocateException() {
+    void Runtime::ModuleData::createCXAEAllocFunc() {
       vector<Type*> argTypes(1, TYPE_INT(64));
       Type *retType = TYPE_PTR(TYPE_INT(8));
       FunctionType *ftype = FunctionType::get(retType, argTypes, false);
@@ -874,6 +892,19 @@ namespace Ant {
       func->setCallingConv(CallingConv::C);
 
       llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&__cxa_throw));
+    }
+
+    extern "C" void __gxx_personality_v0(...);
+
+    void Runtime::ModuleData::createGXXPersFunc() {
+      vector<Type*> argTypes;
+      FunctionType *ftype = FunctionType::get(TYPE_INT(32), argTypes, true);
+
+      Function* func = Function::Create(ftype, GlobalValue::ExternalLinkage,
+                                        GXX_PERS_FUNC_NAME, llvmModule);
+      func->setCallingConv(CallingConv::C);
+
+      llvmEE->addGlobalMapping(func, funcPtrToVoidPtr(&__gxx_personality_v0));
     }
 
     void Runtime::ModuleData::createThrowFunc() {
@@ -938,8 +969,9 @@ namespace Ant {
 #ifdef CONFIG_DEBUG
       createTraceFunc();
 #endif
-      createCXAAllocateException();  
+      createCXAEAllocFunc();  
       createCXAThrowFunc();
+      createGXXPersFunc();
       createThrowFunc();
       createDestroyFunc();
 
