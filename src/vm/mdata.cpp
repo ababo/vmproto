@@ -681,7 +681,8 @@ namespace Ant {
 
         BasicBlock *normal = BasicBlock::Create(llvmModule->getContext(), "",
                                                 CF, 0);
-        InvokeInst::Create(func, normal, cleanup, args, "", CB);
+        InvokeInst *inv = InvokeInst::Create(func, normal, cleanup,args,"",CB);
+        inv->setCallingConv(func->getCallingConv());
         CB = normal;
       }
       else { CALL_FUNC(CB, call, func, args); }
