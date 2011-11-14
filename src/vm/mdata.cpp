@@ -250,6 +250,8 @@ namespace Ant {
 
 #define CONST_INT(bits, val, signed) \
   ConstantInt::get(llvmModule->getContext(), APInt(bits, val, signed))
+#define BITCAST_PINT(bits, vptr, block) \
+    new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", block)
 #define CALL_FUNC(block, var, func, args) \
     CallInst *var = CallInst::Create(func, args, "", block); \
     var->setCallingConv(func->getCallingConv());
@@ -260,6 +262,9 @@ namespace Ant {
                                               func, 0);
       Function *thrw = llvmModule->getFunction(THROW_FUNC_NAME);
       vector<Value*> args(1, CONST_INT(64, edValue, true));
+      Value *edptr =llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
+      edptr = BITCAST_PINT(64, edptr, fblock);
+      new StoreInst(args[0], edptr, fblock);
       CALL_FUNC(fblock, call, thrw, args);
       new UnreachableInst(llvmModule->getContext(), fblock);
 
@@ -268,9 +273,6 @@ namespace Ant {
       BranchInst::Create(tblock, fblock, cond, block);
       block = tblock;
     }
-
-#define BITCAST_PINT(bits, vptr, block) \
-    new BitCastInst(vptr, TYPE_PTR(TYPE_INT(bits)), "", block)
 
     Value *Runtime::ModuleData::emitSpecialPtr(BasicBlock *block, Value *vptr,
                                                SpeField sfld) {
@@ -662,7 +664,7 @@ namespace Ant {
           BasicBlock *cblock = BasicBlock::Create(llvmModule->getContext(), "",
                                                   CF, 0);
           Function *pers = llvmModule->getFunction(GXX_PERS_FUNC_NAME);
-          LandingPadInst *lp = LandingPadInst::Create(TYPE_LPI, pers, 1, "",
+          LandingPadInst *lp = LandingPadInst::Create(TYPE_LPI, pers, 0, "",
                                                       cblock);
           lp->setCleanup(true);
           cleanup = cblock;
@@ -696,7 +698,10 @@ namespace Ant {
 
     void Runtime::ModuleData::emitLLVMCodeTHROW(LLVMContext &context,
                                                 const THROWInstr &instr) {
-
+      Function *thrw = llvmModule->getFunction(THROW_FUNC_NAME);
+      Value *edptr =llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
+      Value *edval = new LoadInst(BITCAST_PINT(64, edptr, CB), "", CB);
+      emitFuncCall(context, thrw, edval);
     }
 
     void Runtime::ModuleData::emitLLVMCodeRET(LLVMContext &context,
@@ -920,10 +925,6 @@ namespace Ant {
 
       BasicBlock *block = BasicBlock::Create(llvmModule->getContext(), "",
                                              func, 0);
-
-      Value *edptr =llvmModule->getGlobalVariable(varName(PRESET_REG_ED),true);
-      edptr = BITCAST_PINT(64, edptr, block);
-      new StoreInst(func->arg_begin(), edptr, block);
 
       Function *cxa_ealloc = llvmModule->getFunction(CXA_EALLOC_FUNC_NAME);
       vector<Value*> args(1, CONST_INT(64, 8, false));
