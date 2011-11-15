@@ -27,8 +27,9 @@ Synchronization:
 
 Module freezing:
 
-1. Module can get frozen, i.e., to become inaccessible;
-2. Threads executing inside a module are stopped when it becomes frozen;
-3. Module can get unfrozen;
-4. When module becomes unfrozen stopped threads resume their execution;
-5. Copy does not contain stopped threads of original.
+1. Module can get packed, i.e., to become inaccessible;
+2. Threads executing inside a module are stopped when it becomes packed;
+3. Module can get unpacked;
+4. When module becomes unpacked stopped threads resume their execution;
+5. Only packed module can be moved or copied (copy does not contain stopped
+   threads of the original).
