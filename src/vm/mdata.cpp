@@ -670,37 +670,44 @@ namespace Ant {
     void Runtime::ModuleData::emitFuncCall(LLVMContext &context,
                                            Function *func, Value *arg) {
       vector<Value*> args(1, arg);
+      if(context.frames.size() == 1) {
+        CALL_FUNC(CB, call, func, args);
+        return;
+      }
 
-      if(context.frames.size() > 1 && context.frames.back().ftype != FT_HAND) {
-        BasicBlock *&cleanup = context.frames.back().ublock;
-        if(!cleanup) {
-          BasicBlock *cblock = BasicBlock::Create(llvmModule->getContext(), "",
-                                                  CF, 0);
-          Function *pers = llvmModule->getFunction(GXX_PERS_FUNC_NAME);
-          LandingPadInst *lp = LandingPadInst::Create(TYPE_LPI, pers, 0, "",
-                                                      cblock);
-          lp->setCleanup(true);
-          cleanup = cblock;
+      int fi = context.frames.size() - 1;
+      BasicBlock *&ublock = context.frames[fi].ublock;
+      if(!ublock) {
+        BasicBlock *block=BasicBlock::Create(llvmModule->getContext(),"",CF,0);
+        Function *pers = llvmModule->getFunction(GXX_PERS_FUNC_NAME);
+        LandingPadInst *lp = LandingPadInst::Create(TYPE_LPI, pers,0,"",block);
+        ublock = block;
 
-          for(int i = context.frames.size() - 1; i > 0; i--) {
-            LLVMContext::Frame &frame = context.frames[i];
-            if(frame.ftype == FT_HAND)
-              break;
+        for(; fi > 1; fi--) {
+          LLVMContext::Frame &frame = context.frames[fi];
+          if(frame.ftype == FT_HAND)
+            if(context.instrIndex >= frame.hindex)
+              continue;
+            else break;
 
-            emitCleanupRegFrame(CF, cblock, frame.reg, frame.ftype == FT_REGR,
-                                frame.vptr);
-          }
-
-          ResumeInst::Create(lp, cblock);
+          emitCleanupRegFrame(CF, block, frame.reg, frame.ftype == FT_REGR,
+                              frame.vptr);
         }
 
-        BasicBlock *normal = BasicBlock::Create(llvmModule->getContext(), "",
-                                                CF, 0);
-        InvokeInst *inv = InvokeInst::Create(func, normal, cleanup,args,"",CB);
-        inv->setCallingConv(func->getCallingConv());
-        CB = normal;
+        if(fi > 1) {
+          lp->addClause(ConstantPointerNull::get(TYPE_PTR(TYPE_INT(8))));
+          BranchInst::Create(context.branchBlock(context.frames[fi].hindex),
+                             block);
+        } else {
+          lp->setCleanup(true);
+          ResumeInst::Create(lp, block);
+        }
       }
-      else { CALL_FUNC(CB, call, func, args); }
+
+      BasicBlock *nblock =BasicBlock::Create(llvmModule->getContext(),"",CF,0);
+      InvokeInst *inv = InvokeInst::Create(func, nblock, ublock, args, "", CB);
+      inv->setCallingConv(func->getCallingConv());
+      CB = nblock;
     }
 
     void Runtime::ModuleData::emitLLVMCodeCALL(LLVMContext &context,
