@@ -1,0 +1,22 @@
+1. Virtual machine design goals
+
+* Memory-safe environment in a simple address space;
+* Transparent remote procedure calls;
+* Design as simple as possible;
+* High performance on multicore CPU;
+
+2. Variables
+
+When thread executes a module procedure it reads and writes variables. Each
+variable is a sequential block of memory organized as an array of equal sized
+elements. Structure of a variable element is determined by a variable type and
+it cannot be changed in runtime. Module has an array of predefined variable
+types which cannot be changed at module lifetime. Variable is always defined by
+variable specificator which contains flags for special options, id of variable
+type and element count.
+
+Variable type describes 3 possible sequential sections in variable element:
+
+* bytes: size of byte array which is available for arithmetic and logical
+  manipulations;
+* vrefs: variable type ids which correspond to array of variable references;

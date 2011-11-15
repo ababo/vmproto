@@ -25,7 +25,7 @@ Synchronization:
    progress (several readers can be called at same time, but no writer);
 6. Writers have higher unblock priority over readers;
 
-Module freezing:
+Module packing:
 
 1. Module can get packed, i.e., to become inaccessible;
 2. Threads executing inside a module are stopped when it becomes packed;
