@@ -138,7 +138,7 @@ namespace Ant {
 
         passed = testFactorial();
 	passed = passed && testQSort();
-        // passed = passed && testEH();
+        passed = passed && testEH();
 
         return passed;
       }

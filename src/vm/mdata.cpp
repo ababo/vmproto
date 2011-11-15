@@ -57,23 +57,31 @@ namespace Ant {
         RegId reg;
         Value *sptr;
         Value *vptr;
-        BasicBlock *cleanup;
+        size_t hindex;
+        BasicBlock *ublock;
       };
 
       Frame *findFrame(RegId reg) {
         for(int i = frames.size() - 1; i >= 0; i--)
-          if(frames[i].reg == reg)
+          if(frames[i].ftype != FT_HAND && frames[i].reg == reg)
             return &frames[i];
         return NULL;
       }
-      void pushFrame(FrameType ftype, RegId reg, Value *sptr, Value *vptr) {
+      void pushRegFrame(bool ref, RegId reg, Value *sptr, Value *vptr) {
         frames.push_back(Frame());
-        frames.back().ftype = ftype;
+        frames.back().ftype = ref ? FT_REGR : FT_REGNR;
         frames.back().reg = reg;
         frames.back().sptr = sptr;
         frames.back().vptr = vptr;
-        frames.back().cleanup = NULL;
+        frames.back().ublock = NULL;
       }
+      void pushHandFrame(size_t hindex) {
+        frames.push_back(Frame());
+        frames.back().ftype = FT_HAND;
+        frames.back().hindex = hindex;
+        frames.back().ublock = NULL;
+      }
+
       void popFrame() { frames.pop_back(); }
 
       BasicBlock *branchBlock(size_t instrIndex) {
@@ -244,8 +252,8 @@ namespace Ant {
                                                     "", CF, 0));
       CB = context.blocks[0];
 
-      context.pushFrame(FT_REGNR, ptypes[procs[context.proc].ptype].io, NULL,
-                        CF->arg_begin());
+      context.pushRegFrame(false, ptypes[procs[context.proc].ptype].io, NULL,
+                           CF->arg_begin());
     }
 
 #define CONST_INT(bits, val, signed) \
@@ -411,8 +419,9 @@ namespace Ant {
     template<uint8_t OP, class VAL>
       void Runtime::ModuleData::emitLLVMCodeCPI(LLVMContext &context,
                                              const CPIInstrT<OP, VAL> &instr) {
-      Value *to =BITCAST_PINT(sizeof(VAL),emitRegValue(context,instr.to()),CB);
-      new StoreInst(CONST_INT(sizeof(VAL), uint64_t(instr.val()),false),to,CB);
+      int bits = sizeof(VAL) << 3;
+      Value *to = BITCAST_PINT(bits, emitRegValue(context, instr.to()), CB);
+      new StoreInst(CONST_INT(bits, uint64_t(instr.val()), false), to, CB);
     }
 
     Value *Runtime::ModuleData::emitZeroVariable(BasicBlock *block,
@@ -465,12 +474,12 @@ namespace Ant {
         emitZeroVariable(CB, vptr, count);
       }
 
-      context.pushFrame(REF ? FT_REGR : FT_REGNR, reg, sptr, vptr);
+      context.pushRegFrame(REF, reg, sptr, vptr);
     }
 
     void Runtime::ModuleData::emitLLVMCodePUSHH(LLVMContext &context,
                                                 const PUSHHInstr &instr) {
-
+      context.pushHandFrame(instr.branchIndex(context.instrIndex));
     }
 
     typedef void (*AntVMDestroyVariablePtr)(const vector<VarTypeData>&,
@@ -542,12 +551,16 @@ namespace Ant {
     void Runtime::ModuleData::emitLLVMCodePOP(LLVMContext &context,
                                               const POPInstr &instr) {
       LLVMContext::Frame &frame = context.frames.back();
-      emitCleanupRegFrame(CF, CB, frame.reg, frame.ftype==FT_REGR, frame.vptr);
+      if(frame.ftype != FT_HAND) {
+        emitCleanupRegFrame(CF, CB, frame.reg, frame.ftype == FT_REGR,
+                            frame.vptr);
 
-      Function *sr = Intrinsic::getDeclaration(llvmModule,
-                                               Intrinsic::stackrestore);
-      vector<Value*> args(1, frame.sptr);
-      CALL_FUNC(CB, call, sr, args);
+        Function *sr = Intrinsic::getDeclaration(llvmModule,
+                                                 Intrinsic::stackrestore);
+        vector<Value*> args(1, frame.sptr);
+        CALL_FUNC(CB, call, sr, args);
+      }
+
       context.popFrame();
     }
 
@@ -659,7 +672,7 @@ namespace Ant {
       vector<Value*> args(1, arg);
 
       if(context.frames.size() > 1 && context.frames.back().ftype != FT_HAND) {
-        BasicBlock *&cleanup = context.frames.back().cleanup;
+        BasicBlock *&cleanup = context.frames.back().ublock;
         if(!cleanup) {
           BasicBlock *cblock = BasicBlock::Create(llvmModule->getContext(), "",
                                                   CF, 0);
