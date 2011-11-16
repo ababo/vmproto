@@ -1,35 +1,35 @@
-﻿Basics:
+﻿1. Basics
 
-1. There are two main entities: modules and threads;
-2. Module represents immutable code and mutable data;
-3. Both code and data of module are persistent;
-4. Module has copy UUID (ID) and type UUID (TID);
-5. Module can be moved or copied inside it's host or into another host;
-6. ID and TID of moved module don't change;
-7. ID of module copy is different from original ID;
-8. TID of module copy is same as original TID;
-9. Module has number of external procedures;
-10. External procedure can be called by specifying module ID;
-11. External procedure can be locally called by specifying module TID;
+- There are two main entities: modules and threads;
+- Module represents immutable code and mutable data;
+- Both code and data of module are persistent;
+- Module has copy UUID (ID) and type UUID (TID);
+- Module can be moved or copied inside it's host or into another host;
+- ID and TID of moved module don't change;
+- ID of module copy is different from original ID;
+- TID of module copy is same as original TID;
+- Module has number of external procedures;
+- External procedure can be called by specifying module ID;
+- External procedure can be locally called by specifying module TID;
 
-Synchronization:
+2. Synchronization
 
-1. There are only synchronous calls;
-2. External procedure can be a function, reader or writer. Functions don't
-   have access to module mutable data; readers have read access; writers have
-   write access;
-3. Function calls are never blocked;
-4. Reader and writer calls of module are blocked if there is a writer call in
-   progress (only a single writer can be called at same time);
-5. Writer calls of module are blocked if there are another reader calls in
-   progress (several readers can be called at same time, but no writer);
-6. Writers have higher unblock priority over readers;
+- There are only synchronous calls;
+- External procedure can be a function, reader or writer. Functions don't have
+  access to module mutable data; readers have read access; writers have write
+  access;
+- Function calls are never blocked;
+- Reader and writer calls of module are blocked if there is a writer call in
+  progress (only a single writer can be called at same time);
+- Writer calls of module are blocked if there are another reader calls in
+  progress (several readers can be called at same time, but no writer);
+- Writers have higher unblock priority over readers;
 
-Module packing:
+3. Module packing
 
-1. Module can get packed, i.e., to become inaccessible;
-2. Threads executing inside a module are stopped when it becomes packed;
-3. Module can get unpacked;
-4. When module becomes unpacked stopped threads resume their execution;
-5. Only packed module can be moved or copied (copy does not contain stopped
-   threads of the original).
+- Module can get packed, i.e., to become inaccessible;
+- Threads executing inside a module are stopped when it becomes packed;
+- Module can get unpacked;
+- When module becomes unpacked stopped threads resume their execution;
+- Only packed module can be moved or copied (copy does not contain stopped
+  threads of the original).
