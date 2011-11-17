@@ -19,6 +19,10 @@ Concrete structure of a variable element is described by a variable type. A
 variable is described by flags (special properties), variable type and element
 count. These three characteristics together are called variable specificator.
 
+Variable type consists of bytes size, array of variable specificators, which
+correspond to element's variable references and procedure ids, which correspond
+to element's procedure references.
+
 Variable specificator defines the following flags:
 - NON_FIXED_REF: referred variable has non-fixed element count.
 - TOP_LEVEL_REG: register has top-level variable. This flag can be used only
@@ -27,3 +31,9 @@ Variable specificator defines the following flags:
   in combination with TOP_LEVEL_REG flag. This flag can be used only in
   register definitions.
 
+3. Registers
+
+Variables are not accessed directly, but via registers. Register can be
+statically assigned to top-level variable, or dynamically assigned using stack
+frame manipulation instructions. Register is described by variable specificator
+which corresponds to variables the register can be assigned to.
