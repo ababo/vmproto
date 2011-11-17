@@ -1,4 +1,4 @@
-AntOS is known to work in linux x86 (gcc 4.4.5) and cygwin (gcc 3.4.4).
+AntOS is known to work in linux x86 (gcc 4.4.5).
 
 1. Download the AntOS source code;
 2. Make sure you have gcc, g++ and make installed;
