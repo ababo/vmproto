@@ -870,10 +870,10 @@ namespace Ant {
       createZTIVar();
 
       for(RegId reg = 0; reg < regs.size(); reg++)
-        if(regs[reg].flags & VFLAG_PERSISTENT) {
+        if(regs[reg].flags & VFLAG_TOP_LEVEL_REG) {
           Type *type = getEltLLVMType(regs[reg].vtype);
           type = ArrayType::get(type, regs[reg].count);
-          // bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL;
+          // bool threadLocal = regs[reg].flags & VFLAG_THREAD_LOCAL_REG;
           bool threadLocal = false; // BUG in LLVM JIT
 
           GlobalVariable *gvar =

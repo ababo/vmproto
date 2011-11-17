@@ -1,11 +1,29 @@
 1. Virtual machine design goals
 
-- To establish a memory-safe concurrent environment in a single address space;
-- To support transparent remote procedure calls;
-- To be as simple as possible, but not simpler;
+- To establish a memory-safe concurrent environment in a single address space.
+- To support transparent remote procedure calls.
+- To be as simple as possible, but not simpler.
 
 2. Variables
 
 When thread executes a module procedure it reads and writes variables. Each
 variable is a sequential block of memory organized as an array of equal sized
-elements. Structure of a variable element is determined by a variable type.
+elements.
+
+Variable element can hold three sections (each one may present or may not):
+- bytes: array of bytes available for arithmetic and logical manipulations.
+- vrefs: array of references to heap-allocated variables.
+- prefs: array of references to procedures.
+
+Concrete structure of a variable element is described by a variable type. A
+variable is described by flags (special properties), variable type and element
+count. These three characteristics together are called variable specificator.
+
+Variable specificator defines the following flags:
+- NON_FIXED_REF: referred variable has non-fixed element count.
+- TOP_LEVEL_REG: register has top-level variable. This flag can be used only
+  in register definitions.
+- THREAD_LOCAL_REG: register top-level variable is thread-local. Must be used
+  in combination with TOP_LEVEL_REG flag. This flag can be used only in
+  register definitions.
+

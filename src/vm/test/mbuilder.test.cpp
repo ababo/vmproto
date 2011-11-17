@@ -25,16 +25,21 @@ namespace {
       ProcTypeId pt;
       ProcId p;
  
-      ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_PERSISTENT,vt);},FlagsException);
-    ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_THREAD_LOCAL,vt);},FlagsException);
-  ASSERT_THROW({b.addVarTypeVRef(vt,VFLAG_FIRST_RESERVED,vt);},FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_TOP_LEVEL_REG, vt);},
+                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_THREAD_LOCAL_REG, vt);},
+                   FlagsException);
+      ASSERT_THROW({b.addVarTypeVRef(vt, VFLAG_FIRST_RESERVED, vt);},
+                   FlagsException);
       ASSERT_THROW({b.addVarTypeVRef(vt, 0, vt, 0);}, RangeException);
 
       ASSERT_THROW({r = b.addReg(VFLAG_FIRST_RESERVED, vt);}, FlagsException);
+      ASSERT_THROW({r = b.addReg(VFLAG_THREAD_LOCAL_REG, vt);},FlagsException);
       ASSERT_THROW({r = b.addReg(0, vt, 0);}, RangeException);
       r = b.addReg(0, vt);
 
-     ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED,r);},FlagsException);
+      ASSERT_THROW({pt=b.addProcType(PTFLAG_FIRST_RESERVED, r);},
+                   FlagsException);
       pt = b.addProcType(0, r);
 
       ASSERT_THROW({p = b.addProc(PFLAG_FIRST_RESERVED, pt);}, FlagsException);
@@ -296,7 +301,7 @@ namespace {
       VarTypeId vt2 = b.addVarType(1);
       RegId io = b.addReg(0, iovt);
       RegId r1 = b.addReg(0, vt1);
-      RegId r11 = b.addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, vt1);
+      RegId r11 = b.addReg(VFLAG_TOP_LEVEL_REG | VFLAG_THREAD_LOCAL_REG, vt1);
       RegId r12 = b.addReg(VFLAG_NON_FIXED_REF, vt1);
       RegId r13 = b.addReg(0, vt2);
       RegId r14 = b.addReg(0, vt1, 2);

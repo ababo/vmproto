@@ -80,8 +80,8 @@ namespace Ant {
 
     enum VarFlag {
       VFLAG_NON_FIXED_REF = 0x1,
-      VFLAG_PERSISTENT = 0x2,
-      VFLAG_THREAD_LOCAL = 0x4,
+      VFLAG_TOP_LEVEL_REG = 0x2,
+      VFLAG_THREAD_LOCAL_REG = 0x4,
       VFLAG_FIRST_RESERVED = 0x8
     };
 

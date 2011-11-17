@@ -49,7 +49,7 @@ namespace Ant {
 
     RegId ModuleBuilder::assertRegAllocated(ProcId proc, FrameType ftype,
 					    RegId reg) const {
-      if(regs[reg].flags & VFLAG_PERSISTENT)
+      if(regs[reg].flags & VFLAG_TOP_LEVEL_REG)
         return reg;
 
       const ProcCon &con = procCons[proc];
@@ -130,6 +130,8 @@ namespace Ant {
       if(regs.size() >= MODULE_REGS_MAX)
         throw RangeException();
       if(flags >= VFLAG_FIRST_RESERVED)
+        throw FlagsException();
+      if((flags & VFLAG_THREAD_LOCAL_REG) && !(flags & VFLAG_TOP_LEVEL_REG))
         throw FlagsException();
       if(!count || count > VAR_COUNT_MAX)
         throw RangeException();
@@ -322,7 +324,7 @@ namespace Ant {
       procCons.clear();
 
       // exception descriptor
-      addReg(VFLAG_PERSISTENT | VFLAG_THREAD_LOCAL, addVarType(8));
+      addReg(VFLAG_TOP_LEVEL_REG | VFLAG_THREAD_LOCAL_REG, addVarType(8));
     }
 
     void ModuleBuilder::createModule(Module &module) {
