@@ -16,20 +16,31 @@ Variable element can hold three sections (each one may present or may not):
 - prefs: array of references to procedures.
 
 Concrete structure of a variable element is described by a variable type. A
-variable is described by flags (special properties), variable type and element
-count. These three characteristics together are called variable specificator.
+variable in whole is described by flags (it's special properties), variable
+type and positive element count. These three characteristics together are
+called variable specificator.
 
-Variable type consists of bytes size, array of variable specificators, which
-correspond to element's variable references and procedure ids, which correspond
-to element's procedure references.
+Variable type consists of element bytes size, array of variable specificators,
+which correspond to element's variable references and procedure ids, which
+correspond to element's procedure references.
 
-Variable specificator defines the following flags:
-- NON_FIXED_REF: referred variable has non-fixed element count.
-- TOP_LEVEL_REG: register has top-level variable. This flag can be used only
-  in register definitions.
-- THREAD_LOCAL_REG: register top-level variable is thread-local. Must be used
-  in combination with TOP_LEVEL_REG flag. This flag can be used only in
+Variable specificator supports the following flags:
+- VFLAG_NON_FIXED_REF: referred variable has non-fixed element count.
+- VFLAG_TOP_LEVEL_REG: register has top-level variable. This flag can be used
+  only in register definitions.
+- VFLAG_THREAD_LOCAL_REG: register top-level variable is thread-local. Must be
+  used in combination with TOP_LEVEL_REG flag. This flag can be used only in
   register definitions.
+
+Heap-allocated variables are managed by reference counting collector. Such
+variables hold reference counters. Each new reference to heap-allocated
+variable retains it (increments counter by 1), and each reference loss releases
+it (decrements counter by 1, then if it becomes zero the variable is being
+destroyed: all variables pointed by it's references are released).
+
+Heap-allocated variables with non-fixed element count keep their actual element
+counts which are set at creation time. In such case the actual element count
+supersedes an element count of variable specificator.
 
 3. Registers
 
@@ -37,3 +48,133 @@ Variables are not accessed directly, but via registers. Register can be
 statically assigned to top-level variable, or dynamically assigned using stack
 frame manipulation instructions. Register is described by variable specificator
 which corresponds to variables the register can be assigned to.
+
+Preset registers:
+- ED (=0): top-level thread-local 8-byte variable holding exception
+  descriptor.
+
+4. Procedure types
+
+Procedure type describes an interface of procedure. It consists of flags (it's
+special properties) and IO register. When procedure is called it reads
+arguments from IO register of it's type. Before returning it places result into
+same IO register.
+
+Procedure type supports the following flags:
+- PTFLAG_READER: procedure reads mutable data, shared between threads.
+- PTFLAG_WRITER: procedure modifies mutable data, shared between threads.
+
+5. Procedures
+
+Procedure is described by flags (it's special properties), it's type and code.
+
+Procedure supports the following flags:
+- PFLAG_EXTERNAL: procedure is accessible from outside of the module.
+
+6. Instructions
+
+Argument prefixes designators:
+- '@': any register.
+- '%': register assigned to variable with at least 1 element; otherwise
+  exception with code VMECODE_NULL_REFERENCE will be thrown.
+- '#n': : same as '%', but the variable must have at least n bytes in element.
+- '#': same as '#8'.
+- '<': register assigned to variable reference (can be null).
+- '>': register assigned to stack allocated variable.
+- '$': immediate integer value.
+
+The instructions bellow are listed in alphabetical order. 
+
+- ADD #op1, #op2, #res
+Adds 'op1' to 'op2' and puts the result to 'res'.
+
+- CALL $proc
+Calls procedure of a same module with a given id. The last allocated stack
+frame must hold a stack allocated variable with a same variable type and
+with a same element count as a variable of IO register of callee procedure.
+
+- CPI1 $from, #1to
+Copy 1-byte emmidiate integer value 'from' to 'to' register bytes.
+
+- CPI2 $from, #2to
+Copy 2-byte emmidiate integer value 'from' to 'to' register bytes.
+
+- CPI4 $from, #4to
+Copy 4-byte emmidiate integer value 'from' to 'to' register bytes.
+
+- CPI8 $from, #to
+Copy 8-byte emmidiate integer value 'from' to 'to' register bytes.
+
+- DEC #it
+Decrements 'it' by 1.
+
+- INC #it
+Increments 'it' by 1.
+
+- JE #op1, #op2, $off
+Jumps with relative offset of 'off' instructions if 'op1' is equal to 'op2'.
+The jump must be within current stack frame.
+
+- JG #op1, #op2, $off
+Jumps with relative offset of 'off' instructions if 'op1' is greater than
+'op2'. The jump must be within current stack frame.
+
+- JMP $off
+Jumps with relative offset of 'off' instructions. The jump must be within
+current stack frame.
+
+- JNG #op1, #op2, $off
+Jumps with relative offset of 'off' instructions if 'op1' is not greater than
+'op2'. The jump must be within current stack frame.
+
+- JNZ #op, $off
+Jumps with relative offset of 'off' instructions if 'op' is not equal to zero.
+The jump must be within current stack frame.
+
+- LDB %from, $off, %to
+Loads bytes from offset 'off' of element 0 of 'from' to bytes with offset 0 of
+element 0 of 'to'. It loads as many bytes as possible.
+
+- LDE %from, #elt, %to
+Loads element 'elt' of 'from' to element 0 of 'to'. If element 'elt' does not
+exist an exception with code VMECODE_RANGE will be thrown. 
+
+- LDR %from, $vref, <to
+Loads variable reference with 'vref' index of element 0 of 'from' to stack
+reference 'to'. If the source reference points to a variable, the variable is
+retained. If the destination reference points to a variable, the variable is
+released. 
+
+- MUL #op1, #op2, #res
+Multiplies 'op1' by 'op2' and puts the result to 'res'.
+
+- POP
+Destroys a current frame. If the frame is created by PUSH instruction the
+appropriate stack-allocated variable is destroyed (all variables pointed by
+it's references are released). If the frame is created by PUSHR instruction,
+the appropriate stack-allocated reference is destroyed (if the reference is
+assigned to a variable then the variable is released). If the frame is created
+by PUSHH instruction, then the current exception handler becomes removed.
+
+- PUSH @reg
+Creates a new stack frame by allocating a new stack variable and assigning it
+to register 'reg'. All bytes of the allocated variabled are set to zero; all
+references are set to null.
+
+- PUSHH $off
+Creates a new exception handler frame to catch exception and makes jump with
+relative offset of 'off' instructions. The jump must be within current stack
+frame.
+
+- PUSHR @reg
+Creates a new stack frame by allocating a new stack reference and assigning it
+to register 'reg'. The allocated reference is set to null.
+
+      OPCODE_SUB, // SUBtract
+      OPCODE_CPB, // CoPy Bytes
+      OPCODE_STE, // STore array Element
+      OPCODE_STB, // STore structure Bytes
+      OPCODE_STR, // STore structure Reference
+      
+      OPCODE_THROW, // THROW exception
+      OPCODE_RET // RETurn
