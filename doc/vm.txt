@@ -21,7 +21,7 @@ type and positive element count. These three characteristics together are
 called variable specificator.
 
 Variable type consists of element byte array size, array of variable
-specificators, which correspond to element's variable references and procedure
+specificators, which correspond to element's variable references, and procedure
 ids, which correspond to element's procedure references.
 
 Variable specificator supports the following flags:
@@ -94,6 +94,10 @@ Calls procedure 'proc' of a same module. The last allocated frame must hold a
 stack allocated variable with a same variable type and with a same element
 count as a variable of IO register of callee procedure.
 
+- CPB %from, %to
+Loads bytes from first element of 'from' to first element's bytes of 'to'. It
+loads as many bytes as possible (minimum 1 byte).
+
 - CPI1 $val, #1to
 Copy 1-byte emmidiate integer value 'val' to bytes of 'to' register.
 
@@ -134,19 +138,20 @@ The jump must be within current stack frame.
 
 - LDB %from, $off, %to
 Loads bytes with offset 'off' from first element of 'from' to first element's
-bytes of 'to'. It loads as many bytes as possible.
+bytes of 'to'. It loads as many bytes as possible (minimum 1 byte).
 
 - LDE %from, #elt, %to
 Loads element 'elt' of 'from' to first element of 'to'. If element 'elt' does
-not exist, an exception with code VMECODE_RANGE will be thrown. 
+not exist, an exception with code VMECODE_RANGE will be thrown.
 
 - LDR %from, $vref, <to
-Loads variable reference with 'vref' index in first element of 'from' to stack
-reference 'to'. The source and destination references must have a same
-variable type. They must both have VFLAG_NON_FIXED_REF set or reset. In the
-last case, they also must have a same element count. If the source reference
-points to a variable, the variable is retained. If the destination reference
-points to a variable, the variable is released. 
+Loads value of variable reference with 'vref' index in first element of 'from'
+to stack reference 'to'. The source reference must exist. The source and
+destination references must have a same variable type. They must both have
+VFLAG_NON_FIXED_REF set or reset. In the last case, they also must have a same
+element count. If the source reference points to a variable, the variable is
+retained. If the destination reference points to a variable, the variable is
+released.
 
 - MUL #op1, #op2, #res
 Multiplies 'op1' by 'op2' and puts the result to 'res'.
@@ -174,11 +179,29 @@ point. The jump must be within current stack frame.
 Creates a new frame by allocating a new stack reference and assigning it
 to register 'reg'. The allocated reference is set to null.
 
-      OPCODE_SUB, // SUBtract
-      OPCODE_CPB, // CoPy Bytes
-      OPCODE_STE, // STore array Element
-      OPCODE_STB, // STore structure Bytes
-      OPCODE_STR, // STore structure Reference
-      
-      OPCODE_THROW, // THROW exception
-      OPCODE_RET // RETurn
+- RET
+Return from procedure.
+
+- STB %from, %to, $off
+Stores bytes from first element of 'from' to first element's bytes of 'to' with
+offset 'off'. It stores as many bytes as possible (minimum 1 byte).
+
+- STE %from, %to, #elt
+Stores first element 'from' to element 'elt' of 'to'. If element 'elt' does
+not exist, an exception with code VMECODE_RANGE will be thrown.
+
+- STR <from, %to, $vref
+Stores value of stack reference 'from' to variable reference with 'vref' index
+in first element of 'to'. The source reference must exist. The source and
+destination references must have a same variable type. They must both have
+VFLAG_NON_FIXED_REF set or reset. In the last case, they also must have a same
+element count. If the source reference points to a variable, the variable is
+retained. If the destination reference points to a variable, the variable is
+released.
+
+- THROW
+Throws an exception. Type of exception is determined by value of exception
+descriptor register (ED), which is typically set before this instruction.
+
+- SUB #op1, #op2, #res
+Subtructs 'op2' from 'op1' and puts the result to 'res'.
