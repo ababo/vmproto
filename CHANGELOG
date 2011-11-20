@@ -1,4 +1,4 @@
-v0.02: November XX, 2001:
+v0.02: November 20, 2011:
 -------------------------
 - The virtual machine supports references to fixed and variable-sized heap
   variables, but there is no heap allocation/deallocation support yet. It also
