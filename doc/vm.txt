@@ -25,7 +25,7 @@ specificators, which correspond to element's variable references, and procedure
 ids, which correspond to element's procedure references.
 
 Variable specificator supports the following flags:
-- VFLAG_NON_FIXED_REF: referred variable has non-fixed element count.
+- VFLAG_NON_FIXED_REF: referenced variable has non-fixed element count.
 - VFLAG_TOP_LEVEL_REG: register has top-level variable. This flag can be used
   only in register definitions.
 - VFLAG_THREAD_LOCAL_REG: register top-level variable is thread-local. Must be
@@ -35,9 +35,8 @@ Variable specificator supports the following flags:
 Heap-allocated variables are managed by reference counting collector. Such
 variables hold reference counters. Each new reference to heap-allocated
 variable increments the counter ("retains" it). Each reference loss decrements
-the counter ("releases" it). When the counter becomes equal to zero the
-variable is being destroyed, and all variables pointed by it's references are
-released.
+the counter ("releases" it). When the counter becomes equal to zero, the
+variable is being destroyed, and all referenced variables are released.
 
 Heap-allocated variables with non-fixed element count keep their actual element
 counts which are set at creation time. In such case the actual element count
@@ -51,15 +50,14 @@ frame manipulation instructions. Register is described by variable specificator
 which corresponds to variables the register can be assigned to.
 
 Predefined registers:
-- ED (=0): top-level thread-local 8-byte variable holding an exception
-  descriptor.
+- ED: top-level thread-local 8-byte variable holding an exception descriptor.
 
 4. Procedure types
 
 Procedure type describes an interface of procedure. It consists of flags (it's
 special properties) and IO register. When procedure is called, it reads
-arguments from IO register of it's type. Before returning it places result into
-same the IO register.
+arguments from IO register of it's type. Before returning, it places result
+into the same IO register.
 
 Procedure type supports the following flags:
 - PTFLAG_READER: procedure reads mutable data, shared between threads.
@@ -76,12 +74,11 @@ Procedure supports the following flags:
 
 Argument prefixes designators:
 - '@': any register.
-- '%': register assigned to variable with at least 1 element; otherwise
+- '%': register assigned to variable with at least 1 element; otherwise an
   exception with code VMECODE_NULL_REFERENCE will be thrown.
 - '#n': : same as '%', but the variable must have at least n bytes in element.
 - '#': same as '#8'.
 - '<': register assigned to variable reference (can be null).
-- '!': register assigned to stack allocated variable.
 - '$': immediate integer value.
 
 The instructions bellow are listed in alphabetical order. 
@@ -96,7 +93,7 @@ count as a variable of IO register of callee procedure.
 
 - CPB %from, %to
 Loads bytes from first element of 'from' to first element's bytes of 'to'. It
-loads as many bytes as possible (minimum 1 byte).
+loads as many bytes as possible (must be at least 1 byte).
 
 - CPI1 $val, #1to
 Copy 1-byte emmidiate integer value 'val' to bytes of 'to' register.
@@ -138,7 +135,7 @@ The jump must be within current stack frame.
 
 - LDB %from, $off, %to
 Loads bytes with offset 'off' from first element of 'from' to first element's
-bytes of 'to'. It loads as many bytes as possible (minimum 1 byte).
+bytes of 'to'. It loads as many bytes as possible (must be at least 1 byte).
 
 - LDE %from, #elt, %to
 Loads element 'elt' of 'from' to first element of 'to'. If element 'elt' does
@@ -149,31 +146,33 @@ Loads value of variable reference with 'vref' index in first element of 'from'
 to stack reference 'to'. The source reference must exist. The source and
 destination references must have a same variable type. They must both have
 VFLAG_NON_FIXED_REF set or reset. In the last case, they also must have a same
-element count. If the source reference points to a variable, the variable is
-retained. If the destination reference points to a variable, the variable is
-released.
+element count. If the source reference is initialized, the appropriate variable
+is retained. If the destination reference is initialized, the appropriate
+variable is released.
 
 - MUL #op1, #op2, #res
 Multiplies 'op1' by 'op2' and puts the result to 'res'.
 
 - POP
 Destroys a current frame. If the frame is created by PUSH instruction the
-appropriate stack-allocated variable is destroyed and all variables pointed by
-it's references are released. If the frame is created by PUSHR instruction,
-the appropriate stack-allocated reference is destroyed. In the last case, if
-the reference is assigned to a variable, then the variable is released. If the
-frame is created by PUSHH instruction, then the current exception handler
-becomes removed.
+appropriate stack-allocated variable is destroyed and all referenced variables
+are released. If the frame is created by PUSHR instruction, the appropriate
+stack-allocated reference is destroyed; if the reference is initialized, then
+the appropriate variable is released. If the frame is created by PUSHH
+instruction, then the current exception handler becomes removed. POP
+instructions must be balanced with pushing instructions.
 
 - PUSH @reg
 Creates a new frame by allocating a new stack variable and assigning it to
 register 'reg'. All bytes of the allocated variable are set to zero; all
-references are set to null.
+references are set to null. Subsequent assigning of the same register is
+allowed. In such case a subsequent POP will restore the previous assignment
+(including top-level variable assignment). 
 
 - PUSHH $off
 Creates a new frame with exception handler. When an exception is caught, an
-execution flow jumps with relative offset of 'off' instructions from this
-point. The jump must be within current stack frame.
+execution jumps with relative offset of 'off' instructions from this point. The
+jump must be within current stack frame.
 
 - PUSHR @reg
 Creates a new frame by allocating a new stack reference and assigning it
@@ -184,7 +183,7 @@ Return from procedure.
 
 - STB %from, %to, $off
 Stores bytes from first element of 'from' to first element's bytes of 'to' with
-offset 'off'. It stores as many bytes as possible (minimum 1 byte).
+offset 'off'. It stores as many bytes as possible (must be at least 1 byte).
 
 - STE %from, %to, #elt
 Stores first element 'from' to element 'elt' of 'to'. If element 'elt' does
@@ -195,9 +194,9 @@ Stores value of stack reference 'from' to variable reference with 'vref' index
 in first element of 'to'. The source reference must exist. The source and
 destination references must have a same variable type. They must both have
 VFLAG_NON_FIXED_REF set or reset. In the last case, they also must have a same
-element count. If the source reference points to a variable, the variable is
-retained. If the destination reference points to a variable, the variable is
-released.
+element count. If the source reference is initialized, the appropriate variable
+is retained. If the destination reference is initialized, the appropriate
+variable is released.
 
 - THROW
 Throws an exception. Type of exception is determined by value of exception
